@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "outDir": "lib",
+        "rootDir": "src",
+        "module": "commonjs",
+        "target": "es5",
+        "moduleResolution": "node",
+        "noEmitOnError": true,
+        "lib": [
+            "dom",
+            "es6",
+            "esnext.asynciterable"
+        ],
+        "allowJs": true
+    },
+    "exclude": [
+        "lib"
+    ],
+    "compileOnSave": true
+}
