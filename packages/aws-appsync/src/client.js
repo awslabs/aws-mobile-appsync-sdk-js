@@ -53,6 +53,7 @@ const newStore = (persistCallback = () => null, effect, discard) => {
                 },
                 effect,
                 discard,
+                detectNetwork: callback => { callback({ online: true }) },
             })
         )
     );
