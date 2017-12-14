@@ -17,7 +17,7 @@ import { offline } from '@redux-offline/redux-offline';
 import offlineConfig from '@redux-offline/redux-offline/lib/defaults';
 import thunk from 'redux-thunk';
 
-import InMemoryCache, { reducer as cacheReducer } from './cache/index';
+import InMemoryCache, { reducer as cacheReducer, NORMALIZED_CACHE_KEY } from './cache/index';
 import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink } from './link';
 import { reducer as commitReducer, offlineEffect, discard } from './link/offline-link';
 
@@ -41,15 +41,14 @@ const newStore = (persistCallback = () => null, effect, discard) => {
             ...cacheReducer(),
             ...commitReducer(),
         }),
-        // @ts-ignore
-        window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__(),
+        window && window.__REDUX_DEVTOOLS_EXTENSION__ ? window.__REDUX_DEVTOOLS_EXTENSION__() : {},
         compose(
             applyMiddleware(thunk),
             offline({
                 ...offlineConfig,
                 persistCallback,
                 persistOptions: {
-                    blacklist: ['rehydrated', 'eclipse']
+                    whitelist: [NORMALIZED_CACHE_KEY, 'offline']
                 },
                 effect,
                 discard,
