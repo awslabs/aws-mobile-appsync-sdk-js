@@ -12,7 +12,7 @@ import { ApolloLink } from 'apollo-link';
 import { getOperationDefinition } from "apollo-utilities";
 import { GraphQLError } from 'graphql';
 
-import * as S3 from 'aws-sdk/clients/s3';
+import upload from "./complex-object-link-uploader";
 
 export class ComplexObjectLink extends ApolloLink {
 
@@ -34,29 +34,18 @@ export const complexObjectLink = (credentials) => {
 
             const { operation: operationType } = getOperationDefinition(operation.query);
             const isMutation = operationType === 'mutation';
-            const fileField = isMutation && findInObject(operation.variables);
+            const [fileFieldKey, fileField] = isMutation ? findInObject(operation.variables) : [];
 
-            let uploadPromise = Promise.resolve();
+            let uploadPromise = Promise.resolve(operation);
 
             if (fileField) {
-                const {
-                    bucket: Bucket,
-                    key: Key,
-                    region,
-                    mimeType: ContentType,
-                    localUri: Body,
-                } = fileField;
-                const s3 = new S3({
-                    credentials,
-                    region,
-                });
+                uploadPromise = upload(fileField, { credentials }).then(() => {
+                    // Remove localUri and mimeType
+                    const { mimeType, localUri, ...fileFields } = fileField;
+                    operation.variables[fileFieldKey] = fileFields;
 
-                uploadPromise = s3.upload({
-                    Bucket,
-                    Key,
-                    Body,
-                    ContentType,
-                }).promise().catch(err => {
+                    return operation;
+                }).catch(err => {
                     const error = new GraphQLError(err.message);
                     error.errorType = 'AWSAppSyncClient:S3UploadException'
 
@@ -66,17 +55,17 @@ export const complexObjectLink = (credentials) => {
                 });
             }
 
-            const promise = uploadPromise.then(() => forward(operation));
-
-            promise.then(observable => {
-                handle = observable.subscribe({
-                    next: observer.next.bind(observer),
-                    error: observer.error.bind(observer),
-                    complete: observer.complete.bind(observer),
+            uploadPromise
+                .then(forward)
+                .then(observable => {
+                    handle = observable.subscribe({
+                        next: observer.next.bind(observer),
+                        error: observer.error.bind(observer),
+                        complete: observer.complete.bind(observer),
+                    });
+                }).catch(err => {
+                    observer.error(err);
                 });
-            }).catch(err => {
-                observer.error(err);
-            });
 
             return () => {
                 if (handle) handle.unsubscribe();
@@ -100,7 +89,15 @@ const findInObject = obj => {
             const val = obj[key];
 
             if (typeof val === 'object') {
-                const hasFields = complexObjectFields.every(field => val[field.name] && typeof val[field.name] === field.type);
+                const hasFields = complexObjectFields.every(field => {
+                    const hasValue = val[field.name];
+                    const types = Array.isArray(field.type) ? field.type : [field.type];
+                    const isOfType = hasValue && types.reduce((prev, curr) => {
+                        return prev || typeof val[field.name] === curr;
+                    }, false);
+
+                    return isOfType;
+                });
 
                 if (hasFields) {
                     which = val;
@@ -114,26 +111,7 @@ const findInObject = obj => {
         });
     }
 
-    _findInObject(obj);
+    const key = _findInObject(obj);
 
-    return which;
+    return [key, which];
 };
-
-const formatAsRequest = ({ operationName, variables, query }, options) => {
-    const body = {
-        operationName,
-        variables,
-        query: print(query)
-    };
-
-    return {
-        body: JSON.stringify(body),
-        method: 'POST',
-        ...options,
-        headers: {
-            accept: '*/*',
-            'content-type': 'application/json; charset=utf-8',
-            ...options.headers,
-        },
-    };
-}

@@ -101,6 +101,7 @@ class AWSAppSyncClient extends ApolloClient {
 
         let link = ApolloLink.from([
             new OfflineLink(store),
+            new ComplexObjectLink(complexObjectsCredentials),
             new AuthLink({ url, region, auth }),
             ApolloLink.split(
                 operation => {
@@ -114,10 +115,7 @@ class AWSAppSyncClient extends ApolloClient {
                     new NonTerminatingHttpLink('subsInfo', { uri: url }, true),
                     new SubscriptionHandshakeLink('subsInfo'),
                 ]),
-                ApolloLink.from([
-                    new ComplexObjectLink(complexObjectsCredentials),
-                    new HttpLink({ uri: url }),
-                ]),
+                new HttpLink({ uri: url }),
             ),
         ]);
 
