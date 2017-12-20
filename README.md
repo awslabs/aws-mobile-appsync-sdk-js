@@ -1,4 +1,4 @@
-AWS Mobile AppSync SDK JavaScript
+AWS Mobile [AppSync](https://aws.amazon.com/appsync/) SDK JavaScript
 
 ## License
 
