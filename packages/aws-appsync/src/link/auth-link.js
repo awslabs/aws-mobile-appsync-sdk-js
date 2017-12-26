@@ -46,7 +46,7 @@ export class AuthLink extends ApolloLink {
 const headerBasedAuth = ({ header, value } = { header: '', value: '' }, operation, forward) => {
     const origContext = operation.getContext();
     const headers = {
-        ...(header && value ? { [header]: value } : {}),
+        ...(header && value ? { [header]: typeof value === 'function' ? value.call() : value } : {}),
         [USER_AGENT_HEADER]: USER_AGENT,
     };
 
