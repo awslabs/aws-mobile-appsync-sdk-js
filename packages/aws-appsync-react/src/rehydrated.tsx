@@ -69,7 +69,7 @@ export default class Rehydrated extends React.Component<RehydratedProps, Rehydra
             if (loading) return rehydrated ? children : loading;
 
             return (
-                <Rehydrate rehydrated={this.state.rehydrated}>
+                <Rehydrate rehydrated={rehydrated}>
                     {children}
                 </Rehydrate>
             );
