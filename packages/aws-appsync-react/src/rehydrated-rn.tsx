@@ -14,8 +14,8 @@ import AWSAppSyncClient from 'aws-appsync';
 
 export interface RehydrateProps {
     rehydrated: boolean;
-    children: any,
-    style: any,
+    children: React.ReactNode;
+    style: any;
 }
 
 const Rehydrate = (props: RehydrateProps) => (
@@ -35,15 +35,23 @@ interface RehydratedState {
 }
 
 export interface RehydratedProps {
-    rehydrated: boolean;
-    children: any,
-    style: any,
+    render?: ((props: { rehydrated: boolean }) => React.ReactNode);
+    children?: React.ReactChildren;
+    loading?: React.ComponentType<any>;
+    style?: any;
 }
 
 export default class Rehydrated extends React.Component<RehydratedProps, RehydratedState> {
 
     static contextTypes = {
         client: PropTypes.instanceOf(AWSAppSyncClient).isRequired,
+    };
+
+    static propTypes = {
+        render: PropTypes.func,
+        children: PropTypes.node,
+        loading: PropTypes.node,
+        style: View.propTypes.style,
     };
 
     constructor(props, context) {
@@ -64,10 +72,19 @@ export default class Rehydrated extends React.Component<RehydratedProps, Rehydra
     }
 
     render() {
-        return (
-            <Rehydrate rehydrated={this.state.rehydrated} style={this.props.style} >
-                {this.props.children}
-            </Rehydrate>
-        );
+        const { render, children, loading, style } = this.props;
+        const { rehydrated } = this.state;
+
+        if (render) return render({ rehydrated });
+
+        if (children) {
+            if (loading) return rehydrated ? children : loading;
+
+            return (
+                <Rehydrate rehydrated={rehydrated} style={style} >
+                    {children}
+                </Rehydrate>
+            );
+        }
     }
 }
