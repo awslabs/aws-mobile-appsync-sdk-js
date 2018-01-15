@@ -43,19 +43,27 @@ export class AuthLink extends ApolloLink {
     }
 }
 
-const headerBasedAuth = ({ header, value } = { header: '', value: '' }, operation, forward) => {
+const headerBasedAuth = async ({ header, value } = { header: '', value: '' }, operation, forward) => {
     const origContext = operation.getContext();
-    const headers = {
-        ...(header && value ? { [header]: typeof value === 'function' ? value.call() : value } : {}),
+    let headers = {
         [USER_AGENT_HEADER]: USER_AGENT,
     };
+
+    if (header && value) {
+        const headerValue = typeof value === 'function' ? await value.call() : await value;
+
+        headers = {
+            ...{ [header]: headerValue },
+            ...headers
+        };
+    }
 
     operation.setContext({
         ...origContext,
         headers,
     });
 
-    return Promise.resolve(forward(operation));
+    return forward(operation);
 
 };
 
@@ -63,9 +71,14 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
     const service = SERVICE;
     const origContext = operation.getContext();
 
-    await credentials.getPromise();
+    let creds = typeof credentials === 'function' ? credentials.call() : credentials;
 
-    const { accessKeyId, secretAccessKey, sessionToken } = credentials;
+    if (typeof creds.getPromise == 'function') {
+        creds = await creds.getPromise();
+    }
+
+    const { accessKeyId, secretAccessKey, sessionToken } = await creds;
+
     const { host, path } = Url.parse(url);
 
     const formatted = {
