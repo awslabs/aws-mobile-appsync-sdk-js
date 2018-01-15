@@ -39,7 +39,9 @@ export const complexObjectLink = (credentials) => {
             let uploadPromise = Promise.resolve(operation);
 
             if (fileField) {
-                uploadPromise = upload(fileField, { credentials }).then(() => {
+                const uploadCredentials = typeof credentials === 'function' ? credentials.call() : credentials;
+
+                uploadPromise = Promise.resolve(uploadCredentials).then(credentials => upload(fileField, { credentials }).then(() => {
                     // Remove localUri and mimeType
                     const { mimeType, localUri, ...fileFields } = fileField;
                     operation.variables[fileFieldKey] = fileFields;
@@ -52,7 +54,7 @@ export const complexObjectLink = (credentials) => {
                     throw new ApolloError({
                         graphQLErrors: [error],
                     });
-                });
+                }));
             }
 
             uploadPromise
