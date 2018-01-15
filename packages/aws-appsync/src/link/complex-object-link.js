@@ -42,9 +42,10 @@ export const complexObjectLink = (credentials) => {
                 const uploadCredentials = typeof credentials === 'function' ? credentials.call() : credentials;
 
                 uploadPromise = Promise.resolve(uploadCredentials).then(credentials => upload(fileField, { credentials }).then(() => {
-                    // Remove localUri and mimeType
-                    const { mimeType, localUri, ...fileFields } = fileField;
-                    operation.variables[fileFieldKey] = fileFields;
+                    const { bucket, key, region } = fileField;
+                    // Store as S3Link, see https://aws.amazon.com/blogs/developer/using-s3link-with-amazon-dynamodb/
+                    const s3Link = { s3: { bucket, key, region } };
+                    operation.variables[fileFieldKey] = JSON.stringify(s3Link);
 
                     return operation;
                 }).catch(err => {
