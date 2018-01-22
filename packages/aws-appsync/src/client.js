@@ -10,6 +10,7 @@ import ApolloClient, { ApolloClientOptions, MutationOptions } from 'apollo-clien
 import { NormalizedCache } from 'apollo-cache-inmemory';
 import { ApolloLink, FetchResult } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
+import { onError } from "apollo-link-error";
 import { getMainDefinition, getOperationDefinition, variablesInOperation } from 'apollo-utilities';
 
 import { Action, applyMiddleware, createStore, compose, combineReducers, Store } from 'redux';
@@ -100,6 +101,16 @@ class AWSAppSyncClient extends ApolloClient {
         const cache = new InMemoryCache(store);
 
         let link = ApolloLink.from([
+            new onError(({ graphQLErrors, networkError }) => {
+                if (graphQLErrors)
+                    graphQLErrors.map(({ message, locations, path }) =>
+                        console.log(
+                            `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
+                        ),
+                    );
+              
+                if (networkError) console.log(`[Network error]: ${networkError}`);
+            }),            
             new OfflineLink(store),
             new ComplexObjectLink(complexObjectsCredentials),
             new AuthLink({ url, region, auth }),
