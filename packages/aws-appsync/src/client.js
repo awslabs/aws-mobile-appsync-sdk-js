@@ -85,7 +85,7 @@ class AWSAppSyncClient extends ApolloClient {
         }
 
         let res;
-        this.hydratedPromise = new Promise((resolve, reject) => {
+        const hydratedPromise = new Promise((resolve, reject) => {
             res = resolve;
         });
 
@@ -127,6 +127,7 @@ class AWSAppSyncClient extends ApolloClient {
 
         super(newOptions);
 
+        this.hydratedPromise = hydratedPromise;
         this.aasStore = store;
     }
 
