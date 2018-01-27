@@ -26,6 +26,7 @@ export class OfflineLink extends ApolloLink {
      * @param {Store} store 
      */
     constructor(store) {
+        super();
         this.store = store;
     }
 

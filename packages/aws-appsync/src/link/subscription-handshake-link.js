@@ -43,6 +43,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     topicObserver = new Map();
 
     constructor(subsInfoContextKey) {
+        super();
         this.subsInfoContextKey = subsInfoContextKey;
     }
 
