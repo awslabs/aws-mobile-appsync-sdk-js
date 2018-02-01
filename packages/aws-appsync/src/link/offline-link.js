@@ -103,22 +103,24 @@ const processMutation = (operation, theStore) => {
         : null;
 
     // console.log('Queuing mutation');
-    theStore.dispatch({
-        type: 'SOME_ACTION',
-        payload: {},
-        meta: {
-            offline: {
-                effect: {
-                    mutation,
-                    variables,
-                    refetchQueries,
-                    doIt: true,
-                },
-                commit: { type: 'SOME_ACTION_COMMIT', meta: null },
-                rollback: { type: 'SOME_ACTION_ROLLBACK', meta: null },
+    if (data) {
+        theStore.dispatch({
+            type: 'SOME_ACTION',
+            payload: {},
+            meta: {
+                offline: {
+                    effect: {
+                        mutation,
+                        variables,
+                        refetchQueries,
+                        doIt: true,
+                    },
+                    commit: { type: 'SOME_ACTION_COMMIT', meta: null },
+                    rollback: { type: 'SOME_ACTION_ROLLBACK', meta: null },
+                }
             }
-        }
-    });
+        });
+    }
 
     return data;
 }
