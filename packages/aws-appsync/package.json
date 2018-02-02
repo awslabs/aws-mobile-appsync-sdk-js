@@ -18,7 +18,7 @@
   "dependencies": {
     "@redux-offline/redux-offline": "^2.2.1",
     "apollo-cache-inmemory": "^1.0.0",
-    "apollo-client": "^2.0.3",
+    "apollo-client": "^2.2.1",
     "apollo-link": "^1.0.0",
     "apollo-link-context": "^1.0.0",
     "apollo-link-http": "^1.0.0",

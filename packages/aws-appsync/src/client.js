@@ -7,63 +7,16 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import ApolloClient, { ApolloClientOptions, MutationOptions } from 'apollo-client';
-import { NormalizedCache } from 'apollo-cache-inmemory';
+import { InMemoryCache } from 'apollo-cache-inmemory';
 import { ApolloLink, FetchResult } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
 import { getMainDefinition, getOperationDefinition, variablesInOperation } from 'apollo-utilities';
 
-import { Action, applyMiddleware, createStore, compose, combineReducers, Store } from 'redux';
-import { offline } from '@redux-offline/redux-offline';
-import offlineConfig from '@redux-offline/redux-offline/lib/defaults';
-import thunk from 'redux-thunk';
-
-import InMemoryCache, { reducer as cacheReducer, NORMALIZED_CACHE_KEY } from './cache/index';
+import OfflineCache from './cache/index';
 import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink } from './link';
-import { reducer as commitReducer, offlineEffect, discard } from './link/offline-link';
-
-/**
- * 
- * @param {Function} persistCallback 
- * @param {*} effect
- * @returns {Store<NormalizedCache>}
- */
-const newStore = (persistCallback = () => null, effect, discard) => {
-    return createStore(
-        combineReducers({
-            rehydrated: (state = false, action) => {
-                switch (action.type) {
-                    case 'REHYDRATE_STORE':
-                        return true;
-                    default:
-                        return state;
-                }
-            },
-            ...cacheReducer(),
-            ...commitReducer(),
-        }),
-        window && window.__REDUX_DEVTOOLS_EXTENSION__ ? window.__REDUX_DEVTOOLS_EXTENSION__() : {},
-        compose(
-            applyMiddleware(thunk),
-            offline({
-                ...offlineConfig,
-                persistCallback,
-                persistOptions: {
-                    whitelist: [NORMALIZED_CACHE_KEY, 'offline']
-                },
-                effect,
-                discard,
-            })
-        )
-    );
-};
+import { createStore } from './store';
 
 class AWSAppSyncClient extends ApolloClient {
-
-    /**
-     * @type {Store<{}>}
-     * @private
-     */
-    aasStore;
 
     /**
      * @type {Promise<AWSAppSyncClient>}
@@ -77,11 +30,11 @@ class AWSAppSyncClient extends ApolloClient {
      * @param {string} url 
      * @param {ApolloClientOptions<InMemoryCache>} options
      */
-    constructor({ url, region, auth, conflictResolver, complexObjectsCredentials }, options) {
+    constructor({ url, region, auth, conflictResolver, complexObjectsCredentials, disableOffline = false }, options) {
         if (!url || !region || !auth) {
-            throw new Error(`
-                In order to initialize AWSAppSyncClient, you must specify url, region and auth properties on the config object.
-            `);
+            throw new Error(
+                'In order to initialize AWSAppSyncClient, you must specify url, region and auth properties on the config object.'
+            );
         }
 
         let res;
@@ -89,18 +42,19 @@ class AWSAppSyncClient extends ApolloClient {
             res = resolve;
         });
 
-        const store = newStore(
+        const store = disableOffline ? null : createStore(
+            this,
             () => {
-                this.aasStore.dispatch({ type: 'REHYDRATE_STORE' });
+                store.dispatch({ type: 'REHYDRATE_STORE' });
                 res(this);
             },
-            (effect, action) => offlineEffect(this, effect, action),
-            discard(conflictResolver),
+            conflictResolver,
         );
-        const cache = new InMemoryCache(store);
+        const cache = disableOffline ? new InMemoryCache() : new OfflineCache(store);
 
+        const passthrough = (op, forward) => (forward ? forward(op) : Observable.of());
         let link = ApolloLink.from([
-            new OfflineLink(store),
+            disableOffline ? passthrough : new OfflineLink(store),
             new ComplexObjectLink(complexObjectsCredentials),
             new AuthLink({ url, region, auth }),
             ApolloLink.split(
@@ -127,7 +81,9 @@ class AWSAppSyncClient extends ApolloClient {
 
         super(newOptions);
 
-        this.aasStore = store;
+        if (disableOffline) {
+            res(this);
+        }
     }
 
     /**
