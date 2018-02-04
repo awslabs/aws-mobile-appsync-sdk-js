@@ -91,35 +91,22 @@ class AWSAppSyncClient extends ApolloClient {
      * @param {MutationOptions} options
      * @returns {Promise<FetchResult>}
      */
-    mutate(options, extraOpts = {}) {
-        const { mutation, variables: mutationVariables, optimisticResponse, context: origContext = {} } = options;
-        const { AASContext: { ...origASAContext = {} } = {} } = origContext;
-
-        const operationDefinition = getOperationDefinition(mutation);
-        const varsInOperation = variablesInOperation(operationDefinition);
-        const variables = Array.from(varsInOperation).reduce((obj, key) => {
-            obj[key] = mutationVariables[key];
-            return obj;
-        }, {});
-
-        // refetchQueries left out intentionally when !doIt so we don't run them twice
-        const { refetchQueries, ...otherOptions } = options;
-        const { doIt } = origASAContext;
+    mutate(options) {
+        // return Promise.resolve();
+        const { context: origContext = {}, mutation, variables, ...otherOptions } = options;
 
         const context = {
             ...origContext,
             AASContext: {
-                ...origASAContext,
-                mutation,
-                variables,
-                optimisticResponse,
-                refetchQueries,
-            },
+                ...otherOptions,
+                ...(origContext.AASContext || {}),
+            }
         };
 
         return super.mutate({
+            mutation,
+            variables,
             ...otherOptions,
-            refetchQueries: doIt ? refetchQueries : undefined,
             context,
         });
     }

@@ -7,9 +7,9 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
-import { ApolloLink, Observable } from "apollo-link";
+import { ApolloLink, Observable, Operation } from "apollo-link";
 import { getOperationDefinition, getOperationName } from "apollo-utilities";
-import { Store } from 'redux';
+import { Store } from "redux";
 
 import { NORMALIZED_CACHE_KEY } from "../cache";
 
@@ -46,17 +46,15 @@ export class OfflineLink extends ApolloLink {
             }
 
             if (isMutation) {
-                const data = processMutation(operation, this.store);
+                const { AASContext: { doIt = false } = {} } = operation.getContext();
 
-                // If we got data, it is the optimisticResponse, we send it to the observer
-                // Otherwise, we allow the mutation to continue in the link chain
-                if (data) {
+                if (!doIt) {
+                    const data = enqueueMutation(operation, this.store);
+
                     observer.next({ data });
                     observer.complete();
 
                     return () => null;
-                } else {
-                    // console.log('Processing mutation');
                 }
             }
 
@@ -73,6 +71,11 @@ export class OfflineLink extends ApolloLink {
     }
 }
 
+/**
+ * 
+ * @param {Operation} operation 
+ * @param {Store} theStore 
+ */
 const processOfflineQuery = (operation, theStore) => {
     const { [NORMALIZED_CACHE_KEY]: normalizedCache = {} } = theStore.getState();
     const { query, variables } = operation;
@@ -88,36 +91,38 @@ const processOfflineQuery = (operation, theStore) => {
     return data;
 }
 
-const processMutation = (operation, theStore) => {
-    const { AASContext } = operation.getContext();
-    const { mutation, variables, optimisticResponse, refetchQueries, doIt } = AASContext;
-
-    if (doIt) {
-        return;
-    }
+/**
+ * 
+ * @param {Operation} operation 
+ * @param {Store} theStore
+ */
+const enqueueMutation = (operation, theStore) => {
+    const { query: mutation, variables } = operation;
+    const { cache, optimisticResponse, AASContext: { refetchQueries, update, doIt = false } = {} } = operation.getContext();
 
     const data = optimisticResponse ?
-        typeof optimisticResponse === 'function' ?
-            { ...optimisticResponse(variables) } :
-            optimisticResponse
+        (typeof optimisticResponse === 'function' ? { ...optimisticResponse(variables) } : optimisticResponse)
         : null;
 
-    // console.log('Queuing mutation');
-    theStore.dispatch({
-        type: 'SOME_ACTION',
-        payload: {},
-        meta: {
-            offline: {
-                effect: {
-                    mutation,
-                    variables,
-                    refetchQueries,
-                    doIt: true,
-                },
-                commit: { type: 'SOME_ACTION_COMMIT', meta: null },
-                rollback: { type: 'SOME_ACTION_ROLLBACK', meta: null },
+    setImmediate(() => {
+        theStore.dispatch({
+            type: 'SOME_ACTION',
+            payload: {},
+            meta: {
+                offline: {
+                    effect: {
+                        mutation,
+                        variables,
+                        refetchQueries,
+                        update,
+                        doIt: true,
+                        prevOptimisticResponse: data,
+                    },
+                    commit: { type: 'SOME_ACTION_COMMIT', meta: null },
+                    rollback: { type: 'SOME_ACTION_ROLLBACK', meta: null },
+                }
             }
-        }
+        });
     });
 
     return data;
@@ -153,7 +158,7 @@ export const reducer = () => ({
  */
 export const offlineEffect = (client, effect, action) => {
     const { type } = action;
-    const { mutation, variables, refetchQueries, doIt } = effect;
+    const { mutation, variables, refetchQueries, update, doIt } = effect;
 
     const context = {
         AASContext: {
@@ -165,6 +170,7 @@ export const offlineEffect = (client, effect, action) => {
         mutation,
         variables,
         refetchQueries,
+        update,
         context,
     };
 
