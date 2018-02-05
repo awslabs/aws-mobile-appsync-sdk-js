@@ -53,8 +53,10 @@ export class OfflineLink extends ApolloLink {
                         console.warn('An optimisticResponse was not provided, it is required when using offline capabilities.');
 
                         if (!online) {
-                            throw new Error('Missing optimisticReponse while offline.');
+                            throw new Error('Missing optimisticResponse while offline.');
                         }
+
+                        // offline muation without optimistic response is processed immediately
                     } else {
                         const data = enqueueMutation(operation, this.store, observer);
 
