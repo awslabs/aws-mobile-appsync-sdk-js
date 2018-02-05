@@ -46,20 +46,23 @@ export class OfflineLink extends ApolloLink {
             }
 
             if (isMutation) {
-                const { optimisticResponse, AASContext: { doIt = false } = {} } = operation.getContext();
+                const { cache, optimisticResponse, AASContext: { doIt = false } = {} } = operation.getContext();
 
                 if (!doIt) {
                     if (!optimisticResponse) {
                         console.warn('An optimisticResponse was not provided, it is required when using offline capabilities.');
-                        // throw error;
+
+                        if (!online) {
+                            throw new Error('Missing optimisticReponse while offline.');
+                        }
+                    } else {
+                        const data = enqueueMutation(operation, this.store, observer);
+
+                        observer.next({ data });
+                        observer.complete();
+
+                        return () => null;
                     }
-
-                    const data = enqueueMutation(operation, this.store, observer);
-
-                    observer.next({ data });
-                    observer.complete();
-
-                    return () => null;
                 }
             }
 
@@ -135,9 +138,8 @@ const enqueueMutation = (operation, theStore, observer) => {
  * @param {*} action 
  */
 export const offlineEffect = (client, effect, action) => {
-    // const { type } = action;
     const doIt = true;
-    const { prevOptimisticResponse, ...otherOptions } = effect;
+    const { ...otherOptions } = effect;
 
     const context = { AASContext: { doIt } };
 
