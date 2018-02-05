@@ -91,37 +91,31 @@ class AWSAppSyncClient extends ApolloClient {
      * @param {MutationOptions} options
      * @returns {Promise<FetchResult>}
      */
-    mutate(options, extraOpts = {}) {
-        const { mutation, variables: mutationVariables, optimisticResponse, context: origContext = {} } = options;
-        const { AASContext: { ...origASAContext = {} } = {} } = origContext;
-
-        const operationDefinition = getOperationDefinition(mutation);
-        const varsInOperation = variablesInOperation(operationDefinition);
-        const variables = Array.from(varsInOperation).reduce((obj, key) => {
-            obj[key] = mutationVariables[key];
-            return obj;
-        }, {});
-
-        // refetchQueries left out intentionally when !doIt so we don't run them twice
-        const { refetchQueries, ...otherOptions } = options;
-        const { doIt } = origASAContext;
+    mutate(options) {
+        const { refetchQueries, context: origContext = {}, ...otherOptions } = options;
+        const { AASContext: { doIt = false, ...restAASContext } = {} } = origContext;
 
         const context = {
             ...origContext,
             AASContext: {
-                ...origASAContext,
-                mutation,
-                variables,
-                optimisticResponse,
-                refetchQueries,
-            },
+                doIt,
+                ...restAASContext,
+                ...(!doIt ? { refetchQueries } : {}),
+            }
         };
 
-        return super.mutate({
+        const { optimisticResponse, variables } = otherOptions;
+        const data = optimisticResponse &&
+            (typeof optimisticResponse === 'function' ? { ...optimisticResponse(variables) } : optimisticResponse);
+
+        const newOptions = {
             ...otherOptions,
-            refetchQueries: doIt ? refetchQueries : undefined,
+            optimisticResponse: data,
+            ...(doIt ? { refetchQueries } : {}),
             context,
-        });
+        }
+
+        return super.mutate(newOptions);
     }
 
 };
