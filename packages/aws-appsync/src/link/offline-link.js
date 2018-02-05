@@ -7,9 +7,9 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
-import { ApolloLink, Observable } from "apollo-link";
+import { ApolloLink, Observable, Operation } from "apollo-link";
 import { getOperationDefinition, getOperationName } from "apollo-utilities";
-import { Store } from 'redux';
+import { Store } from "redux";
 
 import { NORMALIZED_CACHE_KEY } from "../cache";
 
@@ -46,17 +46,25 @@ export class OfflineLink extends ApolloLink {
             }
 
             if (isMutation) {
-                const data = processMutation(operation, this.store);
+                const { cache, optimisticResponse, AASContext: { doIt = false } = {} } = operation.getContext();
 
-                // If we got data, it is the optimisticResponse, we send it to the observer
-                // Otherwise, we allow the mutation to continue in the link chain
-                if (data) {
-                    observer.next({ data });
-                    observer.complete();
+                if (!doIt) {
+                    if (!optimisticResponse) {
+                        console.warn('An optimisticResponse was not provided, it is required when using offline capabilities.');
 
-                    return () => null;
-                } else {
-                    // console.log('Processing mutation');
+                        if (!online) {
+                            throw new Error('Missing optimisticResponse while offline.');
+                        }
+
+                        // offline muation without optimistic response is processed immediately
+                    } else {
+                        const data = enqueueMutation(operation, this.store, observer);
+
+                        observer.next({ data });
+                        observer.complete();
+
+                        return () => null;
+                    }
                 }
             }
 
@@ -73,6 +81,11 @@ export class OfflineLink extends ApolloLink {
     }
 }
 
+/**
+ * 
+ * @param {Operation} operation 
+ * @param {Store} theStore 
+ */
 const processOfflineQuery = (operation, theStore) => {
     const { [NORMALIZED_CACHE_KEY]: normalizedCache = {} } = theStore.getState();
     const { query, variables } = operation;
@@ -88,39 +101,56 @@ const processOfflineQuery = (operation, theStore) => {
     return data;
 }
 
-const processMutation = (operation, theStore) => {
-    const { AASContext } = operation.getContext();
-    const { mutation, variables, optimisticResponse, refetchQueries, doIt } = AASContext;
+/**
+ * 
+ * @param {Operation} operation 
+ * @param {Store} theStore
+ */
+const enqueueMutation = (operation, theStore, observer) => {
+    const { query: mutation, variables, update } = operation;
+    const { cache, optimisticResponse, AASContext: { doIt = false, refetchQueries } = {} } = operation.getContext();
 
-    if (doIt) {
-        return;
-    }
-
-    const data = optimisticResponse ?
-        typeof optimisticResponse === 'function' ?
-            { ...optimisticResponse(variables) } :
-            optimisticResponse
-        : null;
-
-    // console.log('Queuing mutation');
-    theStore.dispatch({
-        type: 'SOME_ACTION',
-        payload: {},
-        meta: {
-            offline: {
-                effect: {
-                    mutation,
-                    variables,
-                    refetchQueries,
-                    doIt: true,
-                },
-                commit: { type: 'SOME_ACTION_COMMIT', meta: null },
-                rollback: { type: 'SOME_ACTION_ROLLBACK', meta: null },
+    setImmediate(() => {
+        theStore.dispatch({
+            type: 'SOME_ACTION',
+            payload: {},
+            meta: {
+                offline: {
+                    effect: {
+                        mutation,
+                        variables,
+                        refetchQueries,
+                        update,
+                        optimisticResponse,
+                    },
+                    commit: { type: 'SOME_ACTION_COMMIT', meta: null },
+                    rollback: { type: 'SOME_ACTION_ROLLBACK', meta: null },
+                }
             }
-        }
+        });
     });
 
-    return data;
+    return optimisticResponse;
+}
+
+/**
+ * 
+ * @param {*} client 
+ * @param {*} effect 
+ * @param {*} action 
+ */
+export const offlineEffect = (client, effect, action) => {
+    const doIt = true;
+    const { ...otherOptions } = effect;
+
+    const context = { AASContext: { doIt } };
+
+    const options = {
+        ...otherOptions,
+        context,
+    };
+
+    return client.mutate(options);
 }
 
 export const reducer = () => ({
@@ -144,32 +174,6 @@ export const reducer = () => ({
         }
     }
 });
-
-/**
- * 
- * @param {*} client 
- * @param {*} effect 
- * @param {*} action 
- */
-export const offlineEffect = (client, effect, action) => {
-    const { type } = action;
-    const { mutation, variables, refetchQueries, doIt } = effect;
-
-    const context = {
-        AASContext: {
-            doIt,
-        },
-    };
-
-    const options = {
-        mutation,
-        variables,
-        refetchQueries,
-        context,
-    };
-
-    return client.mutate(options);
-}
 
 export const discard = (fn = () => null) => (error, action, retries) => {
     const { graphQLErrors = [] } = error;

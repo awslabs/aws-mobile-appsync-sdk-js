@@ -48,6 +48,12 @@ export default class MyCache extends InMemoryCache {
 
         this.store.dispatch(writeThunk(data));
     }
+
+    reset() {
+        this.store.dispatch(writeThunk({}));
+
+        return super.reset();
+    }
 };
 
 const writeThunk = (payload) => (dispatch) => {
@@ -63,7 +69,6 @@ export const reducer = () => ({
         switch (type) {
             case WRITE_ACTION:
                 return {
-                    ...state,
                     ...normCache
                 };
             default:
