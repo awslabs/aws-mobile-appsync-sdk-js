@@ -1,9 +1,9 @@
 /*!
  * Copyright 2017-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of 
+ * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of
  * the License is located at
  *     http://aws.amazon.com/asl/
- * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY 
+ * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { ApolloLink, Observable } from "apollo-link";
@@ -58,6 +58,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         const newTopics = Object.keys(newSubscriptions).map(subKey => newSubscriptions[subKey].topic);
         const prevTopicsSet = new Set(this.topicObserver.keys());
         const newTopicsSet = new Set(newTopics);
+        const lastTopicObserver = new Map(this.topicObserver);
 
         const connectionsInfo = mqttConnections.map(connInfo => {
             const connTopics = connInfo.topics;
@@ -78,7 +79,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 // Disconnect existing clients, wait for them to disconnect
                 .then(this.disconnectAll)
                 // Connect to all topics
-                .then(this.connectAll.bind(this, observer, connectionsInfo));
+                .then(this.connectAll.bind(this, observer, connectionsInfo, lastTopicObserver));
 
             return () => {
                 const [topic,] = Array.from(this.topicObserver).find(([topic, obs]) => obs === observer) || [];
@@ -105,8 +106,12 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     unsubscribeFromTopic = (client, topic) => {
         return new Promise((resolve, reject) => {
             if (!client.isConnected()) {
-                const topics = this.clientTopics.get(client);
-                this.clientTopics.set(client, topics.filter(t => t == topic));
+                const topics = this.clientTopics.get(client).filter(t => t !== topic);
+                if (topics.length > 0) {
+                  this.clientTopics.set(client, topics);
+                } else {
+                  this.clientTopics.delete(client);
+                }
                 this.topicObserver.delete(topic);
 
                 return resolve(topic);
@@ -114,8 +119,12 @@ export class SubscriptionHandshakeLink extends ApolloLink {
 
             client.unsubscribe(topic, {
                 onSuccess: () => {
-                    const topics = this.clientTopics.get(client);
-                    this.clientTopics.set(client, topics.filter(t => t == topic));
+                    const topics = this.clientTopics.get(client).filter(t => t !== topic);
+                    if (topics.length > 0) {
+                      this.clientTopics.set(client, topics);
+                    } else {
+                      this.clientTopics.delete(client);
+                    }
                     this.topicObserver.delete(topic);
 
                     resolve(topic);
@@ -126,7 +135,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     }
 
     /**
-     * 
+     *
      * @param {Paho.MQTT.Client} client
      * @param {Set<string>} topics
      */
@@ -154,18 +163,18 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     }
 
     /**
-     * 
-     * @param {ZenObservable.Observer} observer 
-     * @param {[any]} connectionsInfo 
+     *
+     * @param {ZenObservable.Observer} observer
+     * @param {[any]} connectionsInfo
      * @returns {Promise<void>}
      */
-    connectAll = (observer, connectionsInfo = []) => {
-        const connectPromises = connectionsInfo.map(this.connect.bind(this, observer));
+    connectAll = (observer, connectionsInfo = [], lastTopicObserver) => {
+        const connectPromises = connectionsInfo.map(this.connect.bind(this, observer, lastTopicObserver));
 
         return Promise.all(connectPromises).then(() => undefined);
     }
 
-    connect = (observer, connectionInfo) => {
+    connect = (observer, lastTopicObserver, connectionInfo) => {
         const { topics, client: clientId, url } = connectionInfo;
 
         const client = new Paho.MQTT.Client(url, clientId);
@@ -187,7 +196,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 client.subscribe(topic, {
                     onSuccess: () => {
                         if (!this.topicObserver.has(topic)) {
-                            this.topicObserver.set(topic, observer);
+                          this.topicObserver.set(topic, lastTopicObserver.get(topic) || observer);
                         }
 
                         resolve(topic);
