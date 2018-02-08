@@ -73,8 +73,8 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
 
     let creds = typeof credentials === 'function' ? credentials.call() : credentials;
 
-    if (typeof creds.getPromise == 'function') {
-        creds = await creds.getPromise();
+    if (typeof creds.getPromise === 'function') {
+        await creds.getPromise();
     }
 
     const { accessKeyId, secretAccessKey, sessionToken } = await creds;
