@@ -13,11 +13,13 @@ import { print } from 'graphql/language/printer';
 import aws4 from './signer/signer';
 import * as Url from 'url';
 
-var packageInfo = require("../../package.json");
+import { userAgent } from "../platform";
+
+const packageInfo = require("../../package.json");
 
 const SERVICE = 'appsync';
 const USER_AGENT_HEADER = 'x-amz-user-agent';
-const USER_AGENT = `aws-appsync-sdk-js/${packageInfo.version}`;
+const USER_AGENT = `aws-amplify/${packageInfo.version}${userAgent && ' '}${userAgent}`;
 
 export const AUTH_TYPE = {
     NONE: 'NONE',
