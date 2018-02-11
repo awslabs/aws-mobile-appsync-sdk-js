@@ -13,11 +13,13 @@ import { print } from 'graphql/language/printer';
 import aws4 from './signer/signer';
 import * as Url from 'url';
 
-var packageInfo = require("../../package.json");
+import { userAgent } from "../platform";
+
+const packageInfo = require("../../package.json");
 
 const SERVICE = 'appsync';
 const USER_AGENT_HEADER = 'x-amz-user-agent';
-const USER_AGENT = `aws-appsync-sdk-js/${packageInfo.version}`;
+const USER_AGENT = `aws-amplify/${packageInfo.version}${userAgent && ' '}${userAgent}`;
 
 export const AUTH_TYPE = {
     NONE: 'NONE',
@@ -73,8 +75,8 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
 
     let creds = typeof credentials === 'function' ? credentials.call() : credentials;
 
-    if (typeof creds.getPromise == 'function') {
-        creds = await creds.getPromise();
+    if (typeof creds.getPromise === 'function') {
+        await creds.getPromise();
     }
 
     const { accessKeyId, secretAccessKey, sessionToken } = await creds;
