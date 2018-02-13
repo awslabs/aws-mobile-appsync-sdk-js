@@ -1,9 +1,9 @@
 /*!
  * Copyright 2017-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of 
+ * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of
  * the License is located at
  *     http://aws.amazon.com/asl/
- * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY 
+ * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
@@ -22,8 +22,8 @@ export class OfflineLink extends ApolloLink {
     store;
 
     /**
-     * 
-     * @param {Store} store 
+     *
+     * @param {Store} store
      */
     constructor(store) {
         this.store = store;
@@ -82,9 +82,9 @@ export class OfflineLink extends ApolloLink {
 }
 
 /**
- * 
- * @param {Operation} operation 
- * @param {Store} theStore 
+ *
+ * @param {Operation} operation
+ * @param {Store} theStore
  */
 const processOfflineQuery = (operation, theStore) => {
     const { [NORMALIZED_CACHE_KEY]: normalizedCache = {} } = theStore.getState();
@@ -102,13 +102,13 @@ const processOfflineQuery = (operation, theStore) => {
 }
 
 /**
- * 
- * @param {Operation} operation 
+ *
+ * @param {Operation} operation
  * @param {Store} theStore
  */
 const enqueueMutation = (operation, theStore, observer) => {
-    const { query: mutation, variables, update } = operation;
-    const { cache, optimisticResponse, AASContext: { doIt = false, refetchQueries } = {} } = operation.getContext();
+    const { query: mutation, variables } = operation;
+    const { cache, optimisticResponse, AASContext: { doIt = false, refetchQueries, update } = {} } = operation.getContext();
 
     setImmediate(() => {
         theStore.dispatch({
@@ -134,10 +134,10 @@ const enqueueMutation = (operation, theStore, observer) => {
 }
 
 /**
- * 
- * @param {*} client 
- * @param {*} effect 
- * @param {*} action 
+ *
+ * @param {*} client
+ * @param {*} effect
+ * @param {*} action
  */
 export const offlineEffect = (client, effect, action) => {
     const doIt = true;
