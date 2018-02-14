@@ -47,9 +47,13 @@ export default class MyCache extends InMemoryCache {
      */
     write(write) {
         super.write(write);
-        const data = super.extract(true);
-
-        this.store.dispatch(writeThunk(data));
+        if (this.data && typeof this.data.record === 'undefined') {
+            // do not persist contents of a RecordingCache
+            const data = super.extract(true);
+            this.store.dispatch(writeThunk(data));
+        } else {
+          console.log('NO DISPATCH FOR RECORDINGCACHE')
+        }
     }
 
     reset() {
