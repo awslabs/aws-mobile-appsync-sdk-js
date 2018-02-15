@@ -4,13 +4,13 @@
 #### npm    
 
 ```
-npm install --save aws-appsync-react
+npm install --save aws-appsync
 ```
 
 #### yarn    
     
 ```
-yarn add aws-appsync-react
+yarn add aws-appsync
 ```
 
 ## Usage (React / React Native)  
