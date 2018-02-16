@@ -47,13 +47,17 @@ export default WithProvider
 
 ### Vue    
 
+**main.js**
 ```
+import Vue from 'vue'
+import App from './App'
+import router from './router'
+
 import AWSAppSyncClient from 'aws-appsync'
 import VueApollo from 'vue-apollo'
-
 import AppSyncConfig from './aws-exports'
 
-const client = new AWSAppSyncClient({
+const config = {
   disableOffline: true,
   url: AppSyncConfig.graphqlEndpoint,
   region: AppSyncConfig.region,
@@ -61,7 +65,16 @@ const client = new AWSAppSyncClient({
     type: AppSyncConfig.authType,
     apiKey: AppSyncConfig.apiKey,
   }
-})
+}
+const options = {
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'cache-and-network',
+    }
+  }
+}
+
+const client = new AWSAppSyncClient(config, options)
 
 const appsyncProvider = new VueApollo({
   defaultClient: client
@@ -69,15 +82,34 @@ const appsyncProvider = new VueApollo({
 
 Vue.use(VueApollo)
 
-client.hydrated().then(() => {
-  new Vue({
-    el: '#app',
-    router,
-    components: { App },
-    provide: appsyncProvider.provide(),
-    template: '<App/>'
-  })
-});
+new Vue({
+  el: '#app',
+  router,
+  components: { App },
+  provide: appsyncProvider.provide(),
+  template: '<App/>'
+})
+```
+
+**App.vue**
+```
+<template>
+  <div id="app" v-if="hydrated">
+    <router-view/>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'App',
+  data: () => ({ hydrated: false }),
+  async mounted() {
+    await this.$apollo.provider.defaultClient.hydrated();
+    this.hydrated = true;
+  },
+}
+</script>
+
 ```
 
 #### Angular / Ionic examples coming soon
