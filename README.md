@@ -58,7 +58,6 @@ import VueApollo from 'vue-apollo'
 import AppSyncConfig from './aws-exports'
 
 const config = {
-  disableOffline: true,
   url: AppSyncConfig.graphqlEndpoint,
   region: AppSyncConfig.region,
   auth: {
