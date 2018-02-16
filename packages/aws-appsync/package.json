@@ -27,6 +27,7 @@
     "paho-client": "^1.0.1",
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0",
+    "setimmediate": "^1.0.5",
     "url": "^0.11.0"
   },
   "devDependencies": {
