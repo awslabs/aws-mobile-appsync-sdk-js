@@ -6,6 +6,7 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY 
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
+import 'setimmediate';
 import ApolloClient, { ApolloClientOptions, MutationOptions } from 'apollo-client';
 import { InMemoryCache } from 'apollo-cache-inmemory';
 import { ApolloLink, FetchResult } from 'apollo-link';
