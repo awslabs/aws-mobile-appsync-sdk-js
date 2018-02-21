@@ -117,7 +117,7 @@ export default {
 
 To create a new AppSync project, go to https://aws.amazon.com/appsync/.
 
-For a video walkthrough of how to create a new AppSync project, check out [this](https://www.youtube.com/watch?v=3DhaBaUeiXQ) video.
+For a video walkthrough of how to create a new AppSync project, check out [this](https://www.youtube.com/watch?v=0Xbt7VqkJNc) video.
 
 ## License
 
