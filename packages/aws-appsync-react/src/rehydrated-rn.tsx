@@ -51,7 +51,7 @@ export default class Rehydrated extends React.Component<RehydratedProps, Rehydra
         render: PropTypes.func,
         children: PropTypes.node,
         loading: PropTypes.node,
-        style: View.propTypes.style,
+        style: ViewPropTypes.style,
     };
 
     constructor(props, context) {
