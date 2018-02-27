@@ -52,7 +52,7 @@ export default class MyCache extends InMemoryCache {
             const data = super.extract(true);
             this.store.dispatch(writeThunk(data));
         } else {
-          console.log('NO DISPATCH FOR RECORDINGCACHE')
+          // console.log('NO DISPATCH FOR RECORDINGCACHE')
         }
     }
 
