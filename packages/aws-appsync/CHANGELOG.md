@@ -1,5 +1,8 @@
 # Changelog
 
+### vNext
+- Inconsistent store [PR#43](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/43)
+
 ### 1.0.11
 - Add setimmediate as a dependency [PR#47](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/47)
 

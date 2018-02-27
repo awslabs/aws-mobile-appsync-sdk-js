@@ -1,9 +1,9 @@
 /*!
  * Copyright 2017-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of 
+ * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of
  * the License is located at
  *     http://aws.amazon.com/asl/
- * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY 
+ * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { Cache } from 'apollo-cache';
@@ -22,7 +22,7 @@ export default class MyCache extends InMemoryCache {
     store;
 
     /**
-     * 
+     *
      * @param {Store<NormalizedCache>} store
      * @param {ApolloReducerConfig} config
      */
@@ -31,22 +31,29 @@ export default class MyCache extends InMemoryCache {
 
         this.store = store;
 
-        store.subscribe(() => {
-            const { [NORMALIZED_CACHE_KEY]: normCache = {} } = this.store.getState();
-
+        this.cancelSubscription = store.subscribe(() => {
+            const { [NORMALIZED_CACHE_KEY]: normCache = {}, rehydrated = false } = this.store.getState();
             super.restore({ ...normCache });
+            if (rehydrated) {
+                // console.log('Rehydrated! Cancelling subscription.');
+                this.cancelSubscription();
+            }
         });
     }
 
     /**
-     * 
+     *
      * @param {Cache.WriteOptions} write
      */
     write(write) {
         super.write(write);
-        const data = super.extract(true);
-
-        this.store.dispatch(writeThunk(data));
+        if (this.data && typeof this.data.record === 'undefined') {
+            // do not persist contents of a RecordingCache
+            const data = super.extract(true);
+            this.store.dispatch(writeThunk(data));
+        } else {
+          // console.log('NO DISPATCH FOR RECORDINGCACHE')
+        }
     }
 
     reset() {
