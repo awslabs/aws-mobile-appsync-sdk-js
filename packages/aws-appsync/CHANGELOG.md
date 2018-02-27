@@ -3,6 +3,9 @@
 ### vNext
 - Inconsistent store [PR#43](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/43)
 
+### 1.0.11
+- Add setimmediate as a dependency [PR#47](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/47)
+
 ### 1.0.10
 - Update x-amz-user-agent header [PR#40](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/40)
 
