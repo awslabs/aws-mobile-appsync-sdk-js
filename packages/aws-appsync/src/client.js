@@ -1,9 +1,9 @@
 /*!
  * Copyright 2017-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of 
+ * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of
  * the License is located at
  *     http://aws.amazon.com/asl/
- * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY 
+ * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import 'setimmediate';
@@ -27,8 +27,8 @@ class AWSAppSyncClient extends ApolloClient {
     hydrated = () => this.hydratedPromise;
 
     /**
-     * 
-     * @param {string} url 
+     *
+     * @param {string} url
      * @param {ApolloClientOptions<InMemoryCache>} options
      */
     constructor({ url, region, auth, conflictResolver, complexObjectsCredentials, disableOffline = false }, options) {
@@ -88,12 +88,12 @@ class AWSAppSyncClient extends ApolloClient {
     }
 
     /**
-     * 
+     *
      * @param {MutationOptions} options
      * @returns {Promise<FetchResult>}
      */
     mutate(options) {
-        const { refetchQueries, context: origContext = {}, ...otherOptions } = options;
+        const { update, refetchQueries, context: origContext = {}, ...otherOptions } = options;
         const { AASContext: { doIt = false, ...restAASContext } = {} } = origContext;
 
         const context = {
@@ -101,7 +101,7 @@ class AWSAppSyncClient extends ApolloClient {
             AASContext: {
                 doIt,
                 ...restAASContext,
-                ...(!doIt ? { refetchQueries } : {}),
+                ...(!doIt ? { refetchQueries, update } : {}),
             }
         };
 
@@ -112,6 +112,7 @@ class AWSAppSyncClient extends ApolloClient {
         const newOptions = {
             ...otherOptions,
             optimisticResponse: data,
+            update,
             ...(doIt ? { refetchQueries } : {}),
             context,
         }
