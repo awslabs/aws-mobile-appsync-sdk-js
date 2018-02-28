@@ -2,6 +2,7 @@
 
 ### vNext
 - Inconsistent store [PR#43](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/43)
+- Delete observer associated with a topic when cleanup function is called [PR#60](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/60)
 
 ### 1.0.11
 - Add setimmediate as a dependency [PR#47](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/47)
