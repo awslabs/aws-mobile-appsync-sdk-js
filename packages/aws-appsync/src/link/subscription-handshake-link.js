@@ -84,7 +84,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             return () => {
                 const [topic,] = Array.from(this.topicObserver).find(([topic, obs]) => obs === observer) || [];
 
-                const [client,] = Array.from(this.clientTopics).find(([client, t]) => t == topic) || [];
+                const [client,] = Array.from(this.clientTopics).find(([client, t]) => t.indexOf(topic) > -1) || [];
 
                 if (client && topic) {
                     this.unsubscribeFromTopic(client, topic);
@@ -107,26 +107,16 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         return new Promise((resolve, reject) => {
             if (!client.isConnected()) {
                 const topics = this.clientTopics.get(client).filter(t => t !== topic);
-                if (topics.length > 0) {
-                  this.clientTopics.set(client, topics);
-                } else {
-                  this.clientTopics.delete(client);
-                }
+                this.clientTopics.set(client, topics);
                 this.topicObserver.delete(topic);
-
                 return resolve(topic);
             }
 
             client.unsubscribe(topic, {
                 onSuccess: () => {
                     const topics = this.clientTopics.get(client).filter(t => t !== topic);
-                    if (topics.length > 0) {
-                      this.clientTopics.set(client, topics);
-                    } else {
-                      this.clientTopics.delete(client);
-                    }
+                    this.clientTopics.set(client, topics);
                     this.topicObserver.delete(topic);
-
                     resolve(topic);
                 },
                 onFailure: reject,
