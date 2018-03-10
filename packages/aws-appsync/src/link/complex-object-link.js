@@ -89,7 +89,7 @@ const findInObject = obj => {
         return Object.keys(obj).find(key => {
             const val = obj[key];
 
-            if (typeof val === 'object') {
+            if (val && typeof val === 'object') {
                 const hasFields = complexObjectFields.every(field => {
                     const hasValue = val[field.name];
                     const types = Array.isArray(field.type) ? field.type : [field.type];
