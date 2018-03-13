@@ -1,5 +1,8 @@
 # Changelog
 
+### vNext
+- Update complex-object-link.js to handle 'null' values [PR#67](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/67)
+
 ### 1.0.12
 - Inconsistent store [PR#43](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/43)
 - Delete observer associated with a topic when cleanup function is called [PR#60](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/60)
