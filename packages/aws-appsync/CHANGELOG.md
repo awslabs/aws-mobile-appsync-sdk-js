@@ -1,6 +1,6 @@
 # Changelog
 
-### vNext
+### 1.0.13
 - Update complex-object-link.js to handle 'null' values [PR#67](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/67)
 
 ### 1.0.12
