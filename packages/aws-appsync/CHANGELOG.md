@@ -1,5 +1,8 @@
 # Changelog
 
+### 1.0.14
+- Fix apollo-client version to 2.2.6 [PR#71](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/71) 
+
 ### 1.0.13
 - Update complex-object-link.js to handle 'null' values [PR#67](https://github.com/awslabs/aws-mobile-appsync-sdk-js/pull/67)
 
