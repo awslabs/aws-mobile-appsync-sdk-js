@@ -1,5 +1,7 @@
 # AWS Mobile [AppSync](https://aws.amazon.com/appsync/) SDK JavaScript
 
+[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
+
 ## Installation    
 #### npm    
 
