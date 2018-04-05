@@ -7,7 +7,7 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import * as React from "react";
-import { View, Text, StyleSheet, NetInfo } from "react-native";
+import { View, Text, StyleSheet, NetInfo, ViewPropTypes } from "react-native";
 import * as PropTypes from 'prop-types';
 
 import AWSAppSyncClient from 'aws-appsync';
@@ -51,7 +51,7 @@ export default class Rehydrated extends React.Component<RehydratedProps, Rehydra
         render: PropTypes.func,
         children: PropTypes.node,
         loading: PropTypes.node,
-        style: View.propTypes.style,
+        style: ViewPropTypes ? ViewPropTypes.style : View.propTypes.style,
     };
 
     constructor(props, context) {
