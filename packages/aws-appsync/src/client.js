@@ -18,108 +18,113 @@ import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLin
 import { createStore } from './store';
 
 class AWSAppSyncClient extends ApolloClient {
+  /**
+   * @type {Promise<AWSAppSyncClient>}
+   */
+  hydratedPromise;
 
-    /**
-     * @type {Promise<AWSAppSyncClient>}
-     */
-    hydratedPromise;
+  hydrated = () => this.hydratedPromise;
 
-    hydrated = () => this.hydratedPromise;
+  /**
+   *
+   * @param {string} url
+   * @param {ApolloClientOptions<InMemoryCache>} options
+   */
+  constructor(
+    { url, region, auth, conflictResolver, complexObjectsCredentials, disableOffline = false, links, ownCache },
+    options,
+  ) {
+    if (!url || !region || !auth) {
+      throw new Error(
+        'In order to initialize AWSAppSyncClient, you must specify url, region and auth properties on the config object.',
+      );
+    }
 
-    /**
-     *
-     * @param {string} url
-     * @param {ApolloClientOptions<InMemoryCache>} options
-     */
-    constructor({ url, region, auth, conflictResolver, complexObjectsCredentials, disableOffline = false }, options) {
-        if (!url || !region || !auth) {
-            throw new Error(
-                'In order to initialize AWSAppSyncClient, you must specify url, region and auth properties on the config object.'
-            );
-        }
+    let res;
+    this.hydratedPromise = new Promise((resolve, reject) => {
+      res = resolve;
+    });
 
-        let res;
-        this.hydratedPromise = new Promise((resolve, reject) => {
-            res = resolve;
-        });
-
-        const store = disableOffline ? null : createStore(
-            this,
-            () => {
-                store.dispatch({ type: 'REHYDRATE_STORE' });
-                res(this);
-            },
-            conflictResolver,
-        );
-        const cache = disableOffline ? new InMemoryCache() : new OfflineCache(store);
-
-        const passthrough = (op, forward) => (forward ? forward(op) : Observable.of());
-        let link = ApolloLink.from([
-            disableOffline ? passthrough : new OfflineLink(store),
-            new ComplexObjectLink(complexObjectsCredentials),
-            new AuthLink({ url, region, auth }),
-            ApolloLink.split(
-                operation => {
-                    const { query } = operation;
-                    const { kind, operation: graphqlOperation } = getMainDefinition(query);
-                    const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
-
-                    return isSubscription;
-                },
-                ApolloLink.from([
-                    new NonTerminatingHttpLink('subsInfo', { uri: url }, true),
-                    new SubscriptionHandshakeLink('subsInfo'),
-                ]),
-                new HttpLink({ uri: url }),
-            ),
-        ]);
-
-        const newOptions = {
-            ...options,
-            link,
-            cache,
-        };
-
-        super(newOptions);
-
-        if (disableOffline) {
+    const store = disableOffline
+      ? null
+      : createStore(
+          this,
+          () => {
+            store.dispatch({ type: 'REHYDRATE_STORE' });
             res(this);
-        }
+          },
+          conflictResolver,
+        );
+    const cache = ownCache ? ownCache : disableOffline ? new InMemoryCache() : new OfflineCache(store);
+
+    const passthrough = (op, forward) => (forward ? forward(op) : Observable.of());
+    let link = ApolloLink.from([
+      disableOffline ? passthrough : new OfflineLink(store),
+      new ComplexObjectLink(complexObjectsCredentials),
+      new AuthLink({ url, region, auth }),
+      ...links,
+      ApolloLink.split(
+        operation => {
+          const { query } = operation;
+          const { kind, operation: graphqlOperation } = getMainDefinition(query);
+          const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
+
+          return isSubscription;
+        },
+        ApolloLink.from([
+          new NonTerminatingHttpLink('subsInfo', { uri: url }, true),
+          new SubscriptionHandshakeLink('subsInfo'),
+        ]),
+        new HttpLink({ uri: url }),
+      ),
+    ]);
+
+    const newOptions = {
+      ...options,
+      link,
+      cache,
+    };
+
+    super(newOptions);
+
+    if (disableOffline) {
+      res(this);
     }
+  }
 
-    /**
-     *
-     * @param {MutationOptions} options
-     * @returns {Promise<FetchResult>}
-     */
-    mutate(options) {
-        const { update, refetchQueries, context: origContext = {}, ...otherOptions } = options;
-        const { AASContext: { doIt = false, ...restAASContext } = {} } = origContext;
+  /**
+   *
+   * @param {MutationOptions} options
+   * @returns {Promise<FetchResult>}
+   */
+  mutate(options) {
+    const { update, refetchQueries, context: origContext = {}, ...otherOptions } = options;
+    const { AASContext: { doIt = false, ...restAASContext } = {} } = origContext;
 
-        const context = {
-            ...origContext,
-            AASContext: {
-                doIt,
-                ...restAASContext,
-                ...(!doIt ? { refetchQueries, update } : {}),
-            }
-        };
+    const context = {
+      ...origContext,
+      AASContext: {
+        doIt,
+        ...restAASContext,
+        ...(!doIt ? { refetchQueries, update } : {}),
+      },
+    };
 
-        const { optimisticResponse, variables } = otherOptions;
-        const data = optimisticResponse &&
-            (typeof optimisticResponse === 'function' ? { ...optimisticResponse(variables) } : optimisticResponse);
+    const { optimisticResponse, variables } = otherOptions;
+    const data =
+      optimisticResponse &&
+      (typeof optimisticResponse === 'function' ? { ...optimisticResponse(variables) } : optimisticResponse);
 
-        const newOptions = {
-            ...otherOptions,
-            optimisticResponse: data,
-            update,
-            ...(doIt ? { refetchQueries } : {}),
-            context,
-        }
+    const newOptions = {
+      ...otherOptions,
+      optimisticResponse: data,
+      update,
+      ...(doIt ? { refetchQueries } : {}),
+      context,
+    };
 
-        return super.mutate(newOptions);
-    }
-
-};
+    return super.mutate(newOptions);
+  }
+}
 
 export { AWSAppSyncClient };
