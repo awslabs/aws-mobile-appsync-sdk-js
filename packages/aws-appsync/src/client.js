@@ -9,13 +9,64 @@
 import 'setimmediate';
 import ApolloClient, { ApolloClientOptions, MutationOptions } from 'apollo-client';
 import { InMemoryCache } from 'apollo-cache-inmemory';
-import { ApolloLink, FetchResult } from 'apollo-link';
+import { ApolloLink, FetchResult, Observable } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
 import { getMainDefinition, getOperationDefinition, variablesInOperation } from 'apollo-utilities';
 
 import OfflineCache from './cache/index';
 import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink } from './link';
 import { createStore } from './store';
+
+export const createSubscriptionHanshakeLink = (url, nonSubscriptionLink = new HttpLink({ uri: url })) => {
+    return ApolloLink.split(
+        operation => {
+            const { query } = operation;
+            const { kind, operation: graphqlOperation } = getMainDefinition(query);
+            const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
+
+            return isSubscription;
+        },
+        ApolloLink.from([
+            new NonTerminatingHttpLink('subsInfo', { uri: url }, true),
+            new SubscriptionHandshakeLink('subsInfo'),
+        ]),
+        nonSubscriptionLink,
+    );
+};
+
+export const createAuthLink = ({ url, region, auth }) => new AuthLink({ url, region, auth });
+
+const passthrough = (op, forward) => (forward ? forward(op) : Observable.of());
+
+export const createAppSyncLink = ({
+    url,
+    region,
+    auth,
+    store,
+    complexObjectsCredentials,
+    beforeFetcherLink,
+}) => {
+    const link = ApolloLink.from([
+        new ApolloLink(passthrough),
+        store && new OfflineLink(store),
+        new ComplexObjectLink(complexObjectsCredentials),
+        beforeFetcherLink,
+        createAuthLink({ url, region, auth }),
+        createSubscriptionHanshakeLink(url)
+    ].filter(Boolean));
+
+    return link;
+};
+
+export const createLinkWithCache = (createLinkFunc = () => new ApolloLink(passthrough)) => {
+    return new ApolloLink((op, forward) => {
+        const { cache } = op.getContext();
+
+        const theLink = createLinkFunc(cache);
+
+        return theLink.request(op, forward);
+    });
+}
 
 class AWSAppSyncClient extends ApolloClient {
 
@@ -28,51 +79,48 @@ class AWSAppSyncClient extends ApolloClient {
 
     /**
      *
-     * @param {string} url
+     * @param {object} appSyncOptions
      * @param {ApolloClientOptions<InMemoryCache>} options
      */
-    constructor({ url, region, auth, conflictResolver, complexObjectsCredentials, disableOffline = false }, options) {
-        if (!url || !region || !auth) {
+    constructor({
+        url,
+        region,
+        auth,
+        conflictResolver,
+        complexObjectsCredentials,
+        cacheOptions,
+        disableOffline = false
+    } = {}, options = {}) {
+        const { cache: customCache, link: customLink } = options;
+
+        if (!customLink && (!url || !region || !auth)) {
             throw new Error(
                 'In order to initialize AWSAppSyncClient, you must specify url, region and auth properties on the config object.'
             );
         }
 
-        let res;
-        this.hydratedPromise = new Promise((resolve, reject) => {
-            res = resolve;
+        let resolveClient;
+        this.hydratedPromise = disableOffline ? Promise.resolve(this) : new Promise(resolve => resolveClient = resolve);
+
+        const store = disableOffline ? null : createStore(this, () => resolveClient(this), conflictResolver);
+        const cache = disableOffline ? (customCache || new InMemoryCache(cacheOptions)) : new OfflineCache(store, cacheOptions);
+
+        const waitForRehydrationLink = new ApolloLink((op, forward) => {
+            let handle = null;
+
+            return new Observable(observer => {
+                this.hydratedPromise.then(() => {
+                    handle = passthrough(op, forward).subscribe(observer);
+                }).catch(observer.error);
+
+                return () => {
+                    if (handle) {
+                        handle.unsubscribe();
+                    }
+                };
+            });
         });
-
-        const store = disableOffline ? null : createStore(
-            this,
-            () => {
-                store.dispatch({ type: 'REHYDRATE_STORE' });
-                res(this);
-            },
-            conflictResolver,
-        );
-        const cache = disableOffline ? new InMemoryCache() : new OfflineCache(store);
-
-        const passthrough = (op, forward) => (forward ? forward(op) : Observable.of());
-        let link = ApolloLink.from([
-            disableOffline ? passthrough : new OfflineLink(store),
-            new ComplexObjectLink(complexObjectsCredentials),
-            new AuthLink({ url, region, auth }),
-            ApolloLink.split(
-                operation => {
-                    const { query } = operation;
-                    const { kind, operation: graphqlOperation } = getMainDefinition(query);
-                    const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
-
-                    return isSubscription;
-                },
-                ApolloLink.from([
-                    new NonTerminatingHttpLink('subsInfo', { uri: url }, true),
-                    new SubscriptionHandshakeLink('subsInfo'),
-                ]),
-                new HttpLink({ uri: url }),
-            ),
-        ]);
+        const link = waitForRehydrationLink.concat(customLink || createAppSyncLink({ url, region, auth, store, complexObjectsCredentials }));
 
         const newOptions = {
             ...options,
@@ -81,10 +129,6 @@ class AWSAppSyncClient extends ApolloClient {
         };
 
         super(newOptions);
-
-        if (disableOffline) {
-            res(this);
-        }
     }
 
     /**
@@ -122,4 +166,5 @@ class AWSAppSyncClient extends ApolloClient {
 
 };
 
+export default AWSAppSyncClient;
 export { AWSAppSyncClient };

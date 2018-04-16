@@ -1,6 +1,7 @@
 import { Action, applyMiddleware, createStore, compose, combineReducers, Store } from 'redux';
 import { offline } from '@redux-offline/redux-offline';
 import offlineConfig from '@redux-offline/redux-offline/lib/defaults';
+import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
 import thunk from 'redux-thunk';
 
 import { AWSAppSyncClient } from './client';
@@ -18,7 +19,7 @@ const newStore = (client, persistCallback = () => null, conflictResolver) => {
         combineReducers({
             rehydrated: (state = false, action) => {
                 switch (action.type) {
-                    case 'REHYDRATE_STORE':
+                    case PERSIST_REHYDRATE:
                         return true;
                     default:
                         return state;
