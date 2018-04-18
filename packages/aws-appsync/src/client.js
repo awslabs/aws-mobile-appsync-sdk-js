@@ -30,8 +30,9 @@ class AWSAppSyncClient extends ApolloClient {
      *
      * @param {string} url
      * @param {ApolloClientOptions<InMemoryCache>} options
+     * @param {object} customOfflineConfig options
      */
-    constructor({ url, region, auth, conflictResolver, complexObjectsCredentials, disableOffline = false }, options) {
+    constructor({ url, region, auth, conflictResolver, complexObjectsCredentials, disableOffline = false }, options, customOfflineConfig) {
         if (!url || !region || !auth) {
             throw new Error(
                 'In order to initialize AWSAppSyncClient, you must specify url, region and auth properties on the config object.'
@@ -50,6 +51,7 @@ class AWSAppSyncClient extends ApolloClient {
                 res(this);
             },
             conflictResolver,
+            customOfflineConfig,
         );
         const cache = disableOffline ? new InMemoryCache() : new OfflineCache(store);
 
