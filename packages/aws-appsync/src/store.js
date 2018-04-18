@@ -12,8 +12,10 @@ import { reducer as commitReducer, offlineEffect, discard } from './link/offline
  * @param {AWSAppSyncClient} client
  * @param {Function} persistCallback 
  * @param {Function} conflictResolver 
+ * @param {Object} customOfflineConfig 
  */
-const newStore = (client, persistCallback = () => null, conflictResolver) => {
+const newStore = (client, persistCallback = () => null, conflictResolver, customOfflineConfig) => {
+    const finalOfflineConfig = Object.assign({}, offlineConfig, customOfflineConfig);
     return createStore(
         combineReducers({
             rehydrated: (state = false, action) => {
@@ -31,7 +33,7 @@ const newStore = (client, persistCallback = () => null, conflictResolver) => {
         compose(
             applyMiddleware(thunk),
             offline({
-                ...offlineConfig,
+                ...finalOfflineConfig,
                 persistCallback,
                 persistOptions: {
                     whitelist: [NORMALIZED_CACHE_KEY, 'offline']
