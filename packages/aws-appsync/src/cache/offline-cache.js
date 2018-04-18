@@ -61,7 +61,7 @@ export default class MyCache extends InMemoryCache {
 
         return super.reset();
     }
-};
+}
 
 const writeThunk = (payload) => (dispatch) => {
     dispatch({

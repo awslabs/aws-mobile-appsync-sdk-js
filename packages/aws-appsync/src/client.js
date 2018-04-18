@@ -170,7 +170,7 @@ class AWSAppSyncClient extends ApolloClient {
         return super.mutate(newOptions);
     }
 
-};
+}
 
 export default AWSAppSyncClient;
 export { AWSAppSyncClient };
