@@ -17,7 +17,7 @@ import OfflineCache from './cache/index';
 import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink } from './link';
 import { createStore } from './store';
 
-export const createSubscriptionHanshakeLink = (url, nonSubscriptionLink = new HttpLink({ uri: url })) => {
+export const createSubscriptionHanshakeLink = (url, resultsFetcherLink = new HttpLink({ uri: url })) => {
     return ApolloLink.split(
         operation => {
             const { query } = operation;
@@ -30,7 +30,7 @@ export const createSubscriptionHanshakeLink = (url, nonSubscriptionLink = new Ht
             new NonTerminatingHttpLink('subsInfo', { uri: url }, true),
             new SubscriptionHandshakeLink('subsInfo'),
         ]),
-        nonSubscriptionLink,
+        resultsFetcherLink,
     );
 };
 
@@ -42,30 +42,35 @@ export const createAppSyncLink = ({
     url,
     region,
     auth,
-    store,
     complexObjectsCredentials,
-    beforeFetcherLink,
+    resultsFetcherLink = new HttpLink({ uri: url }),
 }) => {
     const link = ApolloLink.from([
-        new ApolloLink(passthrough),
-        store && new OfflineLink(store),
+        createLinkWithStore((store) => new OfflineLink(store)),
         new ComplexObjectLink(complexObjectsCredentials),
-        beforeFetcherLink,
         createAuthLink({ url, region, auth }),
-        createSubscriptionHanshakeLink(url)
+        createSubscriptionHanshakeLink(url, resultsFetcherLink)
     ].filter(Boolean));
 
     return link;
 };
 
 export const createLinkWithCache = (createLinkFunc = () => new ApolloLink(passthrough)) => {
-    return new ApolloLink((op, forward) => {
-        const { cache } = op.getContext();
+    let theLink;
 
-        const theLink = createLinkFunc(cache);
+    return new ApolloLink((op, forward) => {
+        if (!theLink) {
+            const { cache } = op.getContext();
+
+            theLink = createLinkFunc(cache);
+        }
 
         return theLink.request(op, forward);
     });
+}
+
+const createLinkWithStore = (createLinkFunc = () => new ApolloLink(passthrough)) => {
+    return createLinkWithCache(({ store }) => store ? createLinkFunc(store) : new ApolloLink(passthrough));
 }
 
 class AWSAppSyncClient extends ApolloClient {
@@ -100,9 +105,8 @@ class AWSAppSyncClient extends ApolloClient {
         }
 
         let resolveClient;
-        this.hydratedPromise = disableOffline ? Promise.resolve(this) : new Promise(resolve => resolveClient = resolve);
 
-        const store = disableOffline ? null : createStore(this, () => resolveClient(this), conflictResolver);
+        const store = disableOffline ? null : createStore(() => this, () => resolveClient(this), conflictResolver);
         const cache = disableOffline ? (customCache || new InMemoryCache(cacheOptions)) : new OfflineCache(store, cacheOptions);
 
         const waitForRehydrationLink = new ApolloLink((op, forward) => {
@@ -120,7 +124,7 @@ class AWSAppSyncClient extends ApolloClient {
                 };
             });
         });
-        const link = waitForRehydrationLink.concat(customLink || createAppSyncLink({ url, region, auth, store, complexObjectsCredentials }));
+        const link = waitForRehydrationLink.concat(customLink || createAppSyncLink({ url, region, auth, complexObjectsCredentials }));
 
         const newOptions = {
             ...options,
@@ -129,6 +133,8 @@ class AWSAppSyncClient extends ApolloClient {
         };
 
         super(newOptions);
+
+        this.hydratedPromise = disableOffline ? Promise.resolve(this) : new Promise(resolve => resolveClient = resolve);
     }
 
     /**
