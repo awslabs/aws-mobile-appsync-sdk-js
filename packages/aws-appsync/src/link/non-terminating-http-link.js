@@ -17,6 +17,7 @@ export class NonTerminatingHttpLink extends ApolloLink {
     link;
 
     constructor(contextKey, options) {
+        super();
         this.contextKey = contextKey;
         this.link = createHttpLink(options);
     }
