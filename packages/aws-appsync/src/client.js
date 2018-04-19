@@ -17,7 +17,7 @@ import OfflineCache from './cache/index';
 import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink } from './link';
 import { createStore } from './store';
 
-export const createSubscriptionHanshakeLink = (url, resultsFetcherLink = new HttpLink({ uri: url })) => {
+export const createSubscriptionHandshakeLink = (url, resultsFetcherLink = new HttpLink({ uri: url })) => {
     return ApolloLink.split(
         operation => {
             const { query } = operation;
@@ -49,7 +49,7 @@ export const createAppSyncLink = ({
         createLinkWithStore((store) => new OfflineLink(store)),
         new ComplexObjectLink(complexObjectsCredentials),
         createAuthLink({ url, region, auth }),
-        createSubscriptionHanshakeLink(url, resultsFetcherLink)
+        createSubscriptionHandshakeLink(url, resultsFetcherLink)
     ].filter(Boolean));
 
     return link;
@@ -100,7 +100,7 @@ class AWSAppSyncClient extends ApolloClient {
 
         if (!customLink && (!url || !region || !auth)) {
             throw new Error(
-                'In order to initialize AWSAppSyncClient, you must specify url, region and auth properties on the config object.'
+                'In order to initialize AWSAppSyncClient, you must specify url, region and auth properties on the config object or a custom link.'
             );
         }
 
