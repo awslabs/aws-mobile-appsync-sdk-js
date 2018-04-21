@@ -93,6 +93,7 @@ class AWSAppSyncClient extends ApolloClient {
         auth,
         conflictResolver,
         complexObjectsCredentials,
+        persistOptions,
         cacheOptions,
         disableOffline = false
     } = {}, options = {}) {
@@ -106,7 +107,7 @@ class AWSAppSyncClient extends ApolloClient {
 
         let resolveClient;
 
-        const store = disableOffline ? null : createStore(() => this, () => resolveClient(this), conflictResolver);
+        const store = disableOffline ? null : createStore(() => this, () => resolveClient(this), persistOptions, conflictResolver);
         const cache = disableOffline ? (customCache || new InMemoryCache(cacheOptions)) : new OfflineCache(store, cacheOptions);
 
         const waitForRehydrationLink = new ApolloLink((op, forward) => {
