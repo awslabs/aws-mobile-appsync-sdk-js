@@ -24,6 +24,7 @@
     "apollo-link-http": "^1.0.0",
     "aws-sdk": "^2.139.0",
     "graphql": "^0.11.7",
+    "node-window-polyfill": "^1.0.0",
     "paho-client": "^1.0.1",
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0",
