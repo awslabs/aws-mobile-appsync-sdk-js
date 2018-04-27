@@ -232,18 +232,18 @@ var sign = function (request, access_info, service_info = null) {
     var request_str = canonical_request(request);
 
     // Task 2: Create a String to Sign
-    service_info = service_info || parse_service_info(request),
-        scope = credential_scope(
-            d_str,
-            service_info.region,
-            service_info.service
-        ),
-        str_to_sign = string_to_sign(
-            algorithm,
-            request_str,
-            dt_str,
-            scope
-        );
+    service_info = service_info || parse_service_info(request);
+    var scope = credential_scope(
+        d_str,
+        service_info.region,
+        service_info.service
+    );
+    var str_to_sign = string_to_sign(
+        algorithm,
+        request_str,
+        dt_str,
+        scope
+    );
 
     // Task 3: Calculate the Signature
     var signing_key = get_signing_key(
