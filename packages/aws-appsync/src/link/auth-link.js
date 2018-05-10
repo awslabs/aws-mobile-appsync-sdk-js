@@ -48,6 +48,7 @@ export class AuthLink extends ApolloLink {
 const headerBasedAuth = async ({ header, value } = { header: '', value: '' }, operation, forward) => {
     const origContext = operation.getContext();
     let headers = {
+        ...origContext.headers,
         [USER_AGENT_HEADER]: USER_AGENT,
     };
 
@@ -93,6 +94,7 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
     operation.setContext({
         ...origContext,
         headers: {
+            ...origContext.headers,
             ...headers,
             [USER_AGENT_HEADER]: USER_AGENT,
         },
