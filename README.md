@@ -19,7 +19,7 @@ yarn add aws-appsync
 
 ### React / React Native    
 
-```
+```js
 import AWSAppSyncClient from 'aws-appsync'
 import AppSyncConfig from './aws-exports'
 import { ApolloProvider } from 'react-apollo'
@@ -50,7 +50,7 @@ export default WithProvider
 ### Vue    
 
 **main.js**
-```
+```js
 import Vue from 'vue'
 import App from './App'
 import router from './router'
@@ -93,7 +93,7 @@ new Vue({
 ```
 
 **App.vue**
-```
+```vue
 <template>
   <div id="app" v-if="hydrated">
     <router-view/>
