@@ -14,7 +14,7 @@ import { HttpLink } from 'apollo-link-http';
 import { getMainDefinition, getOperationDefinition, variablesInOperation } from 'apollo-utilities';
 
 import OfflineCache from './cache/index';
-import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink } from './link';
+import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink, AUTH_TYPE } from './link';
 import { createStore } from './store';
 
 export const createSubscriptionHandshakeLink = (url, resultsFetcherLink = new HttpLink({ uri: url })) => {
@@ -174,3 +174,4 @@ class AWSAppSyncClient extends ApolloClient {
 
 export default AWSAppSyncClient;
 export { AWSAppSyncClient };
+export { AUTH_TYPE };
