@@ -43,6 +43,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     topicObserver = new Map();
 
     constructor(subsInfoContextKey) {
+        super();
         this.subsInfoContextKey = subsInfoContextKey;
     }
 
@@ -87,7 +88,13 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 const [client,] = Array.from(this.clientTopics).find(([client, t]) => t.indexOf(topic) > -1) || [];
 
                 if (client && topic) {
-                    this.unsubscribeFromTopic(client, topic);
+                    this.unsubscribeFromTopic(client, topic).then(() => {
+                        const activeTopics = this.clientTopics.get(client) || [];
+
+                        if (!activeTopics.length) {
+                            this.disconnectClient(client, activeTopics);
+                        }
+                    });
                 }
             };
         });
@@ -186,7 +193,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 client.subscribe(topic, {
                     onSuccess: () => {
                         if (!this.topicObserver.has(topic)) {
-                          this.topicObserver.set(topic, lastTopicObserver.get(topic) || observer);
+                            this.topicObserver.set(topic, lastTopicObserver.get(topic) || observer);
                         }
 
                         resolve(topic);

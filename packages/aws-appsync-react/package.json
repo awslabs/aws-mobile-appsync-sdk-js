@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync-react",
-  "version": "1.0.6",
+  "version": "1.0.10",
   "main": "lib/index.js",
   "license": "SEE LICENSE IN LICENSE",
   "description": "AWS Mobile AppSync SDK for JavaScript - React and React Native components",
@@ -16,11 +16,11 @@
     "prepare": "tsc"
   },
   "dependencies": {
+    "aws-appsync": "^1.0.17",
     "prop-types": "^15.6.0"
   },
   "peerDependencies": {
-    "react": "0.14.x || 15.* || ^15.0.0 || ^16.0.0",
-    "aws-appsync": "^1.0.12"
+    "react": "0.14.x || 15.* || ^15.0.0 || ^16.0.0"
   },
   "devDependencies": {
     "@types/react": "^16.0.25",

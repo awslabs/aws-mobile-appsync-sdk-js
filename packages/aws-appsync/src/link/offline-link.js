@@ -26,6 +26,7 @@ export class OfflineLink extends ApolloLink {
      * @param {Store} store
      */
     constructor(store) {
+        super();
         this.store = store;
     }
 
@@ -201,7 +202,7 @@ export const discard = (fn = () => null) => (error, action, retries) => {
                     return true;
                 }
 
-                if (!!conflictResolutionResult) {
+                if (conflictResolutionResult) {
                     action.meta.offline.effect.variables = conflictResolutionResult;
 
                     return false;

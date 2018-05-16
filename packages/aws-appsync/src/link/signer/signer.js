@@ -92,7 +92,7 @@ var parse_service_info = function (request) {
     var url_info = url.parse(request.url),
         host = url_info.host;
 
-    var matched = host.match(/([^\.]+)\.(?:([^\.]*)\.)?amazonaws\.com$/),
+    var matched = host.match(/([^.]+)\.(?:([^.]*)\.)?amazonaws\.com$/),
         parsed = (matched || []).slice(1, 3);
 
     if (parsed[1] === 'es') { // Elastic Search
@@ -217,7 +217,7 @@ var sign = function (request, access_info, service_info = null) {
 
     // datetime string and date string
     var dt = new Date(),
-        dt_str = dt.toISOString().replace(/[:\-]|\.\d{3}/g, ''),
+        dt_str = dt.toISOString().replace(/[:-]|\.\d{3}/g, ''),
         d_str = dt_str.substr(0, 8),
         algorithm = 'AWS4-HMAC-SHA256';
 
@@ -232,18 +232,18 @@ var sign = function (request, access_info, service_info = null) {
     var request_str = canonical_request(request);
 
     // Task 2: Create a String to Sign
-    var service_info = service_info || parse_service_info(request),
-        scope = credential_scope(
-            d_str,
-            service_info.region,
-            service_info.service
-        ),
-        str_to_sign = string_to_sign(
-            algorithm,
-            request_str,
-            dt_str,
-            scope
-        );
+    service_info = service_info || parse_service_info(request);
+    var scope = credential_scope(
+        d_str,
+        service_info.region,
+        service_info.service
+    );
+    var str_to_sign = string_to_sign(
+        algorithm,
+        request_str,
+        dt_str,
+        scope
+    );
 
     // Task 3: Calculate the Signature
     var signing_key = get_signing_key(
@@ -274,4 +274,4 @@ var sign = function (request, access_info, service_info = null) {
 */
 export default class Signer {
     static sign = sign;
-};
+}
