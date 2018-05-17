@@ -26,6 +26,7 @@ export const AUTH_TYPE = {
     API_KEY: 'API_KEY',
     AWS_IAM: 'AWS_IAM',
     AMAZON_COGNITO_USER_POOLS: 'AMAZON_COGNITO_USER_POOLS',
+    OPENID_CONNECT: 'OPENID_CONNECT',
 }
 
 export class AuthLink extends ApolloLink {
@@ -125,6 +126,7 @@ export const authLink = ({ url, region, auth: { type = AUTH_TYPE.AWS_IAM, creden
                     promise = headerBasedAuth({ header: 'X-Api-Key', value: apiKey }, operation, forward);
                     break;
                 case AUTH_TYPE.AMAZON_COGNITO_USER_POOLS:
+                case AUTH_TYPE.OPENID_CONNECT:
                     promise = headerBasedAuth({ header: 'Authorization', value: jwtToken }, operation, forward);
                     break;
                 default:
