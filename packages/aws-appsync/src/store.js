@@ -9,12 +9,13 @@ import { reducer as cacheReducer, NORMALIZED_CACHE_KEY } from './cache/index';
 import { reducer as commitReducer, offlineEffect, discard } from './link/offline-link';
 
 /**
- * 
+ *
  * @param {() => AWSAppSyncClient} clientGetter
- * @param {Function} persistCallback 
- * @param {Function} conflictResolver 
+ * @param {Function} persistCallback
+ * @param {object} persistOptions
+ * @param {Function} conflictResolver
  */
-const newStore = (clientGetter = () => null, persistCallback = () => null, conflictResolver) => {
+const newStore = (clientGetter = () => null, persistCallback = () => null, persistOptions = {}, conflictResolver) => {
     return createStore(
         combineReducers({
             rehydrated: (state = false, action) => {
@@ -35,7 +36,8 @@ const newStore = (clientGetter = () => null, persistCallback = () => null, confl
                 ...offlineConfig,
                 persistCallback,
                 persistOptions: {
-                    whitelist: [NORMALIZED_CACHE_KEY, 'offline']
+                    whitelist: [NORMALIZED_CACHE_KEY, 'offline'],
+                    ...persistOptions,
                 },
                 effect: (effect, action) => offlineEffect(clientGetter(), effect, action),
                 discard: discard(conflictResolver),
