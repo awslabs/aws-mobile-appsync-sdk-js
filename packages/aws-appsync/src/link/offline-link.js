@@ -11,7 +11,9 @@ import { ApolloLink, Observable, Operation } from "apollo-link";
 import { getOperationDefinition, getOperationName } from "apollo-utilities";
 import { Store } from "redux";
 
-import { NORMALIZED_CACHE_KEY } from "../cache";
+import { NORMALIZED_CACHE_KEY, defaultDataIdFromObject } from "../cache";
+
+export const METADATA_KEY = 'appsync:metadata';
 
 export class OfflineLink extends ApolloLink {
 
@@ -114,7 +116,7 @@ const enqueueMutation = (operation, theStore, observer) => {
     setImmediate(() => {
         theStore.dispatch({
             type: 'SOME_ACTION',
-            payload: {},
+            payload: { optimisticResponse },
             meta: {
                 offline: {
                     effect: {
@@ -124,7 +126,7 @@ const enqueueMutation = (operation, theStore, observer) => {
                         update,
                         optimisticResponse,
                     },
-                    commit: { type: 'SOME_ACTION_COMMIT', meta: null },
+                    commit: { type: 'SOME_ACTION_COMMIT', meta: { optimisticResponse } },
                     rollback: { type: 'SOME_ACTION_ROLLBACK', meta: null },
                 }
             }
@@ -140,14 +142,19 @@ const enqueueMutation = (operation, theStore, observer) => {
  * @param {*} effect
  * @param {*} action
  */
-export const offlineEffect = (client, effect, action) => {
+export const offlineEffect = (store, client, effect, action) => {
     const doIt = true;
-    const { ...otherOptions } = effect;
+    const { variables: origVars = {}, optimisticResponse: origOptimistic, ...otherOptions } = effect;
 
     const context = { AASContext: { doIt } };
 
+    const { [METADATA_KEY]: { idsMap } } = store.getState();
+    const variables = replaceUsingMap({ ...origVars }, idsMap);
+    const optimisticResponse = replaceUsingMap({ ...origOptimistic }, idsMap);
+
     const options = {
         ...otherOptions,
+        variables,
         context,
     };
 
@@ -155,20 +162,42 @@ export const offlineEffect = (client, effect, action) => {
 }
 
 export const reducer = () => ({
-    eclipse: (state = {}, action) => {
-        const { type, payload } = action;
+    [METADATA_KEY]: (state = {
+        idsMap: {},
+    }, action) => {
+        const { type, payload, meta } = action;
+
         switch (type) {
             case 'SOME_ACTION':
+                const { optimisticResponse } = payload;
+
+                const ids = getIds(optimisticResponse);
+                const entries = Object.values(ids).reduce((acc, id) => (acc[id] = null, acc), {});
+
                 return {
                     ...state,
+                    idsMap: {
+                        ...state.idsMap,
+                        ...entries,
+                    },
                 };
             case 'SOME_ACTION_COMMIT':
+                const { optimisticResponse } = meta;
+                const { data } = payload;
+
+                const oldIds = getIds(optimisticResponse);
+                const newIds = getIds(data);
+
+                const mapped = mapIds(oldIds, newIds);
+
+                // TODO: When to clear map??
+
                 return {
                     ...state,
-                };
-            case 'SOME_ACTION_ROLLBACK':
-                return {
-                    ...state,
+                    idsMap: {
+                        ...state.idsMap,
+                        ...mapped,
+                    },
                 };
             default:
                 return state;
@@ -230,3 +259,69 @@ export const discard = (fn = () => null) => (error, action, retries) => {
 
     return error.permanent || retries > 10;
 };
+
+//#region utils
+const replaceUsingMap = (obj, map = {}) => {
+    if (!obj) {
+        return obj;
+    }
+
+    const newVal = map[obj];
+    if (newVal) {
+        obj = newVal;
+
+        return obj;
+    }
+
+    Object.keys(obj).forEach(key => {
+        const val = obj[key];
+
+        if (Array.isArray(val)) {
+            val.forEach((v, i) => replaceUsingMap(v, map));
+        } else if (typeof val === 'object') {
+            replaceUsingMap(val, map);
+        } else {
+            const newVal = map[val];
+            if (newVal) {
+                obj[key] = newVal;
+            }
+        }
+    });
+
+    return obj;
+};
+
+const getIds = (obj, path = '', acc = {}) => {
+    if (!obj) {
+        return acc;
+    }
+
+    // TODO: use the one configured in the cache?
+    const dataId = defaultDataIdFromObject(obj);
+    if (dataId) {
+        const [, id] = dataId.split(':');
+        acc[path] = id;
+    }
+
+    Object.keys(obj).forEach(key => {
+        const val = obj[key];
+
+        if (Array.isArray(val)) {
+            val.forEach((v, i) => getIds(v, `${path}.${key}[${i}]`, acc));
+        } else if (typeof val === 'object') {
+            getIds(val, `${path}${path && '.'}${key}`, acc);
+        }
+    });
+
+    return getIds(null, path, acc);
+};
+
+const intersectingKeys = (obj1 = {}, obj2 = {}) => {
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    return keys1.filter(k => keys2.indexOf(k) !== -1);
+};
+
+const mapIds = (obj1, obj2) => intersectingKeys(obj1, obj2).reduce((acc, k) => (acc[obj1[k]] = obj2[k], acc), {});
+//#endregion
