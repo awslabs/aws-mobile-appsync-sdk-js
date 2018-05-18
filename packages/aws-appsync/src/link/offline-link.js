@@ -9,7 +9,7 @@
 import { readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
 import { ApolloLink, Observable, Operation } from "apollo-link";
 import { getOperationDefinition, getOperationName } from "apollo-utilities";
-import { Store } from "redux";
+import { Store, combineReducers } from "redux";
 
 import { NORMALIZED_CACHE_KEY, defaultDataIdFromObject } from "../cache";
 
@@ -162,48 +162,44 @@ export const offlineEffect = (store, client, effect, action) => {
 }
 
 export const reducer = () => ({
-    [METADATA_KEY]: (state = {
-        idsMap: {},
-    }, action) => {
-        const { type, payload, meta } = action;
-
-        switch (type) {
-            case 'SOME_ACTION':
-                const { optimisticResponse } = payload;
-
-                const ids = getIds(optimisticResponse);
-                const entries = Object.values(ids).reduce((acc, id) => (acc[id] = null, acc), {});
-
-                return {
-                    ...state,
-                    idsMap: {
-                        ...state.idsMap,
-                        ...entries,
-                    },
-                };
-            case 'SOME_ACTION_COMMIT':
-                const { optimisticResponse } = meta;
-                const { data } = payload;
-
-                const oldIds = getIds(optimisticResponse);
-                const newIds = getIds(data);
-
-                const mapped = mapIds(oldIds, newIds);
-
-                // TODO: When to clear map??
-
-                return {
-                    ...state,
-                    idsMap: {
-                        ...state.idsMap,
-                        ...mapped,
-                    },
-                };
-            default:
-                return state;
-        }
-    }
+    [METADATA_KEY]: combineReducers({
+        idsMap: idsReducer,
+    })
 });
+
+const idsReducer = (state = {}, action) => {
+    const { type, payload, meta } = action;
+
+    switch (type) {
+        case 'SOME_ACTION':
+            const { optimisticResponse } = payload;
+
+            const ids = getIds(optimisticResponse);
+            const entries = Object.values(ids).reduce((acc, id) => (acc[id] = null, acc), {});
+
+            return {
+                ...state,
+                ...entries,
+            };
+        case 'SOME_ACTION_COMMIT':
+            const { optimisticResponse } = meta;
+            const { data } = payload;
+
+            const oldIds = getIds(optimisticResponse);
+            const newIds = getIds(data);
+
+            const mapped = mapIds(oldIds, newIds);
+
+            // TODO: When to clear map??
+
+            return {
+                ...state,
+                ...mapped,
+            };
+        default:
+            return state;
+    }
+};
 
 export const discard = (fn = () => null) => (error, action, retries) => {
     const { graphQLErrors = [] } = error;
