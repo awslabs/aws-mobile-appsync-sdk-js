@@ -11,6 +11,7 @@ import { InMemoryCache, ApolloReducerConfig, NormalizedCache, defaultDataIdFromO
 import { Store, Action } from 'redux';
 
 export const NORMALIZED_CACHE_KEY = 'appsync';
+export const METADATA_KEY = 'appsync-metadata';
 export { defaultDataIdFromObject };
 
 const WRITE_CACHE_ACTION = 'AAS_WRITE_CACHE';

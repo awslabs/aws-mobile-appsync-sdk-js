@@ -13,8 +13,8 @@ import { ApolloLink, FetchResult, Observable } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
 import { getMainDefinition, getOperationDefinition, variablesInOperation } from 'apollo-utilities';
 
-import OfflineCache from './cache/index';
-import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink, AUTH_TYPE } from './link';
+import OfflineCache, { METADATA_KEY } from './cache/index';
+import { OfflineLink, startMutation, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink, AUTH_TYPE } from './link';
 import { createStore } from './store';
 
 export const createSubscriptionHandshakeLink = (url, resultsFetcherLink = new HttpLink({ uri: url })) => {
@@ -82,6 +82,9 @@ class AWSAppSyncClient extends ApolloClient {
 
     hydrated = () => this.hydratedPromise;
 
+    _disableOffline;
+    _store;
+
     /**
      *
      * @param {object} appSyncOptions
@@ -135,6 +138,8 @@ class AWSAppSyncClient extends ApolloClient {
         super(newOptions);
 
         this.hydratedPromise = disableOffline ? Promise.resolve(this) : new Promise(resolve => resolveClient = resolve);
+        this._disableOffline = disableOffline;
+        this._store = store;
     }
 
     /**
@@ -142,7 +147,7 @@ class AWSAppSyncClient extends ApolloClient {
      * @param {MutationOptions} options
      * @returns {Promise<FetchResult>}
      */
-    mutate(options) {
+    async mutate(options) {
         const { update, refetchQueries, context: origContext = {}, ...otherOptions } = options;
         const { AASContext: { doIt = false, ...restAASContext } = {} } = origContext;
 
@@ -167,10 +172,33 @@ class AWSAppSyncClient extends ApolloClient {
             context,
         }
 
-        return super.mutate(newOptions);
+        if (!this._disableOffline) {
+            boundStartMutation(this._store, this.cache);
+
+            if (doIt) {
+                const { [METADATA_KEY]: { snapshot: { cache } } } = this._store.getState();
+
+                this.cache.restore(cache);
+            }
+        }
+
+        const result = await super.mutate(newOptions);
+
+        if (!this._disableOffline) {
+            const { [METADATA_KEY]: { snapshot: { enqueuedMutations, cache } } } = this._store.getState();
+
+            const isLastMutation = enqueuedMutations === 1;
+            if (doIt && isLastMutation) {
+                this.cache.restore(cache);
+            }
+        }
+
+        return result;
     }
 
 }
+
+const boundStartMutation = (store, cache) => store.dispatch(startMutation(cache));
 
 export default AWSAppSyncClient;
 export { AWSAppSyncClient };

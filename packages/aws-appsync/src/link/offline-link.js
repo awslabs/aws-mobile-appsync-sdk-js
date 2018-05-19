@@ -11,9 +11,14 @@ import { ApolloLink, Observable, Operation } from "apollo-link";
 import { getOperationDefinition, getOperationName } from "apollo-utilities";
 import { Store, combineReducers } from "redux";
 
-import { NORMALIZED_CACHE_KEY, defaultDataIdFromObject } from "../cache";
+import { NORMALIZED_CACHE_KEY, defaultDataIdFromObject, METADATA_KEY } from "../cache";
 
-export const METADATA_KEY = 'appsync:metadata';
+const actions = {
+    START: 'START_MUTATION',
+    ENQUEUE: 'ENQUEUE_OFFLINE_MUTATION',
+    COMMIT: 'COMMIT_OFFLINE_MUTATION',
+    ROLLBACK: 'ROLLBACK_OFFLINE_MUTATION',
+};
 
 export class OfflineLink extends ApolloLink {
 
@@ -84,6 +89,11 @@ export class OfflineLink extends ApolloLink {
     }
 }
 
+export const startMutation = (cache) => ({
+    type: actions.START,
+    payload: { cache },
+});
+
 /**
  *
  * @param {Operation} operation
@@ -115,7 +125,7 @@ const enqueueMutation = (operation, theStore, observer) => {
 
     setImmediate(() => {
         theStore.dispatch({
-            type: 'SOME_ACTION',
+            type: actions.ENQUEUE,
             payload: { optimisticResponse },
             meta: {
                 offline: {
@@ -126,8 +136,8 @@ const enqueueMutation = (operation, theStore, observer) => {
                         update,
                         optimisticResponse,
                     },
-                    commit: { type: 'SOME_ACTION_COMMIT', meta: { optimisticResponse } },
-                    rollback: { type: 'SOME_ACTION_ROLLBACK', meta: null },
+                    commit: { type: actions.COMMIT, meta: { optimisticResponse } },
+                    rollback: { type: actions.ROLLBACK },
                 }
             }
         });
@@ -164,14 +174,61 @@ export const offlineEffect = (store, client, effect, action) => {
 export const reducer = () => ({
     [METADATA_KEY]: combineReducers({
         idsMap: idsReducer,
+        snapshot: snapshotReducer,
     })
 });
+
+const snapshotReducer = (state, action) => {
+    const enqueuedMutations = enqueuedMutationsReducer(state && state.enqueuedMutations, action);
+    const cache = cacheSnapshotReducer(state && state.cache, {
+        ...action,
+        enqueuedMutations
+    });
+
+    return {
+        enqueuedMutations,
+        cache,
+    };
+};
+
+const enqueuedMutationsReducer = (state = 0, action) => {
+    const { type } = action;
+
+    switch (type) {
+        case actions.ENQUEUE:
+            return state + 1;
+        case actions.COMMIT:
+        case actions.ROLLBACK:
+            return state - 1;
+        default:
+            return state;
+    }
+};
+
+const cacheSnapshotReducer = (state = {}, action) => {
+    const { type, payload, enqueuedMutations } = action;
+
+    switch (type) {
+        case actions.START:
+            const isFirstMutation = enqueuedMutations === 0;
+
+            if (isFirstMutation) {
+                const { cache } = payload;
+
+                return { ...cache.extract(false) };
+            }
+
+            return state;
+        default:
+            return state;
+    }
+};
 
 const idsReducer = (state = {}, action) => {
     const { type, payload, meta } = action;
 
     switch (type) {
-        case 'SOME_ACTION':
+        case actions.ENQUEUE:
             const { optimisticResponse } = payload;
 
             const ids = getIds(optimisticResponse);
@@ -181,7 +238,7 @@ const idsReducer = (state = {}, action) => {
                 ...state,
                 ...entries,
             };
-        case 'SOME_ACTION_COMMIT':
+        case actions.COMMIT:
             const { optimisticResponse } = meta;
             const { data } = payload;
 
