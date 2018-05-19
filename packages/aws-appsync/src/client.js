@@ -84,6 +84,15 @@ class AWSAppSyncClient extends ApolloClient {
 
     _disableOffline;
     _store;
+    _origBroadcastQueries;
+
+    initQueryManager() {
+        if (!this.queryManager) {
+            super.initQueryManager();
+
+            this._origBroadcastQueries = this.queryManager.broadcastQueries;
+        }
+    }
 
     /**
      *
@@ -178,22 +187,28 @@ class AWSAppSyncClient extends ApolloClient {
             if (doIt) {
                 const { [METADATA_KEY]: { snapshot: { cache } } } = this._store.getState();
 
+                // disable broadcastEvents
+                this.queryManager.broadcastQueries = () => { };
                 this.cache.restore(cache);
             }
         }
 
-        const result = await super.mutate(newOptions);
+        try {
+            return await super.mutate(newOptions);
+        } finally {
+            if (!this._disableOffline) {
+                const { [METADATA_KEY]: { snapshot: { enqueuedMutations, cache } } } = this._store.getState();
 
-        if (!this._disableOffline) {
-            const { [METADATA_KEY]: { snapshot: { enqueuedMutations, cache } } } = this._store.getState();
+                const isLastMutation = enqueuedMutations === 1;
+                if (doIt && isLastMutation) {
+                    this.cache.restore(cache);
 
-            const isLastMutation = enqueuedMutations === 1;
-            if (doIt && isLastMutation) {
-                this.cache.restore(cache);
+                    // re-enable broadcastEvents and call it
+                    this.queryManager.broadcastQueries = this._origBroadcastQueries;
+                    this.queryManager.broadcastQueries();
+                }
             }
         }
-
-        return result;
     }
 
 }
