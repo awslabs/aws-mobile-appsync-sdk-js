@@ -172,11 +172,18 @@ export const offlineEffect = (store, client, effect, action) => {
 }
 
 export const reducer = () => ({
-    [METADATA_KEY]: combineReducers({
-        idsMap: idsReducer,
-        snapshot: snapshotReducer,
-    })
+    [METADATA_KEY]: metadataReducer,
 });
+
+const metadataReducer = (state, action) => {
+    const snapshot = snapshotReducer(state && state.snapshot, action);
+    const idsMap = idsMapReducer(state && state.idsMap, { ...action, remainingMutations: snapshot.enqueuedMutations });
+
+    return {
+        snapshot,
+        idsMap,
+    };
+};
 
 const snapshotReducer = (state, action) => {
     const enqueuedMutations = enqueuedMutationsReducer(state && state.enqueuedMutations, action);
@@ -224,7 +231,7 @@ const cacheSnapshotReducer = (state = {}, action) => {
     }
 };
 
-const idsReducer = (state = {}, action) => {
+const idsMapReducer = (state = {}, action) => {
     const { type, payload, meta } = action;
 
     switch (type) {
@@ -239,6 +246,7 @@ const idsReducer = (state = {}, action) => {
                 ...entries,
             };
         case actions.COMMIT:
+            const { remainingMutations } = action;
             const { optimisticResponse } = meta;
             const { data } = payload;
 
@@ -247,7 +255,10 @@ const idsReducer = (state = {}, action) => {
 
             const mapped = mapIds(oldIds, newIds);
 
-            // TODO: When to clear map??
+            // Clear ids map on last mutation
+            if (!remainingMutations) {
+                return {};
+            }
 
             return {
                 ...state,
