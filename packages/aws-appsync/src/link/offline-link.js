@@ -10,6 +10,7 @@ import { readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-
 import { ApolloLink, Observable, Operation } from "apollo-link";
 import { getOperationDefinition, getOperationName } from "apollo-utilities";
 import { Store, combineReducers } from "redux";
+import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
 
 import { NORMALIZED_CACHE_KEY, defaultDataIdFromObject, METADATA_KEY } from "../cache";
 
@@ -176,13 +177,22 @@ export const reducer = () => ({
 });
 
 const metadataReducer = (state, action) => {
-    const snapshot = snapshotReducer(state && state.snapshot, action);
-    const idsMap = idsMapReducer(state && state.idsMap, { ...action, remainingMutations: snapshot.enqueuedMutations });
+    const { type, payload } = action;
 
-    return {
-        snapshot,
-        idsMap,
-    };
+    switch (type) {
+        case PERSIST_REHYDRATE:
+            const { [METADATA_KEY]: rehydratedState } = payload;
+
+            return rehydratedState || state;
+        default:
+            const snapshot = snapshotReducer(state && state.snapshot, action);
+            const idsMap = idsMapReducer(state && state.idsMap, { ...action, remainingMutations: snapshot.enqueuedMutations });
+
+            return {
+                snapshot,
+                idsMap,
+            };
+    }
 };
 
 const snapshotReducer = (state, action) => {
