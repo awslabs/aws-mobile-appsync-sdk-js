@@ -14,6 +14,8 @@ export const NORMALIZED_CACHE_KEY = 'appsync';
 export const METADATA_KEY = 'appsync-metadata';
 export { defaultDataIdFromObject };
 
+export const DO_IT_KEY = typeof Symbol !== 'undefined' ? Symbol('doIt') : '@@doIt';
+
 const WRITE_CACHE_ACTION = 'AAS_WRITE_CACHE';
 
 export default class MyCache extends InMemoryCache {
@@ -51,6 +53,15 @@ export default class MyCache extends InMemoryCache {
         super.broadcastWatches();
 
         return this;
+    }
+
+    transformDocument(document) {
+        const doIt = document[DO_IT_KEY];
+        const result = super.transformDocument(document);
+
+        result[DO_IT_KEY] = doIt;
+
+        return result;
     }
 
     /**

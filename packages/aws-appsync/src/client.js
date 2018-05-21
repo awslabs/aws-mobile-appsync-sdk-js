@@ -13,7 +13,7 @@ import { ApolloLink, FetchResult, Observable } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
 import { getMainDefinition, getOperationDefinition, variablesInOperation } from 'apollo-utilities';
 
-import OfflineCache, { METADATA_KEY } from './cache/index';
+import OfflineCache, { METADATA_KEY, DO_IT_KEY } from './cache/index';
 import { OfflineLink, startMutation, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink, AUTH_TYPE } from './link';
 import { createStore } from './store';
 
@@ -84,15 +84,6 @@ class AWSAppSyncClient extends ApolloClient {
 
     _disableOffline;
     _store;
-    _origBroadcastQueries;
-
-    initQueryManager() {
-        if (!this.queryManager) {
-            super.initQueryManager();
-
-            this._origBroadcastQueries = this.queryManager.broadcastQueries;
-        }
-    }
 
     /**
      *
@@ -151,6 +142,35 @@ class AWSAppSyncClient extends ApolloClient {
         this._store = store;
     }
 
+    initQueryManager() {
+        if (!this.queryManager) {
+            super.initQueryManager();
+
+            if (this._disableOffline) {
+                return;
+            }
+
+            const origBroadcastQueries = this.queryManager.broadcastQueries;
+
+            const origMarkMutationInit = this.queryManager.dataStore.markMutationInit;
+            this.queryManager.dataStore.markMutationInit = (opts) => {
+                const skipNotify = !!opts.document[DO_IT_KEY];
+
+                this.queryManager.broadcastQueries = (...args) => {
+                    if (skipNotify) {
+                        return;
+                    }
+
+                    return origBroadcastQueries.apply(this.queryManager, args);
+
+                    this.queryManager.broadcastQueries = origBroadcastQueries;
+                };
+
+                return origMarkMutationInit.apply(this.queryManager.dataStore, [opts]);
+            };
+        }
+    }
+
     /**
      *
      * @param {MutationOptions} options
@@ -187,8 +207,6 @@ class AWSAppSyncClient extends ApolloClient {
             if (doIt) {
                 const { [METADATA_KEY]: { snapshot: { cache } } } = this._store.getState();
 
-                // disable broadcastEvents
-                this.queryManager.broadcastQueries = () => { };
                 this.cache.restore(cache);
             }
         }
@@ -203,8 +221,6 @@ class AWSAppSyncClient extends ApolloClient {
                 if (doIt && isLastMutation) {
                     this.cache.restore(cache);
 
-                    // re-enable broadcastEvents and call it
-                    this.queryManager.broadcastQueries = this._origBroadcastQueries;
                     this.queryManager.broadcastQueries();
                 }
             }
