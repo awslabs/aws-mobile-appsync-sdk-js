@@ -6,7 +6,7 @@ import thunk from 'redux-thunk';
 
 import { AWSAppSyncClient } from './client';
 import { reducer as cacheReducer, NORMALIZED_CACHE_KEY, METADATA_KEY } from './cache/index';
-import { reducer as commitReducer, offlineEffect, discard } from './link/offline-link';
+import { reducer as offlineMetadataReducer, offlineEffect, discard } from './link/offline-link';
 
 /**
  * 
@@ -14,7 +14,7 @@ import { reducer as commitReducer, offlineEffect, discard } from './link/offline
  * @param {Function} persistCallback 
  * @param {Function} conflictResolver 
  */
-const newStore = (clientGetter = () => null, persistCallback = () => null, conflictResolver) => {
+const newStore = (clientGetter = () => null, persistCallback = () => null, conflictResolver, dataIdFromObject) => {
     const store = createStore(
         combineReducers({
             rehydrated: (state = false, action) => {
@@ -26,7 +26,7 @@ const newStore = (clientGetter = () => null, persistCallback = () => null, confl
                 }
             },
             ...cacheReducer(),
-            ...commitReducer(),
+            ...offlineMetadataReducer(dataIdFromObject),
         }),
         typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__(),
         compose(

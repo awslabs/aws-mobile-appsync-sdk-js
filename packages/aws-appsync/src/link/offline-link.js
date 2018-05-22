@@ -172,11 +172,11 @@ export const offlineEffect = (store, client, effect, action) => {
     return client.mutate(options);
 }
 
-export const reducer = () => ({
-    [METADATA_KEY]: metadataReducer,
+export const reducer = dataIdFromObject => ({
+    [METADATA_KEY]: metadataReducer(dataIdFromObject),
 });
 
-const metadataReducer = (state, action) => {
+const metadataReducer = dataIdFromObject => (state, action) => {
     const { type, payload } = action;
 
     switch (type) {
@@ -186,7 +186,7 @@ const metadataReducer = (state, action) => {
             return rehydratedState || state;
         default:
             const snapshot = snapshotReducer(state && state.snapshot, action);
-            const idsMap = idsMapReducer(state && state.idsMap, { ...action, remainingMutations: snapshot.enqueuedMutations });
+            const idsMap = idsMapReducer(state && state.idsMap, { ...action, remainingMutations: snapshot.enqueuedMutations }, dataIdFromObject);
 
             return {
                 snapshot,
@@ -241,14 +241,14 @@ const cacheSnapshotReducer = (state = {}, action) => {
     }
 };
 
-const idsMapReducer = (state = {}, action) => {
+const idsMapReducer = (state = {}, action, dataIdFromObject) => {
     const { type, payload, meta } = action;
 
     switch (type) {
         case actions.ENQUEUE:
             const { optimisticResponse } = payload;
 
-            const ids = getIds(optimisticResponse);
+            const ids = getIds(dataIdFromObject, optimisticResponse);
             const entries = Object.values(ids).reduce((acc, id) => (acc[id] = null, acc), {});
 
             return {
@@ -260,8 +260,8 @@ const idsMapReducer = (state = {}, action) => {
             const { optimisticResponse } = meta;
             const { data } = payload;
 
-            const oldIds = getIds(optimisticResponse);
-            const newIds = getIds(data);
+            const oldIds = getIds(dataIdFromObject, optimisticResponse);
+            const newIds = getIds(dataIdFromObject, data);
 
             const mapped = mapIds(oldIds, newIds);
 
@@ -335,6 +335,7 @@ export const discard = (fn = () => null) => (error, action, retries) => {
 };
 
 //#region utils
+
 const replaceUsingMap = (obj, map = {}) => {
     if (!obj) {
         return obj;
@@ -365,13 +366,12 @@ const replaceUsingMap = (obj, map = {}) => {
     return obj;
 };
 
-const getIds = (obj, path = '', acc = {}) => {
+const getIds = (dataIdFromObject, obj, path = '', acc = {}) => {
     if (!obj) {
         return acc;
     }
 
-    // TODO: use the one configured in the cache?
-    const dataId = defaultDataIdFromObject(obj);
+    const dataId = dataIdFromObject(obj);
     if (dataId) {
         const [, id] = dataId.split(':');
         acc[path] = id;
@@ -381,13 +381,13 @@ const getIds = (obj, path = '', acc = {}) => {
         const val = obj[key];
 
         if (Array.isArray(val)) {
-            val.forEach((v, i) => getIds(v, `${path}.${key}[${i}]`, acc));
+            val.forEach((v, i) => getIds(dataIdFromObject, v, `${path}.${key}[${i}]`, acc));
         } else if (typeof val === 'object') {
-            getIds(val, `${path}${path && '.'}${key}`, acc);
+            getIds(dataIdFromObject, val, `${path}${path && '.'}${key}`, acc);
         }
     });
 
-    return getIds(null, path, acc);
+    return getIds(dataIdFromObject, null, path, acc);
 };
 
 const intersectingKeys = (obj1 = {}, obj2 = {}) => {
