@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync",
-  "version": "1.0.21-bookkeeping.0",
+  "version": "1.0.21-bookkeeping.1",
   "main": "lib/index.js",
   "license": "SEE LICENSE IN LICENSE",
   "description": "AWS Mobile AppSync SDK for JavaScript",
@@ -8,6 +8,7 @@
     "name": "Amazon Web Services",
     "url": "https://aws.amazon.com/"
   },
+  "homepage": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git",
   "repository": {
     "type": "git",
     "url": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git"
