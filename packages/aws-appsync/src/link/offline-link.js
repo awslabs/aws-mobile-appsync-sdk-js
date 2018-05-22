@@ -321,7 +321,7 @@ export const discard = (fn = () => null) => (error, action, retries) => {
 
         return true;
     } else {
-        const { networkError: { graphQLErrors } = { graphQLErrors: [] } } = error;
+        const { networkError: { graphQLErrors = [] } = { graphQLErrors: [] } } = error;
         const appSyncClientError = graphQLErrors.find(err => err.errorType && err.errorType.startsWith('AWSAppSyncClient:'));
 
         if (appSyncClientError) {
