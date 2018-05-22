@@ -75,30 +75,7 @@ export default class MyCache extends InMemoryCache {
     }
 
     recordOptimisticTransaction(transaction, id) {
-        const x = c => {
-            // console.log('doing transaction', id);
-            const proxy = new Proxy(c, {
-                get: (target, property, receiver) => {
-                    switch (property) {
-                        case 'writeQuery':
-                            // case 'write':
-                            // return (...args) => console.log(property, ...args);
-                            return (...args) => target[property].apply(target, args);
-                        // return (...args) => (console.log(property, ...args), target[property].apply(target, args));
-                    }
-                    return target[property];
-                }
-            });
-            return transaction(proxy)
-        };
-        return super.recordOptimisticTransaction(x, id);
-
-        // this.data
-        // get this.optimistic.find(o => o.id === id) // {id, transaction, data}
-    }
-
-    removeOptimistic(id) {
-        return super.removeOptimistic(id);
+        return;
     }
 }
 
