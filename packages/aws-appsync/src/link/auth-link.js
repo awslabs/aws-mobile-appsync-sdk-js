@@ -75,9 +75,9 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
     const service = SERVICE;
     const origContext = operation.getContext();
 
-    let creds = typeof credentials === 'function' ? credentials.call() : credentials;
+    let creds = typeof credentials === 'function' ? credentials.call() : (credentials || {});
 
-    if (typeof creds.getPromise === 'function') {
+    if (creds && typeof creds.getPromise === 'function') {
         await creds.getPromise();
     }
 
@@ -104,7 +104,7 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
     return forward(operation);
 }
 
-export const authLink = ({ url, region, auth: { type = AUTH_TYPE.AWS_IAM, credentials, apiKey, jwtToken } = {} }) => {
+export const authLink = ({ url, region, auth: { type, credentials, apiKey, jwtToken } = {} }) => {
     return new ApolloLink((operation, forward) => {
         return new Observable(observer => {
             let handle;
