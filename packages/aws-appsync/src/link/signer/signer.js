@@ -149,7 +149,7 @@ kService = HMAC(kRegion, Service)
 kSigning = HMAC(kService, "aws4_request")
 </pre>
 */
-var get_signing_key = function (secret_key, d_str, service_info) {
+var get_signing_key = function (secret_key = '', d_str, service_info) {
     var k = ('AWS4' + secret_key),
         k_date = encrypt(k, d_str),
         k_region = encrypt(k_date, service_info.region),
@@ -168,7 +168,7 @@ var get_signature = function (signing_key, str_to_sign) {
 * Create authorization header
 * Refer to {@link http://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html|Add the Signing Information}
 */
-var get_authorization_header = function (algorithm, access_key, scope, signed_headers, signature) {
+var get_authorization_header = function (algorithm, access_key = '', scope, signed_headers, signature) {
     return [
         algorithm + ' ' + 'Credential=' + access_key + '/' + scope,
         'SignedHeaders=' + signed_headers,
