@@ -1,6 +1,6 @@
 ![AWS AppSync](https://s3.amazonaws.com/aws-mobile-hub-images/awsappsyncgithub.png)
 
-## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK
+## [AWS AppSync](https://aws.amazon.com/appsync/) Apollo JavaScript SDK
 
 [![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
 
