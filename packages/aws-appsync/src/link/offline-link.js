@@ -9,9 +9,17 @@
 import { readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
 import { ApolloLink, Observable, Operation } from "apollo-link";
 import { getOperationDefinition, getOperationName } from "apollo-utilities";
-import { Store } from "redux";
+import { Store, combineReducers } from "redux";
+import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
 
-import { NORMALIZED_CACHE_KEY } from "../cache";
+import { NORMALIZED_CACHE_KEY, defaultDataIdFromObject, METADATA_KEY } from "../cache";
+
+const actions = {
+    START: 'START_MUTATION',
+    ENQUEUE: 'ENQUEUE_OFFLINE_MUTATION',
+    COMMIT: 'COMMIT_OFFLINE_MUTATION',
+    ROLLBACK: 'ROLLBACK_OFFLINE_MUTATION',
+};
 
 export class OfflineLink extends ApolloLink {
 
@@ -82,6 +90,11 @@ export class OfflineLink extends ApolloLink {
     }
 }
 
+export const startMutation = (cache) => ({
+    type: actions.START,
+    payload: { cache },
+});
+
 /**
  *
  * @param {Operation} operation
@@ -113,8 +126,8 @@ const enqueueMutation = (operation, theStore, observer) => {
 
     setImmediate(() => {
         theStore.dispatch({
-            type: 'SOME_ACTION',
-            payload: {},
+            type: actions.ENQUEUE,
+            payload: { optimisticResponse },
             meta: {
                 offline: {
                     effect: {
@@ -124,8 +137,8 @@ const enqueueMutation = (operation, theStore, observer) => {
                         update,
                         optimisticResponse,
                     },
-                    commit: { type: 'SOME_ACTION_COMMIT', meta: null },
-                    rollback: { type: 'SOME_ACTION_ROLLBACK', meta: null },
+                    commit: { type: actions.COMMIT, meta: { optimisticResponse } },
+                    rollback: { type: actions.ROLLBACK },
                 }
             }
         });
@@ -140,41 +153,131 @@ const enqueueMutation = (operation, theStore, observer) => {
  * @param {*} effect
  * @param {*} action
  */
-export const offlineEffect = (client, effect, action) => {
+export const offlineEffect = (store, client, effect, action) => {
     const doIt = true;
-    const { ...otherOptions } = effect;
+    const { variables: origVars = {}, optimisticResponse: origOptimistic, ...otherOptions } = effect;
 
     const context = { AASContext: { doIt } };
 
+    const { [METADATA_KEY]: { idsMap } } = store.getState();
+    const variables = replaceUsingMap({ ...origVars }, idsMap);
+    const optimisticResponse = replaceUsingMap({ ...origOptimistic }, idsMap);
+
     const options = {
         ...otherOptions,
+        variables,
         context,
     };
 
     return client.mutate(options);
 }
 
-export const reducer = () => ({
-    eclipse: (state = {}, action) => {
-        const { type, payload } = action;
-        switch (type) {
-            case 'SOME_ACTION':
-                return {
-                    ...state,
-                };
-            case 'SOME_ACTION_COMMIT':
-                return {
-                    ...state,
-                };
-            case 'SOME_ACTION_ROLLBACK':
-                return {
-                    ...state,
-                };
-            default:
-                return state;
-        }
-    }
+export const reducer = dataIdFromObject => ({
+    [METADATA_KEY]: metadataReducer(dataIdFromObject),
 });
+
+const metadataReducer = dataIdFromObject => (state, action) => {
+    const { type, payload } = action;
+
+    switch (type) {
+        case PERSIST_REHYDRATE:
+            const { [METADATA_KEY]: rehydratedState } = payload;
+
+            return rehydratedState || state;
+        default:
+            const snapshot = snapshotReducer(state && state.snapshot, action);
+            const idsMap = idsMapReducer(state && state.idsMap, { ...action, remainingMutations: snapshot.enqueuedMutations }, dataIdFromObject);
+
+            return {
+                snapshot,
+                idsMap,
+            };
+    }
+};
+
+const snapshotReducer = (state, action) => {
+    const enqueuedMutations = enqueuedMutationsReducer(state && state.enqueuedMutations, action);
+    const cache = cacheSnapshotReducer(state && state.cache, {
+        ...action,
+        enqueuedMutations
+    });
+
+    return {
+        enqueuedMutations,
+        cache,
+    };
+};
+
+const enqueuedMutationsReducer = (state = 0, action) => {
+    const { type } = action;
+
+    switch (type) {
+        case actions.ENQUEUE:
+            return state + 1;
+        case actions.COMMIT:
+        case actions.ROLLBACK:
+            return state - 1;
+        default:
+            return state;
+    }
+};
+
+const cacheSnapshotReducer = (state = {}, action) => {
+    const { type, payload, enqueuedMutations } = action;
+
+    switch (type) {
+        case actions.START:
+            const isFirstMutation = enqueuedMutations === 0;
+
+            if (isFirstMutation) {
+                const { cache } = payload;
+
+                return { ...cache.extract(false) };
+            }
+
+            return state;
+        default:
+            return state;
+    }
+};
+
+const idsMapReducer = (state = {}, action, dataIdFromObject) => {
+    const { type, payload, meta } = action;
+
+    switch (type) {
+        case actions.ENQUEUE:
+            const { optimisticResponse } = payload;
+
+            const ids = getIds(dataIdFromObject, optimisticResponse);
+            const entries = Object.values(ids).reduce((acc, id) => (acc[id] = null, acc), {});
+
+            return {
+                ...state,
+                ...entries,
+            };
+        case actions.COMMIT:
+            const { remainingMutations } = action;
+            const { optimisticResponse } = meta;
+            const { data } = payload;
+
+            const oldIds = getIds(dataIdFromObject, optimisticResponse);
+            const newIds = getIds(dataIdFromObject, data);
+
+            const mapped = mapIds(oldIds, newIds);
+
+            // Clear ids map on last mutation
+            if (!remainingMutations) {
+                return {};
+            }
+
+            return {
+                ...state,
+                ...mapped,
+            };
+        default:
+            return state;
+    }
+};
 
 export const discard = (fn = () => null) => (error, action, retries) => {
     const { graphQLErrors = [] } = error;
@@ -218,7 +321,7 @@ export const discard = (fn = () => null) => (error, action, retries) => {
 
         return true;
     } else {
-        const { networkError: { graphQLErrors } = { graphQLErrors: [] } } = error;
+        const { networkError: { graphQLErrors = [] } = { graphQLErrors: [] } } = error;
         const appSyncClientError = graphQLErrors.find(err => err.errorType && err.errorType.startsWith('AWSAppSyncClient:'));
 
         if (appSyncClientError) {
@@ -230,3 +333,69 @@ export const discard = (fn = () => null) => (error, action, retries) => {
 
     return error.permanent || retries > 10;
 };
+
+//#region utils
+
+const replaceUsingMap = (obj, map = {}) => {
+    if (!obj) {
+        return obj;
+    }
+
+    const newVal = map[obj];
+    if (newVal) {
+        obj = newVal;
+
+        return obj;
+    }
+
+    Object.keys(obj).forEach(key => {
+        const val = obj[key];
+
+        if (Array.isArray(val)) {
+            val.forEach((v, i) => replaceUsingMap(v, map));
+        } else if (typeof val === 'object') {
+            replaceUsingMap(val, map);
+        } else {
+            const newVal = map[val];
+            if (newVal) {
+                obj[key] = newVal;
+            }
+        }
+    });
+
+    return obj;
+};
+
+const getIds = (dataIdFromObject, obj, path = '', acc = {}) => {
+    if (!obj) {
+        return acc;
+    }
+
+    const dataId = dataIdFromObject(obj);
+    if (dataId) {
+        const [, id] = dataId.split(':');
+        acc[path] = id;
+    }
+
+    Object.keys(obj).forEach(key => {
+        const val = obj[key];
+
+        if (Array.isArray(val)) {
+            val.forEach((v, i) => getIds(dataIdFromObject, v, `${path}.${key}[${i}]`, acc));
+        } else if (typeof val === 'object') {
+            getIds(dataIdFromObject, val, `${path}${path && '.'}${key}`, acc);
+        }
+    });
+
+    return getIds(dataIdFromObject, null, path, acc);
+};
+
+const intersectingKeys = (obj1 = {}, obj2 = {}) => {
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    return keys1.filter(k => keys2.indexOf(k) !== -1);
+};
+
+const mapIds = (obj1, obj2) => intersectingKeys(obj1, obj2).reduce((acc, k) => (acc[obj1[k]] = obj2[k], acc), {});
+//#endregion

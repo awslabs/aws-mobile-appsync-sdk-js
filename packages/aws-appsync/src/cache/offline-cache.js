@@ -7,11 +7,14 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { Cache } from 'apollo-cache';
-import { InMemoryCache, ApolloReducerConfig, NormalizedCache } from 'apollo-cache-inmemory';
+import { InMemoryCache, ApolloReducerConfig, NormalizedCache, defaultDataIdFromObject } from 'apollo-cache-inmemory';
 import { Store, Action } from 'redux';
 
 export const NORMALIZED_CACHE_KEY = 'appsync';
-export const WRITE_ACTION = 'AAS_WRITE';
+export const METADATA_KEY = 'appsync-metadata';
+export { defaultDataIdFromObject };
+
+const WRITE_CACHE_ACTION = 'AAS_WRITE_CACHE';
 
 export default class MyCache extends InMemoryCache {
 
@@ -41,6 +44,15 @@ export default class MyCache extends InMemoryCache {
         });
     }
 
+    restore(data) {
+        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data));
+
+        super.restore(data);
+        super.broadcastWatches();
+
+        return this;
+    }
+
     /**
      *
      * @param {Cache.WriteOptions} write
@@ -50,22 +62,26 @@ export default class MyCache extends InMemoryCache {
         if (this.data && typeof this.data.record === 'undefined') {
             // do not persist contents of a RecordingCache
             const data = super.extract(true);
-            this.store.dispatch(writeThunk(data));
+            this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data));
         } else {
-          // console.log('NO DISPATCH FOR RECORDINGCACHE')
+            // console.log('NO DISPATCH FOR RECORDINGCACHE')
         }
     }
 
     reset() {
-        this.store.dispatch(writeThunk({}));
+        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, {}));
 
         return super.reset();
     }
+
+    recordOptimisticTransaction(transaction, id) {
+        return;
+    }
 }
 
-const writeThunk = (payload) => (dispatch) => {
+const writeThunk = (type, payload) => (dispatch) => {
     dispatch({
-        type: WRITE_ACTION,
+        type,
         payload,
     });
 };
@@ -74,7 +90,7 @@ export const reducer = () => ({
     [NORMALIZED_CACHE_KEY]: (state = {}, action) => {
         const { type, payload: normCache } = action;
         switch (type) {
-            case WRITE_ACTION:
+            case WRITE_CACHE_ACTION:
                 return {
                     ...normCache
                 };

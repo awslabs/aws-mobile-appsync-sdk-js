@@ -48,13 +48,12 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     }
 
     request = (operation) => {
+        const { [this.subsInfoContextKey]: subsInfo } = operation.getContext();
         const {
-            [this.subsInfoContextKey]: {
                 extensions: {
-                    subscription: { newSubscriptions, mqttConnections }
-                }
+                        subscription: { newSubscriptions, mqttConnections }
             }
-        } = operation.getContext();
+        } = subsInfo;
 
         const newTopics = Object.keys(newSubscriptions).map(subKey => newSubscriptions[subKey].topic);
         const prevTopicsSet = new Set(this.topicObserver.keys());
