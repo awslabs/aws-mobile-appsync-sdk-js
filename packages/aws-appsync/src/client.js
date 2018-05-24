@@ -13,8 +13,8 @@ import { ApolloLink, FetchResult, Observable } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
 import { getMainDefinition, getOperationDefinition, variablesInOperation } from 'apollo-utilities';
 
-import OfflineCache from './cache/index';
-import { OfflineLink, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink, AUTH_TYPE } from './link';
+import OfflineCache, { METADATA_KEY, defaultDataIdFromObject } from './cache/index';
+import { OfflineLink, startMutation, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink, AUTH_TYPE } from './link';
 import { createStore } from './store';
 
 export const createSubscriptionHandshakeLink = (url, resultsFetcherLink = new HttpLink({ uri: url })) => {
@@ -82,6 +82,18 @@ class AWSAppSyncClient extends ApolloClient {
 
     hydrated = () => this.hydratedPromise;
 
+    _disableOffline;
+    _store;
+    _origBroadcastQueries;
+
+    initQueryManager() {
+        if (!this.queryManager) {
+            super.initQueryManager();
+
+            this._origBroadcastQueries = this.queryManager.broadcastQueries;
+        }
+    }
+
     /**
      *
      * @param {object} appSyncOptions
@@ -93,7 +105,7 @@ class AWSAppSyncClient extends ApolloClient {
         auth,
         conflictResolver,
         complexObjectsCredentials,
-        cacheOptions,
+        cacheOptions = {},
         disableOffline = false
     } = {}, options = {}) {
         const { cache: customCache, link: customLink } = options;
@@ -106,7 +118,8 @@ class AWSAppSyncClient extends ApolloClient {
 
         let resolveClient;
 
-        const store = disableOffline ? null : createStore(() => this, () => resolveClient(this), conflictResolver);
+        const dataIdFromObject = disableOffline ? () => { } : cacheOptions.dataIdFromObject || defaultDataIdFromObject;
+        const store = disableOffline ? null : createStore(() => this, () => resolveClient(this), conflictResolver, dataIdFromObject);
         const cache = disableOffline ? (customCache || new InMemoryCache(cacheOptions)) : new OfflineCache(store, cacheOptions);
 
         const waitForRehydrationLink = new ApolloLink((op, forward) => {
@@ -135,6 +148,8 @@ class AWSAppSyncClient extends ApolloClient {
         super(newOptions);
 
         this.hydratedPromise = disableOffline ? Promise.resolve(this) : new Promise(resolve => resolveClient = resolve);
+        this._disableOffline = disableOffline;
+        this._store = store;
     }
 
     /**
@@ -142,7 +157,7 @@ class AWSAppSyncClient extends ApolloClient {
      * @param {MutationOptions} options
      * @returns {Promise<FetchResult>}
      */
-    mutate(options) {
+    async mutate(options) {
         const { update, refetchQueries, context: origContext = {}, ...otherOptions } = options;
         const { AASContext: { doIt = false, ...restAASContext } = {} } = origContext;
 
@@ -161,16 +176,45 @@ class AWSAppSyncClient extends ApolloClient {
 
         const newOptions = {
             ...otherOptions,
-            optimisticResponse: data,
+            optimisticResponse: doIt ? null : data,
             update,
             ...(doIt ? { refetchQueries } : {}),
             context,
         }
 
-        return super.mutate(newOptions);
+        if (!this._disableOffline) {
+            boundStartMutation(this._store, this.cache);
+
+            if (doIt) {
+                const { [METADATA_KEY]: { snapshot: { cache } } } = this._store.getState();
+
+                // disable broadcastEvents
+                this.queryManager.broadcastQueries = () => { };
+                this.cache.restore(cache);
+            }
+        }
+
+        try {
+            return await super.mutate(newOptions);
+        } finally {
+            if (!this._disableOffline) {
+                const { [METADATA_KEY]: { snapshot: { enqueuedMutations, cache } } } = this._store.getState();
+
+                const isLastMutation = enqueuedMutations === 1;
+                if (doIt && isLastMutation) {
+                    this.cache.restore(cache);
+
+                    // re-enable broadcastEvents and call it
+                    this.queryManager.broadcastQueries = this._origBroadcastQueries;
+                    this.queryManager.broadcastQueries();
+                }
+            }
+        }
     }
 
 }
+
+const boundStartMutation = (store, cache) => store.dispatch(startMutation(cache));
 
 export default AWSAppSyncClient;
 export { AWSAppSyncClient };
