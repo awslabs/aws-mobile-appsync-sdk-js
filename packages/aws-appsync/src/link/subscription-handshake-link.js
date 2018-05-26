@@ -8,22 +8,9 @@
  */
 import { ApolloLink, Observable } from "apollo-link";
 
-import * as Paho from 'paho-client/src/mqttws31';
+import * as Paho from '../vendor/paho-mqtt';
 
-const { MQTT: { Client } } = Paho;
-
-// super simple in-memory implementation of localStorage. Needed by Paho client on react-native
-if (!window.localStorage) {
-    window.localStorage = (() => {
-        const data = {}
-
-        return {
-            setItem: (key, item) => data[key] = item,
-            getItem: (key) => data[key],
-            removeItem: (key) => delete data[key],
-        };
-    })();
-}
+const { Client } = Paho;
 
 export class SubscriptionHandshakeLink extends ApolloLink {
 
@@ -33,7 +20,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     subsInfoContextKey;
 
     /**
-     * @type {Map<Paho.MQTT.Client, [string]>}
+     * @type {Map<Paho.Client, [string]>}
      */
     clientTopics = new Map();
 
@@ -50,8 +37,8 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     request = (operation) => {
         const { [this.subsInfoContextKey]: subsInfo } = operation.getContext();
         const {
-                extensions: {
-                        subscription: { newSubscriptions, mqttConnections }
+            extensions: {
+                subscription: { newSubscriptions, mqttConnections }
             }
         } = subsInfo;
 
@@ -132,7 +119,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
 
     /**
      *
-     * @param {Paho.MQTT.Client} client
+     * @param {Paho.Client} client
      * @param {Set<string>} topics
      */
     disconnectClient = (client, topics) => {
@@ -173,7 +160,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     connect = (observer, lastTopicObserver, connectionInfo) => {
         const { topics, client: clientId, url } = connectionInfo;
 
-        const client = new Paho.MQTT.Client(url, clientId);
+        const client = new Paho.Client(url, clientId);
         // client.trace = console.log.bind(null, clientId);
 
         client.onMessageArrived = ({ destinationName, payloadString }) => this.onMessage(destinationName, payloadString);
