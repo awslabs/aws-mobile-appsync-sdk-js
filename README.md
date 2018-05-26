@@ -3,6 +3,14 @@
 ## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK
 
 [![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
+![npm](https://img.shields.io/npm/dm/aws-appsync.svg)
+
+
+package | version
+--- | ---
+aws-appsync | ![npm](https://img.shields.io/npm/v/aws-appsync.svg)
+aws-appsync-react | ![npm](https://img.shields.io/npm/v/aws-appsync-react.svg)
+
 
 ## Installation    
 #### npm    
