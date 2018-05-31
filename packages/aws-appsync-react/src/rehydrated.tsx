@@ -22,13 +22,13 @@ const Rehydrate = (props: RehydrateProps) => (
     </div>
 );
 
-interface RehydratedState {
+export interface RehydratedState {
     rehydrated: boolean
 }
 
 export interface RehydratedProps {
     render?: ((props: { rehydrated: boolean }) => React.ReactNode);
-    children?: React.ReactChildren;
+    children?: React.ReactChildren | React.ReactNode;
     loading?: React.ComponentType<any>;
 }
 

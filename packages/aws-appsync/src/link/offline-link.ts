@@ -139,6 +139,7 @@ const processOfflineQuery = (operation, theStore) => {
  */
 const enqueueMutation = (operation, theStore, observer) => {
     const { query: mutation, variables } = operation;
+    // @ts-ignore
     const { cache, optimisticResponse, AASContext: { doIt = false, refetchQueries, update } = {} } = operation.getContext();
 
     setImmediate(() => {
@@ -264,9 +265,10 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
 
     switch (type) {
         case actions.ENQUEUE:
-            const { optimisticResponse } = payload;
+            const { enqueueOptimisticResponse } = payload;
 
-            const ids = getIds(dataIdFromObject, optimisticResponse);
+            const ids = getIds(dataIdFromObject, enqueueOptimisticResponse);
+            // @ts-ignore
             const entries = Object.values(ids).reduce((acc, id) => (acc[id] = null, acc), {});
 
             return {
@@ -279,10 +281,10 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
             // Clear ids map on last mutation
             return remainingMutations ? state : {};
         case actions.SAVE_SERVER_ID:
-            const { optimisticResponse } = meta;
+            const { commitOptimisticResponse } = meta;
             const { data } = payload;
 
-            const oldIds = getIds(dataIdFromObject, optimisticResponse);
+            const oldIds = getIds(dataIdFromObject, commitOptimisticResponse);
             const newIds = getIds(dataIdFromObject, data);
 
             const mapped = mapIds(oldIds, newIds);
@@ -309,6 +311,7 @@ export const discard = (fn = () => null) => (error, action, retries) => {
             const { operation: operationType } = operationDefinition;
 
             try {
+                // @ts-ignore
                 const conflictResolutionResult = fn({
                     mutation,
                     mutationName,
