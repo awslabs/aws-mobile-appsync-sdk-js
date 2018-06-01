@@ -17,6 +17,8 @@ import OfflineCache, { METADATA_KEY, defaultDataIdFromObject } from './cache/ind
 import { OfflineLink, startMutation, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink, AUTH_TYPE } from './link';
 import { createStore } from './store';
 
+export { defaultDataIdFromObject };
+
 export const createSubscriptionHandshakeLink = (url, resultsFetcherLink = new HttpLink({ uri: url })) => {
     return ApolloLink.split(
         operation => {
