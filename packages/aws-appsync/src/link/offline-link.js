@@ -12,7 +12,7 @@ import { getOperationDefinition, getOperationName } from "apollo-utilities";
 import { Store, combineReducers } from "redux";
 import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
 
-import { NORMALIZED_CACHE_KEY, defaultDataIdFromObject, METADATA_KEY } from "../cache";
+import { NORMALIZED_CACHE_KEY, METADATA_KEY } from "../cache";
 
 const actions = {
     START: 'START_MUTATION',
