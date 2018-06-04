@@ -2,6 +2,8 @@
 
 ## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK
 
+ This SDK can be used with the Apollo JavaScript client found [here](https://github.com/apollographql/apollo-client).
+
 [![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
 ![npm](https://img.shields.io/npm/dm/aws-appsync.svg)
 
