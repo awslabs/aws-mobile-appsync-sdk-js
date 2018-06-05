@@ -11,10 +11,20 @@ import ApolloClient, { ApolloClientOptions, MutationOptions } from 'apollo-clien
 import { InMemoryCache } from 'apollo-cache-inmemory';
 import { ApolloLink, FetchResult, Observable } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
-import { getMainDefinition, getOperationDefinition, variablesInOperation } from 'apollo-utilities';
+import { getMainDefinition, getOperationDefinition, variablesInOperation, tryFunctionOrLogError } from 'apollo-utilities';
 
 import OfflineCache, { METADATA_KEY, defaultDataIdFromObject } from './cache/index';
-import { OfflineLink, startMutation, AuthLink, NonTerminatingHttpLink, SubscriptionHandshakeLink, ComplexObjectLink, AUTH_TYPE } from './link';
+import {
+    OfflineLink,
+    saveSnapshot,
+    replaceUsingMap,
+    saveServerId,
+    AuthLink,
+    NonTerminatingHttpLink,
+    SubscriptionHandshakeLink,
+    ComplexObjectLink,
+    AUTH_TYPE
+} from './link';
 import { createStore } from './store';
 
 export { defaultDataIdFromObject };
@@ -169,6 +179,7 @@ class AWSAppSyncClient extends ApolloClient {
                 doIt,
                 ...restAASContext,
                 ...(!doIt ? { refetchQueries, update } : {}),
+                ...(doIt ? { client: this } : {}),
             }
         };
 
@@ -185,28 +196,48 @@ class AWSAppSyncClient extends ApolloClient {
         }
 
         if (!this._disableOffline) {
-            boundStartMutation(this._store, this.cache);
+            if (!doIt) {
+                const { [METADATA_KEY]: { snapshot: { enqueuedMutations } } } = this._store.getState();
 
-            if (doIt) {
-                const { [METADATA_KEY]: { snapshot: { cache } } } = this._store.getState();
-
-                // disable broadcastEvents
-                this.queryManager.broadcastQueries = () => { };
-                this.cache.restore(cache);
+                if (enqueuedMutations === 0) {
+                    boundSaveSnapshot(this._store, this.cache);
+                }
             }
         }
 
+        let result = null;
         try {
-            return await super.mutate(newOptions);
+            result = await super.mutate(newOptions);
+
+            return result;
         } finally {
             if (!this._disableOffline) {
-                const { [METADATA_KEY]: { snapshot: { enqueuedMutations, cache } } } = this._store.getState();
+                if (doIt && result && result.data) {
+                    const {
+                        offline: { outbox: [, ...enquededMutations] },
+                    } = this._store.getState();
+                    const { data } = result;
 
-                const isLastMutation = enqueuedMutations === 1;
-                if (doIt && isLastMutation) {
-                    this.cache.restore(cache);
+                    // persist canonical snapshot
+                    boundSaveSnapshot(this._store, this.cache);
 
-                    // re-enable broadcastEvents and call it
+                    // Save map of client ids with server ids
+                    boundSaveServerId(this._store, optimisticResponse, data);
+
+                    const { [METADATA_KEY]: { idsMap } } = this._store.getState();
+
+                    enquededMutations.forEach(({ meta: { offline: { effect: { update, optimisticResponse: origOptimisticResponse } } } }) => {
+                        if (typeof update !== 'function') {
+                            return;
+                        }
+
+                        const optimisticResponse = replaceUsingMap({ ...origOptimisticResponse }, idsMap);
+
+                        tryFunctionOrLogError(() => {
+                            update(this.cache, { data: optimisticResponse });
+                        });
+                    });
+
                     this.queryManager.broadcastQueries = this._origBroadcastQueries;
                     this.queryManager.broadcastQueries();
                 }
@@ -216,7 +247,8 @@ class AWSAppSyncClient extends ApolloClient {
 
 }
 
-const boundStartMutation = (store, cache) => store.dispatch(startMutation(cache));
+const boundSaveSnapshot = (store, cache) => store.dispatch(saveSnapshot(cache));
+const boundSaveServerId = (store, optimisticResponse, data) => store.dispatch(saveServerId(optimisticResponse, data));
 
 export default AWSAppSyncClient;
 export { AWSAppSyncClient };

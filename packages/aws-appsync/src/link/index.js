@@ -7,7 +7,7 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 export { AuthLink, AUTH_TYPE } from './auth-link';
-export { OfflineLink, startMutation } from './offline-link';
+export { OfflineLink, saveSnapshot, replaceUsingMap, saveServerId } from './offline-link';
 export { SubscriptionHandshakeLink } from "./subscription-handshake-link";
 export { NonTerminatingHttpLink } from "./non-terminating-http-link";
 export { ComplexObjectLink } from "./complex-object-link";
