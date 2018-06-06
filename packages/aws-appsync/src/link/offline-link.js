@@ -15,10 +15,11 @@ import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
 import { NORMALIZED_CACHE_KEY, METADATA_KEY } from "../cache";
 
 const actions = {
-    START: 'START_MUTATION',
+    SAVE_SNAPSHOT: 'SAVE_SNAPSHOT',
     ENQUEUE: 'ENQUEUE_OFFLINE_MUTATION',
     COMMIT: 'COMMIT_OFFLINE_MUTATION',
     ROLLBACK: 'ROLLBACK_OFFLINE_MUTATION',
+    SAVE_SERVER_ID: 'SAVE_SERVER_ID',
 };
 
 export class OfflineLink extends ApolloLink {
@@ -55,7 +56,7 @@ export class OfflineLink extends ApolloLink {
             }
 
             if (isMutation) {
-                const { cache, optimisticResponse, AASContext: { doIt = false } = {} } = operation.getContext();
+                const { optimisticResponse, AASContext: { doIt = false } = {} } = operation.getContext();
 
                 if (!doIt) {
                     if (!optimisticResponse) {
@@ -78,7 +79,23 @@ export class OfflineLink extends ApolloLink {
             }
 
             const handle = forward(operation).subscribe({
-                next: observer.next.bind(observer),
+                next: data => {
+                    if (isMutation) {
+                        const { [METADATA_KEY]: { snapshot: { cache: cacheSnapshot } } } = this.store.getState();
+                        const { cache, AASContext: { client } } = operation.getContext();
+
+                        client.queryManager.broadcastQueries = () => { };
+
+                        const silenceBroadcast = cache.silenceBroadcast;
+                        cache.silenceBroadcast = true;
+
+                        cache.restore({ ...cacheSnapshot });
+
+                        cache.silenceBroadcast = silenceBroadcast;
+                    }
+
+                    observer.next(data);
+                },
                 error: observer.error.bind(observer),
                 complete: observer.complete.bind(observer),
             });
@@ -90,8 +107,8 @@ export class OfflineLink extends ApolloLink {
     }
 }
 
-export const startMutation = (cache) => ({
-    type: actions.START,
+export const saveSnapshot = (cache) => ({
+    type: actions.SAVE_SNAPSHOT,
     payload: { cache },
 });
 
@@ -166,6 +183,7 @@ export const offlineEffect = (store, client, effect, action) => {
     const options = {
         ...otherOptions,
         variables,
+        optimisticResponse,
         context,
     };
 
@@ -223,23 +241,23 @@ const enqueuedMutationsReducer = (state = 0, action) => {
 };
 
 const cacheSnapshotReducer = (state = {}, action) => {
-    const { type, payload, enqueuedMutations } = action;
+    const { type, payload } = action;
 
     switch (type) {
-        case actions.START:
-            const isFirstMutation = enqueuedMutations === 0;
+        case actions.SAVE_SNAPSHOT:
+            const { cache } = payload;
 
-            if (isFirstMutation) {
-                const { cache } = payload;
-
-                return { ...cache.extract(false) };
-            }
-
-            return state;
+            return { ...cache.extract(false) };
         default:
             return state;
     }
 };
+
+export const saveServerId = (optimisticResponse, data) => ({
+    type: actions.SAVE_SERVER_ID,
+    meta: { optimisticResponse },
+    payload: { data },
+});
 
 const idsMapReducer = (state = {}, action, dataIdFromObject) => {
     const { type, payload, meta } = action;
@@ -257,6 +275,10 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
             };
         case actions.COMMIT:
             const { remainingMutations } = action;
+
+            // Clear ids map on last mutation
+            return remainingMutations ? state : {};
+        case actions.SAVE_SERVER_ID:
             const { optimisticResponse } = meta;
             const { data } = payload;
 
@@ -264,11 +286,6 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
             const newIds = getIds(dataIdFromObject, data);
 
             const mapped = mapIds(oldIds, newIds);
-
-            // Clear ids map on last mutation
-            if (!remainingMutations) {
-                return {};
-            }
 
             return {
                 ...state,
@@ -336,7 +353,7 @@ export const discard = (fn = () => null) => (error, action, retries) => {
 
 //#region utils
 
-const replaceUsingMap = (obj, map = {}) => {
+export const replaceUsingMap = (obj, map = {}) => {
     if (!obj) {
         return obj;
     }
