@@ -8,6 +8,7 @@
  */
 import { ApolloLink, Observable } from "apollo-link";
 
+// @ts-ignore
 import * as Paho from '../vendor/paho-mqtt';
 
 const { Client } = Paho;
@@ -34,7 +35,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         this.subsInfoContextKey = subsInfoContextKey;
     }
 
-    request = (operation) => {
+    request(operation) {
         const { [this.subsInfoContextKey]: subsInfo } = operation.getContext();
         const {
             extensions: {
@@ -69,8 +70,10 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 .then(this.connectAll.bind(this, observer, connectionsInfo, lastTopicObserver));
 
             return () => {
+                // @ts-ignore
                 const [topic,] = Array.from(this.topicObserver).find(([topic, obs]) => obs === observer) || [];
 
+                // @ts-ignore
                 const [client,] = Array.from(this.clientTopics).find(([client, t]) => t.indexOf(topic) > -1) || [];
 
                 if (client && topic) {
@@ -160,6 +163,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     connect = (observer, lastTopicObserver, connectionInfo) => {
         const { topics, client: clientId, url } = connectionInfo;
 
+        // @ts-ignore
         const client = new Paho.Client(url, clientId);
         // client.trace = console.log.bind(null, clientId);
 
@@ -176,6 +180,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             // console.log(`Doing setup for ${topics.length} topics`, topics);
 
             const subPromises = topics.map(topic => new Promise((resolve, reject) => {
+                // @ts-ignore
                 client.subscribe(topic, {
                     onSuccess: () => {
                         if (!this.topicObserver.has(topic)) {

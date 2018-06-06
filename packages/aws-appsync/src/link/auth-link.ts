@@ -31,6 +31,8 @@ export const AUTH_TYPE = {
 
 export class AuthLink extends ApolloLink {
 
+    private link: ApolloLink;
+
     /**
      * 
      * @param {*} options
@@ -54,6 +56,7 @@ const headerBasedAuth = async ({ header, value } = { header: '', value: '' }, op
     };
 
     if (header && value) {
+        // @ts-ignore
         const headerValue = typeof value === 'function' ? await value.call() : await value;
 
         headers = {
@@ -104,6 +107,7 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
     return forward(operation);
 }
 
+// @ts-ignore
 export const authLink = ({ url, region, auth: { type, credentials, apiKey, jwtToken } = {} }) => {
     return new ApolloLink((operation, forward) => {
         return new Observable(observer => {
@@ -134,6 +138,7 @@ export const authLink = ({ url, region, auth: { type, credentials, apiKey, jwtTo
             }
 
             promise.then(observable => {
+                // @ts-ignore
                 handle = observable.subscribe({
                     next: observer.next.bind(observer),
                     error: observer.error.bind(observer),
