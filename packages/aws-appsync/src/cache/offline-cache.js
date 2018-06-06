@@ -73,10 +73,6 @@ export default class MyCache extends InMemoryCache {
 
         return super.reset();
     }
-
-    recordOptimisticTransaction(transaction, id) {
-        return;
-    }
 }
 
 const writeThunk = (type, payload) => (dispatch) => {
