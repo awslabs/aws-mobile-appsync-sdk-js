@@ -28,6 +28,7 @@ const newStore = (clientGetter = () => null, persistCallback = () => null, confl
             ...cacheReducer(),
             ...offlineMetadataReducer(dataIdFromObject),
         }),
+        // @ts-ignore
         typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__(),
         compose(
             applyMiddleware(thunk),

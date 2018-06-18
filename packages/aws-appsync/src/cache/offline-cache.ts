@@ -34,11 +34,13 @@ export default class MyCache extends InMemoryCache {
 
         this.store = store;
 
+        // @ts-ignore
         this.cancelSubscription = store.subscribe(() => {
             const { [NORMALIZED_CACHE_KEY]: normCache = {}, rehydrated = false } = this.store.getState();
             super.restore({ ...normCache });
             if (rehydrated) {
                 // console.log('Rehydrated! Cancelling subscription.');
+                // @ts-ignore
                 this.cancelSubscription();
             }
         });
@@ -59,6 +61,7 @@ export default class MyCache extends InMemoryCache {
      */
     write(write) {
         super.write(write);
+        // @ts-ignore
         if (this.data && typeof this.data.record === 'undefined') {
             // do not persist contents of a RecordingCache
             const data = super.extract(true);

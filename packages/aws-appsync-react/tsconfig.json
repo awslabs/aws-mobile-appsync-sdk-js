@@ -10,7 +10,8 @@
             "dom",
             "es6"
         ],
-        "jsx": "react"
+        "jsx": "react",
+        "declaration": true
     },
     "exclude": [
         "lib"

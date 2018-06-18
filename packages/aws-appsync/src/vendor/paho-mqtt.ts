@@ -84,7 +84,9 @@ function onMessageArrived(message) {
 (function ExportLibrary(root, factory) {
 	if(typeof exports === "object" && typeof module === "object"){
 		module.exports = factory();
+		// @ts-ignore
 	} else if (typeof define === "function" && define.amd){
+		// @ts-ignore
 		define(factory);
 	} else if (typeof exports === "object"){
 		exports = factory();
@@ -106,6 +108,7 @@ function onMessageArrived(message) {
 	/**
 	 * @private
 	 */
+	// @ts-ignore
 	var localStorage = global.localStorage || (function () {
 		var data = {};
 
@@ -494,6 +497,7 @@ function onMessageArrived(message) {
 				return [null,startingPos];
 			}
 
+			// @ts-ignore
 			var wireMessage = new WireMessage(type);
 			switch(type) {
 			case MESSAGE_TYPE.CONNACK:
@@ -704,6 +708,7 @@ function onMessageArrived(message) {
 			this._keepAliveInterval = keepAliveInterval*1000;
 			this.isReset = false;
 
+			// @ts-ignore
 			var pingReq = new WireMessage(MESSAGE_TYPE.PINGREQ).encode();
 
 			var doTimeout = function (pinger) {
@@ -716,6 +721,7 @@ function onMessageArrived(message) {
 			var doPing = function() {
 				if (!this.isReset) {
 					this._client._trace("Pinger.doPing", "Timed out");
+					// @ts-ignore
 					this._client._disconnected( ERROR.PING_TIMEOUT.code , format(ERROR.PING_TIMEOUT));
 				} else {
 					this.isReset = false;
@@ -767,9 +773,11 @@ function onMessageArrived(message) {
 	 */
 		var ClientImpl = function (uri, host, port, path, clientId) {
 		// Check dependencies are satisfied in this browser.
+			// @ts-ignore
 			if (!("WebSocket" in global && global.WebSocket !== null)) {
 				throw new Error(format(ERROR.UNSUPPORTED, ["WebSocket"]));
 			}
+			// @ts-ignore
 			if (!("ArrayBuffer" in global && global.ArrayBuffer !== null)) {
 				throw new Error(format(ERROR.UNSUPPORTED, ["ArrayBuffer"]));
 			}
@@ -894,6 +902,7 @@ function onMessageArrived(message) {
 			if (!this.connected)
 				throw new Error(format(ERROR.INVALID_STATE, ["not connected"]));
 
+			// @ts-ignore
 			var wireMessage = new WireMessage(MESSAGE_TYPE.SUBSCRIBE);
 			wireMessage.topics=[filter];
 			if (subscribeOptions.qos !== undefined)
@@ -906,6 +915,7 @@ function onMessageArrived(message) {
 			}
 
 			if (subscribeOptions.onFailure) {
+				// @ts-ignore
 				wireMessage.onFailure = function(errorCode) {subscribeOptions.onFailure({invocationContext:subscribeOptions.invocationContext,errorCode:errorCode, errorMessage:format(errorCode)});};
 			}
 
@@ -913,6 +923,7 @@ function onMessageArrived(message) {
 				wireMessage.timeOut = new Timeout(this, subscribeOptions.timeout, subscribeOptions.onFailure,
 					[{invocationContext:subscribeOptions.invocationContext,
 						errorCode:ERROR.SUBSCRIBE_TIMEOUT.code,
+						// @ts-ignore
 						errorMessage:format(ERROR.SUBSCRIBE_TIMEOUT)}]);
 			}
 
@@ -928,6 +939,7 @@ function onMessageArrived(message) {
 			if (!this.connected)
 				throw new Error(format(ERROR.INVALID_STATE, ["not connected"]));
 
+			// @ts-ignore
 			var wireMessage = new WireMessage(MESSAGE_TYPE.UNSUBSCRIBE);
 			wireMessage.topics = [filter];
 
@@ -938,6 +950,7 @@ function onMessageArrived(message) {
 				wireMessage.timeOut = new Timeout(this, unsubscribeOptions.timeout, unsubscribeOptions.onFailure,
 					[{invocationContext:unsubscribeOptions.invocationContext,
 						errorCode:ERROR.UNSUBSCRIBE_TIMEOUT.code,
+						// @ts-ignore
 						errorMessage:format(ERROR.UNSUBSCRIBE_TIMEOUT)}]);
 			}
 
@@ -949,6 +962,7 @@ function onMessageArrived(message) {
 		ClientImpl.prototype.send = function (message) {
 			this._trace("Client.send", message);
 
+			// @ts-ignore
 			var wireMessage = new WireMessage(MESSAGE_TYPE.PUBLISH);
 			wireMessage.payloadMessage = message;
 
@@ -1000,6 +1014,7 @@ function onMessageArrived(message) {
 			if (!this.socket)
 				throw new Error(format(ERROR.INVALID_STATE, ["not connecting or connected"]));
 
+			// @ts-ignore
 			var wireMessage = new WireMessage(MESSAGE_TYPE.DISCONNECT);
 
 			// Run the disconnected call back as soon as the message has been sent,
@@ -1063,6 +1078,7 @@ function onMessageArrived(message) {
 				this._connectTimeout.cancel();
 				this._connectTimeout = null;
 			}
+			// @ts-ignore
 			this._connectTimeout = new Timeout(this, this.connectOptions.timeout, this._disconnected,  [ERROR.CONNECT_TIMEOUT.code, format(ERROR.CONNECT_TIMEOUT)]);
 		};
 
@@ -1087,9 +1103,11 @@ function onMessageArrived(message) {
 			switch(wireMessage.type) {
 			case MESSAGE_TYPE.PUBLISH:
 				if(wireMessage.pubRecReceived)
+					// @ts-ignore
 					storedMessage.pubRecReceived = true;
 
 				// Convert the payload to a hex string.
+				// @ts-ignore
 				storedMessage.payloadMessage = {};
 				var hex = "";
 				var messageBytes = wireMessage.payloadMessage.payloadBytes;
@@ -1099,19 +1117,25 @@ function onMessageArrived(message) {
 					else
 						hex = hex+messageBytes[i].toString(16);
 				}
+				// @ts-ignore
 				storedMessage.payloadMessage.payloadHex = hex;
 
+				// @ts-ignore
 				storedMessage.payloadMessage.qos = wireMessage.payloadMessage.qos;
+				// @ts-ignore
 				storedMessage.payloadMessage.destinationName = wireMessage.payloadMessage.destinationName;
 				if (wireMessage.payloadMessage.duplicate)
+					// @ts-ignore
 					storedMessage.payloadMessage.duplicate = true;
 				if (wireMessage.payloadMessage.retained)
+					// @ts-ignore
 					storedMessage.payloadMessage.retained = true;
 
 				// Add a sequence number to sent messages.
 				if ( prefix.indexOf("Sent:") === 0 ) {
 					if ( wireMessage.sequence === undefined )
 						wireMessage.sequence = ++this._sequence;
+					// @ts-ignore
 					storedMessage.sequence = wireMessage.sequence;
 				}
 				break;
@@ -1454,6 +1478,7 @@ function onMessageArrived(message) {
 		/** @ignore */
 		ClientImpl.prototype._on_socket_close = function () {
 			if (!this._reconnecting) {
+				// @ts-ignore
 				this._disconnected(ERROR.SOCKET_CLOSE.code , format(ERROR.SOCKET_CLOSE));
 			}
 		};
@@ -1551,6 +1576,7 @@ function onMessageArrived(message) {
 
 			if (errorCode !== undefined && this._reconnecting) {
 				//Continue automatic reconnect process
+				// @ts-ignore
 				this._reconnectTimeout = new Timeout(this, this._reconnectInterval, this._reconnect);
 				return;
 			}
@@ -1586,6 +1612,7 @@ function onMessageArrived(message) {
 
 				if (errorCode === undefined) {
 					errorCode = ERROR.OK.code;
+					// @ts-ignore
 					errorText = format(ERROR.OK);
 				}
 
@@ -1636,10 +1663,12 @@ function onMessageArrived(message) {
 
 			//buffer style trace
 			if ( this._traceBuffer !== null ) {
+				// @ts-ignore
 				for (var i = 0, max = arguments.length; i < max; i++) {
 					if ( this._traceBuffer.length == this._MAX_TRACE_ENTRIES ) {
 						this._traceBuffer.shift();
 					}
+					// @ts-ignore
 					if (i === 0) this._traceBuffer.push(arguments[i]);
 					else if (typeof arguments[i] === "undefined" ) this._traceBuffer.push(arguments[i]);
 					else this._traceBuffer.push("  "+JSON.stringify(arguments[i]));
@@ -1785,22 +1814,27 @@ function onMessageArrived(message) {
 			Object.defineProperties(this,{
 				"host":{
 					get: function() { return host; },
+					// @ts-ignore
 					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
 				},
 				"port":{
 					get: function() { return port; },
+					// @ts-ignore
 					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
 				},
 				"path":{
 					get: function() { return path; },
+					// @ts-ignore
 					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
 				},
 				"uri":{
 					get: function() { return uri; },
+					// @ts-ignore
 					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
 				},
 				"clientId":{
 					get: function() { return client.clientId; },
+					// @ts-ignore
 					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
 				},
 				"onConnected":{
