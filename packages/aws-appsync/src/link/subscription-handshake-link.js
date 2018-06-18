@@ -167,7 +167,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
 
         return new Promise((resolve, reject) => {
             client.connect({
-                useSSL: true,
+                useSSL: url.indexOf('wss://') === 0,
                 mqttVersion: 3,
                 onSuccess: () => resolve(client),
                 onFailure: reject,
