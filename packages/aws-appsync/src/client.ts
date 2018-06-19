@@ -8,12 +8,13 @@
  */
 import 'setimmediate';
 import ApolloClient, { ApolloClientOptions, MutationOptions } from 'apollo-client';
-import { InMemoryCache } from 'apollo-cache-inmemory';
+import { InMemoryCache, ApolloReducerConfig } from 'apollo-cache-inmemory';
 import { ApolloLink, FetchResult, Observable } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
 import { getMainDefinition, getOperationDefinition, variablesInOperation, tryFunctionOrLogError } from 'apollo-utilities';
+import { Store } from 'redux';
 
-import OfflineCache, { METADATA_KEY, defaultDataIdFromObject } from './cache/index';
+import { OfflineCache, METADATA_KEY, defaultDataIdFromObject } from './cache/index';
 import {
     OfflineLink,
     saveSnapshot,
@@ -26,6 +27,10 @@ import {
     AUTH_TYPE
 } from './link';
 import { createStore } from './store';
+import { ApolloCache } from 'apollo-cache';
+import { AuthOptions } from './link/auth-link';
+import { ConflictResolutionInfo } from './link/offline-link';
+import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 
 export { defaultDataIdFromObject };
 
@@ -39,7 +44,7 @@ export const createSubscriptionHandshakeLink = (url, resultsFetcherLink = new Ht
             return isSubscription;
         },
         ApolloLink.from([
-            new NonTerminatingHttpLink('subsInfo', { uri: url }, true),
+            new NonTerminatingHttpLink('subsInfo', { uri: url }),
             new SubscriptionHandshakeLink('subsInfo'),
         ]),
         resultsFetcherLink,
@@ -67,7 +72,7 @@ export const createAppSyncLink = ({
     return link;
 };
 
-export const createLinkWithCache = (createLinkFunc = () => new ApolloLink(passthrough)) => {
+export const createLinkWithCache = (createLinkFunc = (cache: ApolloCache<any>) => new ApolloLink(passthrough)) => {
     let theLink;
 
     return new ApolloLink((op, forward) => {
@@ -81,22 +86,39 @@ export const createLinkWithCache = (createLinkFunc = () => new ApolloLink(passth
     });
 }
 
-const createLinkWithStore = (createLinkFunc = () => new ApolloLink(passthrough)) => {
-    return createLinkWithCache(({ store }) => store ? createLinkFunc(store) : new ApolloLink(passthrough));
+export interface CacheWithStore<T> extends ApolloCache<T> {
+    store: Store<any>
 }
 
-class AWSAppSyncClient extends ApolloClient {
+const createLinkWithStore = (createLinkFunc = (store: Store<any>) => new ApolloLink(passthrough)) => {
+    return createLinkWithCache((cache) => {
+        const { store } = cache as CacheWithStore<any>;
 
-    /**
-     * @type {Promise<AWSAppSyncClient>}
-     */
-    hydratedPromise;
+        return store ? createLinkFunc(store) : new ApolloLink(passthrough)
+    });
+}
 
-    hydrated = () => this.hydratedPromise;
+export interface AWSAppSyncClientOptions {
+    url: string,
+    region: string,
+    auth: AuthOptions,
+    conflictResolver?: (info: ConflictResolutionInfo) => string | object,
+    complexObjectsCredentials?: () => (Credentials | CredentialsOptions | null) | Credentials | CredentialsOptions | null,
+    cacheOptions?: ApolloReducerConfig,
+    disableOffline?: boolean,
+}
 
-    _disableOffline;
-    _store;
-    _origBroadcastQueries;
+class AWSAppSyncClient<TCacheShape> extends ApolloClient<TCacheShape> {
+
+    private hydratedPromise: Promise<AWSAppSyncClient<TCacheShape>>;
+
+    hydrated() {
+        return this.hydratedPromise
+    };
+
+    private _disableOffline: boolean;
+    private _store: Store<any>;
+    private _origBroadcastQueries: () => void;
 
     initQueryManager() {
         if (!this.queryManager) {
@@ -119,8 +141,8 @@ class AWSAppSyncClient extends ApolloClient {
         complexObjectsCredentials,
         cacheOptions = {},
         disableOffline = false
-    } = {}, options = {}) {
-        const { cache: customCache, link: customLink } = options;
+    }: AWSAppSyncClientOptions, options: ApolloClientOptions<InMemoryCache>) {
+        const { cache: customCache = undefined, link: customLink = undefined } = options || {};
 
         if (!customLink && (!url || !region || !auth)) {
             throw new Error(
@@ -132,7 +154,7 @@ class AWSAppSyncClient extends ApolloClient {
 
         const dataIdFromObject = disableOffline ? () => { } : cacheOptions.dataIdFromObject || defaultDataIdFromObject;
         const store = disableOffline ? null : createStore(() => this, () => resolveClient(this), conflictResolver, dataIdFromObject);
-        const cache = disableOffline ? (customCache || new InMemoryCache(cacheOptions)) : new OfflineCache(store, cacheOptions);
+        const cache: ApolloCache<any> = disableOffline ? (customCache || new InMemoryCache(cacheOptions)) : new OfflineCache(store, cacheOptions);
 
         const waitForRehydrationLink = new ApolloLink((op, forward) => {
             let handle = null;

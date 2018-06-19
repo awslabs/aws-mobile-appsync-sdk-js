@@ -6,12 +6,13 @@
         "target": "es5",
         "moduleResolution": "node",
         "noEmitOnError": true,
+        "declaration": true,
         "lib": [
             "dom",
             "es6",
-            "esnext.asynciterable"
-        ],
-        "allowJs": true
+            "esnext.asynciterable",
+            "es2017.object"
+        ]
     },
     "exclude": [
         "lib"

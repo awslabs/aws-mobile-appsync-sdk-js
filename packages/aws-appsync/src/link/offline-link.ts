@@ -11,6 +11,7 @@ import { ApolloLink, Observable, Operation } from "apollo-link";
 import { getOperationDefinition, getOperationName } from "apollo-utilities";
 import { Store, combineReducers } from "redux";
 import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
+import { DocumentNode } from "graphql";
 
 import { NORMALIZED_CACHE_KEY, METADATA_KEY } from "../cache";
 
@@ -139,7 +140,9 @@ const processOfflineQuery = (operation, theStore) => {
  */
 const enqueueMutation = (operation, theStore, observer) => {
     const { query: mutation, variables } = operation;
-    const { cache, optimisticResponse, AASContext: { doIt = false, refetchQueries, update } = {} } = operation.getContext();
+    const { cache, optimisticResponse,
+        AASContext: { doIt = false, refetchQueries = undefined, update = undefined } = {}
+    } = operation.getContext();
 
     setImmediate(() => {
         theStore.dispatch({
@@ -261,13 +264,14 @@ export const saveServerId = (optimisticResponse, data) => ({
 
 const idsMapReducer = (state = {}, action, dataIdFromObject) => {
     const { type, payload, meta } = action;
+    let optimisticResponse;
 
     switch (type) {
         case actions.ENQUEUE:
-            const { optimisticResponse } = payload;
+            optimisticResponse = payload;
 
             const ids = getIds(dataIdFromObject, optimisticResponse);
-            const entries = Object.values(ids).reduce((acc, id) => (acc[id] = null, acc), {});
+            const entries = Object.values(ids).reduce((acc: { [key: string]: string }, id: string) => (acc[id] = null, acc), {});
 
             return {
                 ...state,
@@ -279,7 +283,7 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
             // Clear ids map on last mutation
             return remainingMutations ? state : {};
         case actions.SAVE_SERVER_ID:
-            const { optimisticResponse } = meta;
+            optimisticResponse = meta;
             const { data } = payload;
 
             const oldIds = getIds(dataIdFromObject, optimisticResponse);
@@ -296,7 +300,16 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
     }
 };
 
-export const discard = (fn = () => null) => (error, action, retries) => {
+export interface ConflictResolutionInfo {
+    mutation: DocumentNode,
+    mutationName: string,
+    operationType: string,
+    variables: object,
+    data: object,
+    retries: number,
+}
+
+export const discard = (fn = (obj: ConflictResolutionInfo) => null) => (error, action, retries) => {
     const { graphQLErrors = [] } = error;
     const conditionalCheck = graphQLErrors.find(err => err.errorType === 'DynamoDB:ConditionalCheckFailedException');
 
