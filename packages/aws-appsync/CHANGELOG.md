@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.1.1"></a>
+## [1.1.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.1.0...aws-appsync@1.1.1) (2018-06-21)
+
+
+### Bug Fixes
+
+* **build:** Copy vendor files to lib/ ([5d4a240](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/5d4a240))
+
+
+
+
 <a name="1.1.0"></a>
 # [1.1.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.0.23...aws-appsync@1.1.0) (2018-06-21)
 
