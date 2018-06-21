@@ -10,7 +10,7 @@ global.Buffer = global.Buffer || require('buffer').Buffer; // Required for aws s
 var url = require('url'),
     crypto = require('aws-sdk/global').util.crypto;
 
-var encrypt = function (key, src, encoding) {
+var encrypt = function (key, src, encoding = '') {
     return crypto.lib.createHmac('sha256', key).update(src, 'utf8').digest(encoding);
 };
 

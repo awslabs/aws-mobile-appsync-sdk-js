@@ -14,27 +14,18 @@ const { Client } = Paho;
 
 export class SubscriptionHandshakeLink extends ApolloLink {
 
-    /**
-     * @type {string}
-     */
-    subsInfoContextKey;
+    private subsInfoContextKey: string;
 
-    /**
-     * @type {Map<Paho.Client, [string]>}
-     */
-    clientTopics = new Map();
+    private clientTopics: Map<Paho.Client, string[]> = new Map();
 
-    /**
-     * @type {Map<string, Observer>}
-     */
-    topicObserver = new Map();
+    private topicObserver: Map<string, ZenObservable.SubscriptionObserver<object>> = new Map();
 
     constructor(subsInfoContextKey) {
         super();
         this.subsInfoContextKey = subsInfoContextKey;
     }
 
-    request = (operation) => {
+    request(operation) {
         const { [this.subsInfoContextKey]: subsInfo } = operation.getContext();
         const {
             extensions: {
@@ -69,9 +60,9 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 .then(this.connectAll.bind(this, observer, connectionsInfo, lastTopicObserver));
 
             return () => {
-                const [topic,] = Array.from(this.topicObserver).find(([topic, obs]) => obs === observer) || [];
+                const [topic = undefined,] = Array.from(this.topicObserver).find(([topic, obs]) => obs === observer) || [];
 
-                const [client,] = Array.from(this.clientTopics).find(([client, t]) => t.indexOf(topic) > -1) || [];
+                const [client = undefined,] = Array.from(this.clientTopics).find(([client, t]) => t.indexOf(topic) > -1) || [];
 
                 if (client && topic) {
                     this.unsubscribeFromTopic(client, topic).then(() => {
@@ -160,10 +151,10 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     connect = (observer, lastTopicObserver, connectionInfo) => {
         const { topics, client: clientId, url } = connectionInfo;
 
-        const client = new Paho.Client(url, clientId);
+        const client: any = new Paho.Client(url, clientId);
         // client.trace = console.log.bind(null, clientId);
 
-        client.onMessageArrived = ({ destinationName, payloadString }) => this.onMessage(destinationName, payloadString);
+        (client as any).onMessageArrived = ({ destinationName, payloadString }) => this.onMessage(destinationName, payloadString);
 
         return new Promise((resolve, reject) => {
             client.connect({
@@ -176,7 +167,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             // console.log(`Doing setup for ${topics.length} topics`, topics);
 
             const subPromises = topics.map(topic => new Promise((resolve, reject) => {
-                client.subscribe(topic, {
+                (client as any).subscribe(topic, {
                     onSuccess: () => {
                         if (!this.topicObserver.has(topic)) {
                             this.topicObserver.set(topic, lastTopicObserver.get(topic) || observer);
@@ -188,7 +179,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 });
             }));
 
-            return Promise.all(subPromises).then(([...topics]) => {
+            return Promise.all(subPromises).then(([...topics]: any[]) => {
                 // console.log('All topics subscribed', topics);
 
                 this.clientTopics.set(client, topics);

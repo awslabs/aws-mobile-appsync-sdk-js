@@ -14,6 +14,7 @@ import aws4 from './signer/signer';
 import * as Url from 'url';
 
 import { userAgent } from "../platform";
+import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 
 const packageInfo = require("../../package.json");
 
@@ -21,15 +22,17 @@ const SERVICE = 'appsync';
 const USER_AGENT_HEADER = 'x-amz-user-agent';
 const USER_AGENT = `aws-amplify/${packageInfo.version}${userAgent && ' '}${userAgent}`;
 
-export const AUTH_TYPE = {
-    NONE: 'NONE',
-    API_KEY: 'API_KEY',
-    AWS_IAM: 'AWS_IAM',
-    AMAZON_COGNITO_USER_POOLS: 'AMAZON_COGNITO_USER_POOLS',
-    OPENID_CONNECT: 'OPENID_CONNECT',
+export enum AUTH_TYPE {
+    NONE = 'NONE',
+    API_KEY = 'API_KEY',
+    AWS_IAM = 'AWS_IAM',
+    AMAZON_COGNITO_USER_POOLS = 'AMAZON_COGNITO_USER_POOLS',
+    OPENID_CONNECT = 'OPENID_CONNECT',
 }
 
 export class AuthLink extends ApolloLink {
+
+    private link: ApolloLink;
 
     /**
      * 
@@ -46,7 +49,12 @@ export class AuthLink extends ApolloLink {
     }
 }
 
-const headerBasedAuth = async ({ header, value } = { header: '', value: '' }, operation, forward) => {
+interface Headers {
+    header: string,
+    value: string | (() => (string | Promise<string>))
+}
+
+const headerBasedAuth = async ({ header, value }: Headers = { header: '', value: '' }, operation, forward) => {
     const origContext = operation.getContext();
     let headers = {
         ...origContext.headers,
@@ -54,7 +62,7 @@ const headerBasedAuth = async ({ header, value } = { header: '', value: '' }, op
     };
 
     if (header && value) {
-        const headerValue = typeof value === 'function' ? await value.call() : await value;
+        const headerValue = typeof value === 'function' ? await value.call(undefined) : await value;
 
         headers = {
             ...{ [header]: headerValue },
@@ -104,12 +112,19 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
     return forward(operation);
 }
 
-export const authLink = ({ url, region, auth: { type, credentials, apiKey, jwtToken } = {} }) => {
+export interface AuthOptions {
+    type: AUTH_TYPE,
+    credentials?: (() => Credentials | CredentialsOptions | null | Promise<Credentials | CredentialsOptions | null>) | Credentials | CredentialsOptions | null,
+    apiKey?: () => (string | Promise<string>) | string,
+    jwtToken?: () => (string | Promise<string>) | string,
+};
+
+export const authLink = ({ url, region, auth: { type = AUTH_TYPE.NONE, credentials = {}, apiKey = '', jwtToken = '' } = <AuthOptions>{} }) => {
     return new ApolloLink((operation, forward) => {
         return new Observable(observer => {
             let handle;
 
-            let promise = Promise.resolve();
+            let promise: Promise<Observable<any>>;
 
             switch (type) {
                 case AUTH_TYPE.NONE:

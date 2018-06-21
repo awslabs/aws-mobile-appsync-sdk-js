@@ -16,6 +16,8 @@ import upload from "./complex-object-link-uploader";
 
 export class ComplexObjectLink extends ApolloLink {
 
+    private link: ApolloLink;
+
     constructor(credentials) {
         super();
 
@@ -34,7 +36,7 @@ export const complexObjectLink = (credentials) => {
 
             const { operation: operationType } = getOperationDefinition(operation.query);
             const isMutation = operationType === 'mutation';
-            const [fileFieldKey, fileField] = isMutation ? findInObject(operation.variables) : [];
+            const [fileFieldKey = undefined, fileField = undefined] = isMutation ? findInObject(operation.variables) : [];
 
             let uploadPromise = Promise.resolve(operation);
 
@@ -92,7 +94,7 @@ const findInObject = obj => {
             if (val && typeof val === 'object') {
                 const hasFields = complexObjectFields.every(field => {
                     const hasValue = val[field.name];
-                    const types = Array.isArray(field.type) ? field.type : [field.type];
+                    const types: string[] = Array.isArray(field.type) ? field.type : [field.type];
                     const isOfType = hasValue && types.reduce((prev, curr) => {
                         return prev || typeof val[field.name] === curr;
                     }, false);
