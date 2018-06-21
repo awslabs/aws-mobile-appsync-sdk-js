@@ -7,3 +7,4 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 export * from './offline-cache';
+export { default as OfflineCache } from './offline-cache';
