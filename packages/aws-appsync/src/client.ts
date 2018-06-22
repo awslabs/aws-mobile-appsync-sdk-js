@@ -141,7 +141,7 @@ class AWSAppSyncClient<TCacheShape> extends ApolloClient<TCacheShape> {
         complexObjectsCredentials,
         cacheOptions = {},
         disableOffline = false
-    }: AWSAppSyncClientOptions, options: ApolloClientOptions<InMemoryCache>) {
+    }: AWSAppSyncClientOptions, options?: ApolloClientOptions<InMemoryCache>) {
         const { cache: customCache = undefined, link: customLink = undefined } = options || {};
 
         if (!customLink && (!url || !region || !auth)) {
