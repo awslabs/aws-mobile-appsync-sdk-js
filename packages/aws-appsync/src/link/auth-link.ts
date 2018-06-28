@@ -176,7 +176,7 @@ const formatAsRequest = ({ operationName, variables, query }, options) => {
         ...options,
         headers: {
             accept: '*/*',
-            'content-type': 'application/json; charset=utf-8',
+            'content-type': 'application/json; charset=UTF-8',
             ...options.headers,
         },
     };
