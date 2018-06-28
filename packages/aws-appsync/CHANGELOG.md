@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.1.3"></a>
+## [1.1.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.1.1...aws-appsync@1.1.3) (2018-06-28)
+
+
+### Bug Fixes
+
+* **client:** Always pass refetchQueries when offline is disabled. ([#164](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/164)) ([baee768](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/baee768)), closes [#159](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/159)
+* **typescript:** Options parameter in AppSyncClient constructor made optional ([#156](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/156)) ([79aaaff](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/79aaaff))
+
+
+
+
 <a name="1.1.1"></a>
 ## [1.1.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.1.0...aws-appsync@1.1.1) (2018-06-21)
 
