@@ -213,9 +213,9 @@ class AWSAppSyncClient<TCacheShape> extends ApolloClient<TCacheShape> {
             ...otherOptions,
             optimisticResponse: doIt ? null : data,
             update,
-            ...(doIt ? { refetchQueries } : {}),
+            ...(this._disableOffline || doIt ? { refetchQueries } : {}),
             context,
-        }
+        };
 
         if (!this._disableOffline) {
             if (!doIt) {
