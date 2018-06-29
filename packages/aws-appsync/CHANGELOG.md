@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.1.4"></a>
+## [1.1.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.1.3...aws-appsync@1.1.4) (2018-06-29)
+
+
+### Bug Fixes
+
+* **auth:** replacing utf-8 with UTF-8 ([#162](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/162)) ([e95c5ae](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/e95c5ae))
+
+
+
+
 <a name="1.1.3"></a>
 ## [1.1.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.1.1...aws-appsync@1.1.3) (2018-06-28)
 
