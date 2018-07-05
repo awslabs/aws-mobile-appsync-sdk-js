@@ -46,6 +46,7 @@ export class OfflineLink extends ApolloLink {
             const { operation: operationType } = getOperationDefinition(operation.query);
             const isMutation = operationType === 'mutation';
             const isQuery = operationType === 'query';
+            const { optimisticResponse, AASContext: { doIt = false } = {} } = operation.getContext();
 
             if (!online && isQuery) {
                 const data = processOfflineQuery(operation, this.store);
@@ -57,8 +58,7 @@ export class OfflineLink extends ApolloLink {
             }
 
             if (isMutation) {
-                const { optimisticResponse, AASContext: { doIt = false } = {} } = operation.getContext();
-
+                
                 if (!doIt) {
                     if (!optimisticResponse) {
                         console.warn('An optimisticResponse was not provided, it is required when using offline capabilities.');
@@ -85,7 +85,9 @@ export class OfflineLink extends ApolloLink {
                         const { [METADATA_KEY]: { snapshot: { cache: cacheSnapshot } } } = this.store.getState();
                         const { cache, AASContext: { client } } = operation.getContext();
 
-                        client.queryManager.broadcastQueries = () => { };
+                        if(doIt) {
+                            client.queryManager.broadcastQueries = () => { };
+                        }
 
                         const silenceBroadcast = cache.silenceBroadcast;
                         cache.silenceBroadcast = true;
