@@ -10,7 +10,7 @@ import { Observable, Operation, NextLink } from 'apollo-link';
 import { ApolloLink } from 'apollo-link';
 import { print } from 'graphql/language/printer';
 
-import aws4 from './signer/signer';
+import { Signer } from './signer';
 import * as Url from 'url';
 
 import { userAgent } from "../platform";
@@ -98,7 +98,7 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
         service, region, url, host, path
     };
 
-    const { headers } = aws4.sign(formatted, { access_key: accessKeyId, secret_key: secretAccessKey, session_token: sessionToken });
+    const { headers } = Signer.sign(formatted, { access_key: accessKeyId, secret_key: secretAccessKey, session_token: sessionToken });
 
     operation.setContext({
         ...origContext,

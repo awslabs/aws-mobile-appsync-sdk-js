@@ -272,6 +272,9 @@ var sign = function (request, access_info, service_info = null) {
 *
 * @class Signer
 */
-export default class Signer {
+class Signer {
     static sign = sign;
 }
+
+export default Signer;
+export { Signer };
