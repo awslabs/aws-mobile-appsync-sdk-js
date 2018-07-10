@@ -186,12 +186,7 @@ class AWSAppSyncClient<TCacheShape> extends ApolloClient<TCacheShape> {
         this._store = store;
     }
 
-    /**
-     *
-     * @param {MutationOptions} options
-     * @returns {Promise<FetchResult>}
-     */
-    async mutate(options) {
+    async mutate(options: MutationOptions<TCacheShape>): Promise<FetchResult> {
         const { update, refetchQueries, context: origContext = {}, ...otherOptions } = options;
         const { AASContext: { doIt = false, ...restAASContext } = {} } = origContext;
 
