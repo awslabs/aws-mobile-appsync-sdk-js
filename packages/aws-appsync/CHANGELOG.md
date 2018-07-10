@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.2.1"></a>
+## [1.2.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.2.0...aws-appsync@1.2.1) (2018-07-10)
+
+
+### Bug Fixes
+
+* **offline:** Check if client is available before disabling broadcastQueries ([#177](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/177)) ([92a7baa](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/92a7baa))
+
+
+
+
 <a name="1.2.0"></a>
 # [1.2.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.1.4...aws-appsync@1.2.0) (2018-07-10)
 
