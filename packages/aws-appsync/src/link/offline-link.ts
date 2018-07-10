@@ -80,9 +80,9 @@ export class OfflineLink extends ApolloLink {
             const handle = forward(operation).subscribe({
                 next: data => {
                     if (isMutation) {
-                        const { cache, AASContext: { client }, optimisticResponse } = operation.getContext();
+                        const { cache, AASContext: { client } } = operation.getContext();
 
-                        if (optimisticResponse) {
+                        if (client && client.queryManager) {
                             const { [METADATA_KEY]: { snapshot: { cache: cacheSnapshot } } } = this.store.getState();
 
                             client.queryManager.broadcastQueries = () => { };
