@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.2.0"></a>
+# [1.2.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.1.4...aws-appsync@1.2.0) (2018-07-10)
+
+
+### Bug Fixes
+
+* **offline:** Enqueue mutation even if no optimisticResponse is provided ([#173](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/173)) ([73e48b4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/73e48b4)), closes [#170](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/170) [#158](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/158)
+* **typescript:** client.mutate - remove JSDoc in favor of TypeScript ([#174](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/174)) ([39891f4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/39891f4))
+
+
+### Features
+
+* **signer:** Export SigV4 Signer ([#165](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/165)) ([7a016cb](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/7a016cb)), closes [#153](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/153)
+
+
+
+
 <a name="1.1.4"></a>
 ## [1.1.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.1.3...aws-appsync@1.1.4) (2018-06-29)
 
