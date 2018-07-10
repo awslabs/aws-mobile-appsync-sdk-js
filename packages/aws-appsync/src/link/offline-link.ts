@@ -8,7 +8,7 @@
  */
 import { readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
 import { ApolloLink, Observable, Operation } from "apollo-link";
-import { getOperationDefinition, getOperationName } from "apollo-utilities";
+import { getOperationDefinition, getOperationName, getMutationDefinition, resultKeyNameFromField } from "apollo-utilities";
 import { Store, combineReducers } from "redux";
 import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
 import { DocumentNode } from "graphql";
@@ -66,33 +66,34 @@ export class OfflineLink extends ApolloLink {
                         if (!online) {
                             throw new Error('Missing optimisticResponse while offline.');
                         }
-
-                        // offline muation without optimistic response is processed immediately
-                    } else {
-                        const data = enqueueMutation(operation, this.store, observer);
-
-                        observer.next({ data });
-                        observer.complete();
-
-                        return () => null;
                     }
+
+                    const data = enqueueMutation(operation, this.store, observer);
+
+                    observer.next({ data });
+                    observer.complete();
+
+                    return () => null;
                 }
             }
 
             const handle = forward(operation).subscribe({
                 next: data => {
                     if (isMutation) {
-                        const { [METADATA_KEY]: { snapshot: { cache: cacheSnapshot } } } = this.store.getState();
-                        const { cache, AASContext: { client } } = operation.getContext();
+                        const { cache, AASContext: { client }, optimisticResponse } = operation.getContext();
 
-                        client.queryManager.broadcastQueries = () => { };
+                        if (optimisticResponse) {
+                            const { [METADATA_KEY]: { snapshot: { cache: cacheSnapshot } } } = this.store.getState();
 
-                        const silenceBroadcast = cache.silenceBroadcast;
-                        cache.silenceBroadcast = true;
+                            client.queryManager.broadcastQueries = () => { };
 
-                        cache.restore({ ...cacheSnapshot });
+                            const silenceBroadcast = cache.silenceBroadcast;
+                            cache.silenceBroadcast = true;
 
-                        cache.silenceBroadcast = silenceBroadcast;
+                            cache.restore({ ...cacheSnapshot });
+
+                            cache.silenceBroadcast = silenceBroadcast;
+                        }
                     }
 
                     observer.next(data);
@@ -164,7 +165,21 @@ const enqueueMutation = (operation, theStore, observer) => {
         });
     });
 
-    return optimisticResponse;
+    let result;
+
+    if (optimisticResponse) {
+        result = optimisticResponse;
+    } else {
+        const mutationDefinition = getMutationDefinition(mutation);
+
+        result = mutationDefinition.selectionSet.selections.reduce((acc, elem) => {
+            acc[resultKeyNameFromField(elem)] = null
+
+            return acc;
+        }, {});
+    }
+
+    return result;
 }
 
 /**
