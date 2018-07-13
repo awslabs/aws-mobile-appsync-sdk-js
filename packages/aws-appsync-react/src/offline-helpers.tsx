@@ -6,7 +6,12 @@ import { graphql } from 'react-apollo';
 
 import { buildMutation } from 'aws-appsync';
 
-export const withGraphQL = (options) => (Component) => {
+export const graphqlMutation = (mutation, cacheUpdateQuery, typename, operationType, idField) =>
+    withGraphQL(
+        reactMutator(mutation, cacheUpdateQuery, typename, operationType, idField)
+    );
+
+const withGraphQL = (options) => (Component) => {
     const { document } = options;
 
     const A = graphql(
@@ -26,7 +31,7 @@ export const withGraphQL = (options) => (Component) => {
     return B;
 }
 
-export const reactMutator = (mutation, cacheUpdateQuery, typename, idField) => {
+const reactMutator = (mutation, cacheUpdateQuery, typename, operationType, idField) => {
     return {
         document: mutation,
         props: (props) => {
@@ -37,7 +42,7 @@ export const reactMutator = (mutation, cacheUpdateQuery, typename, idField) => {
                 [mutationName]: (variables) => {
                     return props.mutate({
                         variables,
-                        ...buildMutation(client, mutation, variables, cacheUpdateQuery, typename, undefined, idField),
+                        ...buildMutation(client, mutation, variables, cacheUpdateQuery, typename, operationType, idField),
                     });
                 }
             }
