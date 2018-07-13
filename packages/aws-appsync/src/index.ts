@@ -9,6 +9,6 @@
 import AWSAppSyncClient from "./client";
 export * from "./client";
 export { Signer } from './link/signer';
-export { mutator as mutatorHelper, subscriber as subscriberHelper } from './helpers/offline';
+export * from './helpers/offline';
 
 export default AWSAppSyncClient;

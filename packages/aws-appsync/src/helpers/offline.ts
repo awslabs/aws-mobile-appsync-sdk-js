@@ -66,7 +66,7 @@ const getOpTypeFromOperationName = (opName = '') => {
     return result;
 };
 
-const subscriber = (subscriptionQuery, cacheUpdateQuery, operationType, idField) => {
+const buildSubscription = (subscriptionQuery, cacheUpdateQuery, operationType, idField) => {
 
     const queryField = resultKeyNameFromField(cacheUpdateQuery.definitions[0].selectionSet.selections[0]);
 
@@ -182,7 +182,7 @@ const setValueByPath = (obj, path = [], value) => path.reduce((acc, elem, i, arr
 
 const isDocument = (doc) => doc && doc.kind === 'Document';
 
-const mutator = (client, mutation, variables, cacheUpdateQuery, typename, operationType, idField = 'id') => {
+const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, operationType, idField = 'id') => {
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
 
     const { id, _id } = variables;
@@ -278,6 +278,6 @@ const mutator = (client, mutation, variables, cacheUpdateQuery, typename, operat
 }
 
 export { 
-    subscriber,
-    mutator
+    buildSubscription,
+    buildMutation
 };

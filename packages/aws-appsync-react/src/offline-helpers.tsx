@@ -4,7 +4,7 @@ import * as PropTypes from 'prop-types';
 import { resultKeyNameFromField } from 'apollo-utilities';
 import { graphql } from 'react-apollo';
 
-import { mutatorHelper } from 'aws-appsync';
+import { buildMutation } from 'aws-appsync';
 
 export const withGraphQL = (options) => (Component) => {
     const { document } = options;
@@ -37,7 +37,7 @@ export const reactMutator = (mutation, cacheUpdateQuery, typename, idField) => {
                 [mutationName]: (variables) => {
                     return props.mutate({
                         variables,
-                        ...mutatorHelper(client, mutation, variables, cacheUpdateQuery, typename, undefined, idField),
+                        ...buildMutation(client, mutation, variables, cacheUpdateQuery, typename, undefined, idField),
                     });
                 }
             }
