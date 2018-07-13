@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync-react",
-  "version": "1.0.22-zerocode.5",
+  "version": "1.0.22-zerocode.6",
   "main": "lib/index.js",
   "license": "SEE LICENSE IN LICENSE",
   "description": "AWS Mobile AppSync SDK for JavaScript - React and React Native components",
@@ -17,7 +17,7 @@
     "prepare": "tsc"
   },
   "dependencies": {
-    "aws-appsync": "^1.2.2-zerocode.5",
+    "aws-appsync": "^1.2.2-zerocode.6",
     "prop-types": "^15.6.0"
   },
   "peerDependencies": {
