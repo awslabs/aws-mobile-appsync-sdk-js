@@ -226,7 +226,7 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
         optimisticResponse: typename ? {
             __typename: "Mutation",
             [mutationField]: {
-                __typename: typename, [idField]: uuid(), ...variables
+                __typename: typename, [idField]: uuid(), ...variables, version: variables.version + 1
             }
         } : null,
         update: (proxy, { data: { [mutationField]: mutatedItem } }) => {
