@@ -182,7 +182,7 @@ const setValueByPath = (obj, path = [], value) => path.reduce((acc, elem, i, arr
 
 const isDocument = (doc) => doc && doc.kind === 'Document';
 
-const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, operationType, idField = 'id') => {
+const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, idField = 'id', operationType?) => {
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
 
     const { id, _id } = variables;
