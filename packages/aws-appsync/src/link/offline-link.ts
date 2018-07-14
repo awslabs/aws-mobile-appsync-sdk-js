@@ -273,7 +273,7 @@ const cacheSnapshotReducer = (state = {}, action) => {
 
 export const saveServerId = (optimisticResponse, data) => ({
     type: actions.SAVE_SERVER_ID,
-    meta: { optimisticResponse },
+    meta: optimisticResponse,
     payload: { data },
 });
 
