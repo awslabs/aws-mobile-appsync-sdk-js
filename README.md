@@ -49,7 +49,7 @@ const client = new AWSAppSyncClient({
   auth: {
     type: AppSyncConfig.authenticationType,
     apiKey: AppSyncConfig.apiKey,
-    jwtToken: async () => token, // Required when you use Cognito UserPools OR OpenID Connect. token object is obtained previously
+    // jwtToken: async () => token, // Required when you use Cognito UserPools OR OpenID Connect. token object is obtained previously
   }
 })
 
