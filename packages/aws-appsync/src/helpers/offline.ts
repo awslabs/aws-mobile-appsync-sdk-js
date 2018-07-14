@@ -1,4 +1,4 @@
-import {v4 as uuid} from 'uuid';
+import { v4 as uuid } from 'uuid';
 import { resultKeyNameFromField } from 'apollo-utilities';
 
 const operationTypes = {
@@ -93,18 +93,19 @@ const buildSubscription = (subscriptionQuery, cacheUpdateQuery, operationType, i
     }
 }
 
-const getUpdater = (opType, idField = 'id') => {
-    let updater = (arr, item) => arr;
+const getUpdater = (opType, idField = 'id'): (arr: object[], newItem?: object) => object[] => {
+    let updater;
 
     switch (opType) {
         case operationTypes.ADD:
         case operationTypes.UPDATE:
-            updater = (arr, newItem) => [...arr.filter(item => item[idField] !== newItem[idField]), newItem];
+            updater = (arr, newItem) => !newItem ? [...arr] : [...arr.filter(item => item[idField] !== newItem[idField]), newItem];
             break;
         case operationTypes.REMOVE:
-            updater = (arr, newItem) => arr.filter(item => item[idField] !== newItem[idField]);
+            updater = (arr, newItem) => !newItem ? [] : arr.filter(item => item[idField] !== newItem[idField]);
             break;
         default:
+            updater = (arr) => arr;
     }
 
     return updater;
@@ -185,7 +186,13 @@ const isDocument = (doc) => doc && doc.kind === 'Document';
 const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, idField = 'id', operationType?) => {
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
 
-    const { id, _id } = variables;
+    const { id, _id, [idField]: idCustomField } = variables;
+
+    const comparator = idField ?
+        elem => elem[idField] === idCustomField :
+        elem => elem.id === id || elem._id === _id;
+
+    let version = -1;
 
     Object.keys(opTypeQueriesMap).forEach(opType => {
         const queries = opTypeQueriesMap[opType];
@@ -206,18 +213,21 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
                 return;
             }
 
-            const comparator = idField ?
-                elem => elem[idField] === variables[idField] :
-                elem => elem.id === id || elem._id === _id;
-
             const path = findArrayInObject(result);
             const arr = [...getValueByPath(result, path)];
 
             const cachedItem = arr.find(comparator);
 
-            variables.version = cachedItem ? Math.max(cachedItem.version || 1, variables.version || 1) : variables.version || 1;
+            if (cachedItem) {
+                version = cachedItem.version;
+            }
+
         });
     });
+
+    version++;
+
+    variables.version = version;
 
     const mutationField = resultKeyNameFromField(mutation.definitions[0].selectionSet.selections[0]);
 
@@ -226,7 +236,7 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
         optimisticResponse: typename ? {
             __typename: "Mutation",
             [mutationField]: {
-                __typename: typename, [idField]: uuid(), ...variables, version: variables.version + 1
+                __typename: typename, [idField]: variables[idField] || uuid(), ...variables
             }
         } : null,
         update: (proxy, { data: { [mutationField]: mutatedItem } }) => {
@@ -277,7 +287,7 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
     }
 }
 
-export { 
+export {
     buildSubscription,
     buildMutation
 };
