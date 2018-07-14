@@ -324,7 +324,7 @@ export interface ConflictResolutionInfo {
     retries: number,
 }
 
-export const discard = (fn = (obj: ConflictResolutionInfo) => null) => (error, action, retries) => {
+export const discard = (fn = (obj: ConflictResolutionInfo) => 'DISCARD') => (error, action, retries) => {
     const { graphQLErrors = [] } = error;
     const conditionalCheck = graphQLErrors.find(err => err.errorType === 'DynamoDB:ConditionalCheckFailedException');
 
