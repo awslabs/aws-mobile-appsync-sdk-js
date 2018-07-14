@@ -80,9 +80,8 @@ const buildSubscription = (subscriptionQuery, cacheUpdateQuery, operationType, i
 
             const updater = getUpdater(optype, idField);
 
-            const arr = Array.isArray(prev[queryField]) ?
-                [...prev[queryField]] :
-                (Object.keys(prev).length === 0 ? [] : { ...prev[queryField] });
+            const path = findArrayInObject(prev);
+            const arr = [...getValueByPath(prev, path)];
 
             const updatedOpResult = updater(arr, mutadedItem);
 
@@ -105,7 +104,7 @@ const getUpdater = (opType, idField = 'id'): (arr: object[], newItem?: object) =
             updater = (arr, newItem) => !newItem ? [] : arr.filter(item => item[idField] !== newItem[idField]);
             break;
         default:
-            updater = (arr) => arr;
+            updater = arr => arr;
     }
 
     return updater;
