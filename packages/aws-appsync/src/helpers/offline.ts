@@ -1,11 +1,11 @@
 import { v4 as uuid } from 'uuid';
-import { resultKeyNameFromField } from 'apollo-utilities';
+import { resultKeyNameFromField, cloneDeep } from 'apollo-utilities';
 
-const operationTypes = {
-    AUTO: 'auto',
-    ADD: 'add',
-    REMOVE: 'remove',
-    UPDATE: 'update',
+export enum CacheOperationTypes {
+    AUTO = 'auto',
+    ADD = 'add',
+    REMOVE = 'remove',
+    UPDATE = 'update',
 };
 
 const prefixesForRemove = [
@@ -49,13 +49,13 @@ const getOpTypeFromOperationName = (opName = '') => {
     // Note: we do a toLowerCase() and startsWith() to avoid ambiguity with operations like "RemoveAddendum"
     const comparator = prefix => opName.toLowerCase().startsWith(prefix);
 
-    let result = operationTypes.AUTO;
+    let result = CacheOperationTypes.AUTO;
 
     [
-        [prefixesForAdd, operationTypes.ADD],
-        [prefixesForRemove, operationTypes.REMOVE],
-        [prefixesForUpdate, operationTypes.UPDATE],
-    ].forEach(([prefix, type]: [string[], string]) => {
+        [prefixesForAdd, CacheOperationTypes.ADD],
+        [prefixesForRemove, CacheOperationTypes.REMOVE],
+        [prefixesForUpdate, CacheOperationTypes.UPDATE],
+    ].forEach(([prefix, type]: [string[], CacheOperationTypes]) => {
         if (prefix.some(comparator)) {
             result = type;
 
@@ -66,7 +66,7 @@ const getOpTypeFromOperationName = (opName = '') => {
     return result;
 };
 
-const buildSubscription = (subscriptionQuery, cacheUpdateQuery, operationType, idField) => {
+const buildSubscription = (subscriptionQuery, cacheUpdateQuery, idField?, operationType?: CacheOperationTypes) => {
 
     const queryField = resultKeyNameFromField(cacheUpdateQuery.definitions[0].selectionSet.selections[0]);
 
@@ -85,8 +85,19 @@ const buildSubscription = (subscriptionQuery, cacheUpdateQuery, operationType, i
 
             const updatedOpResult = updater(arr, mutadedItem);
 
+            let result;
+
+            if (path.length === 0) {
+                result = updatedOpResult;
+            } else {
+                const cloned = cloneDeep(prev);
+                setValueByPath(cloned, path, updatedOpResult);
+
+                result = cloned[queryField];
+            }
+
             return {
-                [queryField]: updatedOpResult
+                [queryField]: result
             };
         }
     }
@@ -96,11 +107,11 @@ const getUpdater = (opType, idField = 'id'): (arr: object[], newItem?: object) =
     let updater;
 
     switch (opType) {
-        case operationTypes.ADD:
-        case operationTypes.UPDATE:
+        case CacheOperationTypes.ADD:
+        case CacheOperationTypes.UPDATE:
             updater = (arr, newItem) => !newItem ? [...arr] : [...arr.filter(item => item[idField] !== newItem[idField]), newItem];
             break;
-        case operationTypes.REMOVE:
+        case CacheOperationTypes.REMOVE:
             updater = (arr, newItem) => !newItem ? [] : arr.filter(item => item[idField] !== newItem[idField]);
             break;
         default:
@@ -182,7 +193,7 @@ const setValueByPath = (obj, path = [], value) => path.reduce((acc, elem, i, arr
 
 const isDocument = (doc) => doc && doc.kind === 'Document';
 
-const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, idField = 'id', operationType?) => {
+const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, idField = 'id', operationType?: CacheOperationTypes) => {
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
 
     const { id, _id, [idField]: idCustomField } = variables;

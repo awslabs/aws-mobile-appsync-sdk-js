@@ -4,7 +4,7 @@ import * as PropTypes from 'prop-types';
 import { resultKeyNameFromField } from 'apollo-utilities';
 import { graphql } from 'react-apollo';
 
-import { buildMutation } from 'aws-appsync';
+import { buildMutation, CacheOperationTypes } from 'aws-appsync';
 
 export const graphqlMutation = (mutation, cacheUpdateQuery, typename, idField, operationType) =>
     withGraphQL(
@@ -31,7 +31,7 @@ const withGraphQL = (options) => (Component) => {
     return B;
 }
 
-const reactMutator = (mutation, cacheUpdateQuery, typename, idField, operationType) => {
+const reactMutator = (mutation, cacheUpdateQuery, typename, idField, operationType?: CacheOperationTypes) => {
     return {
         document: mutation,
         props: (props) => {
