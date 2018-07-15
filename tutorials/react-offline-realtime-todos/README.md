@@ -586,3 +586,5 @@ Of course for all of these not only do you want the cache management in the clie
 
 //***************
 // Manuel please steps for updating the UI and also how the graphqlMutation changes for multiple queries. If the code is too verbose like in the Edit case above then lets use a separate file again.
+> NOTE: queryTodosByStatusIndex(status: String!, first: Int, after: String): TodoConnection needs to be changed to queryTodosByStatusIndex(status: TodoStatus!, first: Int, after: String): TodoConnection
+> NOTE: See `./src/AppComplete.js` for the complete sample, also `./src/GraphQLAllTodosByStatus.js`
