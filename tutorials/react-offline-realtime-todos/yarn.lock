@@ -412,16 +412,16 @@ autoprefixer@^6.3.1:
     postcss "^5.2.16"
     postcss-value-parser "^3.2.3"
 
-aws-appsync-react@^1.0.22-zerocode.17:
-  version "1.0.22-zerocode.17"
-  resolved "https://registry.yarnpkg.com/aws-appsync-react/-/aws-appsync-react-1.0.22-zerocode.17.tgz#f8c8d42cda1cc0a0c69edc12980209b76a9173f0"
+aws-appsync-react@^1.0.22-zerocode.19:
+  version "1.0.22-zerocode.19"
+  resolved "https://registry.yarnpkg.com/aws-appsync-react/-/aws-appsync-react-1.0.22-zerocode.19.tgz#d4a2b61213df92844302e016ccd03936eff235d6"
   dependencies:
-    aws-appsync "^1.2.2-zerocode.17"
+    aws-appsync "^1.2.2-zerocode.19"
     prop-types "^15.6.0"
 
-aws-appsync@^1.2.2-zerocode.17:
-  version "1.2.2-zerocode.17"
-  resolved "https://registry.yarnpkg.com/aws-appsync/-/aws-appsync-1.2.2-zerocode.17.tgz#0d0ed6b28012324dd9f4fc0c338384ad972fe2ec"
+aws-appsync@^1.2.2-zerocode.19:
+  version "1.2.2-zerocode.19"
+  resolved "https://registry.yarnpkg.com/aws-appsync/-/aws-appsync-1.2.2-zerocode.19.tgz#3a5125011ebfcacdabb1f0383f08c6a4bd904103"
   dependencies:
     "@redux-offline/redux-offline" "^2.2.1"
     apollo-cache-inmemory "^1.0.0"

@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "aws-appsync": "^1.2.2-zerocode.17",
-    "aws-appsync-react": "^1.0.22-zerocode.17",
+    "aws-appsync": "^1.2.2-zerocode.19",
+    "aws-appsync-react": "^1.0.22-zerocode.19",
     "graphql-tag": "^2.9.2",
     "react": "^16.4.1",
     "react-apollo": "^2.1.9",
