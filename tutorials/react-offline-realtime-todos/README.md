@@ -1,23 +1,19 @@
 # Overview
 
-This is an example tutorial of building an offline and realtime enabled React application with the AWS AppSync SDK cache abstractions for the Apollo client.
+This is an example tutorial of building an offline and realtime enabled React application with the AWS AppSync SDK cache abstractions for the Apollo client. The tutorial takes you through a sample GraphQL schema for a "Todo" application in steps:
+- Persisting queries offline for reads
+- Mutations offline, with automatic optimistic UI and syncronization
+- Subscribing to data and automatically updating UI
+- Mutations with version checks and conflict resolution
+- Mutations to update multiple UIs (e.g. queries) simultaneously
 
+If you have never used AWS AppSync before it may be useful [follow the Quickstart Documentation](https://docs.aws.amazon.com/appsync/latest/devguide/quickstart.html).
 
 ## Schema
 
-Create a new AppSync API and navigate to the **Schema** page in the console. Select **Create Resources** and enter the following type:
+Before connecting your client you need a GraphQL API.
 
-```
-type Todo {
-  id: ID!
-  name: String
-  description: String
-}
-```
-
-Press **Create** at the bottom and your GraphQL API will be connected to a new Amazon DynamoDB table along with resolvers.
-
-In your schema page add an `enum` called `TodoStatus` and modify the `Todo` type to include this:
+Navigate to the AWS AppSync console, create a new API and navigate to the **Schema** page. Add the following schema:
 
 ```
 type Todo {
@@ -37,21 +33,39 @@ type Query {
 }
 ```
 
-Save this schema, then click "Create Resources" and select the "Use existing type" button. Under the table configuration section, add an Index with the name **status-index** that has a Primary key of **status** and Sort key of **none**. Press **Create** at the bottom of the page.
+Press **Save Schema**, then click "Create Resources" and select the "Use existing type" button. Under the table configuration section, add an Index with the name **status-index** that has a Primary key of **status** and Sort key of **none**. Press **Create** at the bottom of the page.
 
-//Add the following to CreateTodoInput and UpdateTodoInput:
-  status: TodoStatus
+Once the process completes edit the schema input types so that `CreateTodoInput` and `UpdateTodoInput` have a `status: TodoStatus` field:
+
+```
+input CreateTodoInput {
+	name: String
+	description: String
+	status: TodoStatus
+}
+
+input UpdateTodoInput {
+	id: ID!
+	name: String
+	description: String
+	status: TodoStatus
+}
+```
+
+**Save** the schema again. Click the root of the navigation bar in the left of the console, scroll down and select the **Web** section then click **Download** and save the `AppSync.js` file somewhere for later.
 
 ## Imports and configuration
 
-This tutorial assumes you are using Create React App. For simplicity all editing will happen in the `App.js` file. First import the AppSync client SDK dependencies after creating a new React application:
+This tutorial assumes you have [Create React App](https://github.com/facebook/create-react-app) installed. For simplicity all editing will happen in the `App.js` file but you can modularize your directory and file structure as necessary. 
+
+First import the AppSync client SDK dependencies after creating a new React application:
 
 ```
 create-react-app todos && cd ./todos
 yarn add aws-appsync aws-appsync-react graphql-tag react-apollo
 ```
 
-Next add the following imports:
+Copy the `AppSync.js` file that you downloaded from the console into the `./todos/src` directory. Next add the following imports towards the top of the `App.js` file:
 
 
 ```javascript
@@ -60,7 +74,7 @@ import { Rehydrated, graphqlMutation } from 'aws-appsync-react';
 import AppSyncConfig from './AppSync';
 ```
 
-Replace everything under the definition of the `<App />` component with the following configuration:
+Replace everything __after__ the definition of the `<App />` component with the following configuration:
 
 ```javascript
 const client = new AWSAppSyncClient({
@@ -83,9 +97,13 @@ const WithProvider = () => (
 export default WithProvider
 ```
 
+Save the file and ensure everything runs in a browser by starting the app from your terminal:
+
+`yarn start`
+
 ## Add offline reads
 
-Alter the  `<App />` component that simply renders a component called `<AllTodosWithData` like so:
+The first step is to ensure your Todos can be displayed when offline. Alter the  `<App />` component that simply renders a component called `<AllTodosWithData` like so:
 
 ```javascript
 class App extends Component {
@@ -117,7 +135,6 @@ query {
 }`
 ```
 
-
 Then import it as well as the `graphql` HOC at the top of your main application file:
 
 
@@ -146,9 +163,28 @@ const AllTodosWithData = graphql(listTodos)(Todos);
 If you save your file and run this code the queries are automatically persisted offline by the AWS AppSync SDK. To run the code use:
 `yarn start`
 
+At this point you can test by adding Todos into your GraphQL backend from the console and refreshing your queries by pressing the **Refresh** button displayed in the screen. Go back into the AWS AppSync console and in your API select the **Queries** pane in the lefthand navigation. Enter the following into the text area:
+
+```
+mutation addTodo {
+  createTodo(input:{
+    name:"My TODO"
+    description:"Testing from the console"
+    status:pending
+  }){
+    id
+    name
+    description
+    status
+  }
+}
+```
+
+Press the arrow at the top to run your query and then from the running client application press the **Refresh** button. Alter the mutation text for `name` and `description` a couple of times in the console and add more items then refresh the client again. If you keep the app running, or build as a PWA, but disable the network connection (which can be similated in browsers such as Google Chrome) the items will be persisted in the cache and visible on the screen.
+
 ## Add offline writes
 
-Writing data when offline with mutations is a little different. the AWS AppSync SDK has an interface that will automatically perform optimistic writes to the cache for immediate UI updates. 
+Of course some applications will want to write from the client application as well and not just add Todos from the console. Writing data when offline with mutations is a little different. the AWS AppSync SDK has an interface that will automatically perform optimistic writes to the cache for immediate UI updates. 
 
 The SDK will infer the type of operation by the name of your mutation - for example "createTodo" or "addTodo" are automatically mapped to new items in the cache, however you can provide an operation type override. Additionally the SDK will perform automatic versioning of objects if you choose to use the conflict resolution controls of AWS AppSync. We will show you how this is done later.
 
@@ -172,9 +208,9 @@ mutation($name: String $description: String $status:TodoStatus) {
 }`
 ```
 
-Note the mutation is called `createTodo` - this will be what your prop is named in the component below.
+Note the mutation is called `createTodo`,  this will be what your prop is named in the when you add the mutation to the component below that will add Todos on the screen and invoke the operation.
 
-Import this into the top of your main application file:
+Import the mutation by dding the following into the top of `App.js`:
 
 ```javascript
 import NewTodo from './GraphQLNewTodo';
@@ -263,7 +299,7 @@ import NewTodoSubs from './GraphQLSubscribeTodos';
 ```
 
 
-It is recommended to initiate the subscription inside of the `componentDidMount()` lifecyle method like so:
+It is recommended to initiate the subscription inside of the `componentDidMount()` lifecyle method of the `<Todos />` component like so:
 
 ```javascript
 class Todos extends Component {
@@ -314,7 +350,7 @@ type Todo {
 	name: String
 	description: String
 	status: TodoStatus
-  version: Int
+        version: Int
 }
 
 input UpdateTodoInput {
@@ -352,7 +388,7 @@ If you are unfamiliar with editing resolvers in AWS AppSync please [reference th
 
 Notice that we have commented out `set( $attribs.status = { "S" : "pending" } )`. If you wanted the resolver in AppSync to automatically set the status as `pending` for any new items created you can uncomment this line by removing the first `#`.
 
-Now modify the resolver Request Mapping template attached to the `updateTodo` field like so:
+Now modify the resolver Request Mapping template attached to the `updateTodo` field and overwite it with the contents below:
 
 ```
 {
@@ -444,3 +480,32 @@ Now modify the resolver Request Mapping template attached to the `updateTodo` fi
 }
 ```
 
+Without going into too much details, the above template will perform conditional checks on the version to ensure that the client is only able to perform an update if the version matches what is in the database. Additionally if the mutation does succeed then the version will be incremented, sent back to the client and updated in it's cache.
+
+It's worth noting that if you have an application where many users or devices can be performing mutations on shared objects, then ideally you should have all of your clients setup a subscription to `onUpdateTodo` which was automatically setup in the provisioning process to be invoked when `updateTodo` runs successfully. You can modify the `<Todos />` component to listen for another subscription like so:
+
+//***************
+// Manuel please fill these steps out to use two subs
+
+To make updates to items, you can use the AppSync console but the client SDK supports mutations on multiple items offline which are queued. To track this in a React component takes a little orchestration, so we have included an `AppWithEdit.js` file in the sample directory that you can rename to `App.js` and use in this example. The mutations for edits are similar to before. 
+
+//***************
+// Manuel please steps to add GraphQLUpdateTodo.js file, import it, then add onto <Todos> demonstrating composition
+
+## Updating multiple queries with a mutation
+
+In a client applications, different parts of your UI correlate to one or more GraphQL queries. As such you may want to update different parts of the UI simultaneously when a single mutation runs.
+
+For example, we have a `status` flag as a GraphQL `enum` in this schema. Your UI might show:
+- All Todos in the system
+- Pending Todos yet to be completed
+- Done Todos that have been executed
+
+With this layout you might want the following in your UI:
+- When adding a Todo, update the "All Todos" and "Pending Todos" queries with a new item
+- When marking a Todo completed, update the status for that Todo in the "All Todos" list, remove it from the "Pending Todos" cache results, and add it to the "Done Todos" cache
+
+Of course for all of these not only do you want the cache management in the client but the mutations should flow through to eventually converge in your backend. The AppSync client supports this flow no matter if the client is online or offline. 
+
+//***************
+// Manuel please steps for updating the UI and also how the graphqlMutation changes for multiple queries. If the code is too verbose like in the Edit case above then lets use a separate file again.
