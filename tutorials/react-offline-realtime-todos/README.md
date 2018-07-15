@@ -482,10 +482,36 @@ Now modify the resolver Request Mapping template attached to the `updateTodo` fi
 
 Without going into too much details, the above template will perform conditional checks on the version to ensure that the client is only able to perform an update if the version matches what is in the database. Additionally if the mutation does succeed then the version will be incremented, sent back to the client and updated in it's cache.
 
-It's worth noting that if you have an application where many users or devices can be performing mutations on shared objects, then ideally you should have all of your clients setup a subscription to `onUpdateTodo` which was automatically setup in the provisioning process to be invoked when `updateTodo` runs successfully. You can modify the `<Todos />` component to listen for another subscription like so:
+It's worth noting that if you have an application where many users or devices can be performing mutations on shared objects, then ideally you should have all of your clients setup a subscription to `onUpdateTodo` and `onDeleteTodo` which were automatically setup in the provisioning process to be invoked when `updateTodo` and `deleteTodo` run successfully. You can modify the `<Todos />` component to listen for more subscriptions by adding new subcriptions to the `./src/GraphQLSubscribeTodos.js` file like so:
 
-//***************
-// Manuel please fill these steps out to use two subs
+```javascript
+import gql from 'graphql-tag';
+
+export default gql`
+subscription{
+  onCreateTodo{
+    id
+    name
+    description
+    status
+    version
+  }
+  onUpdateTodo{
+    id
+    name
+    description
+    status
+    version
+  }
+  onDeleteTodo{
+    id
+    name
+    description
+    status
+    version
+  }
+}`
+```
 
 To make updates to items, you can use the AppSync console but the client SDK supports mutations on multiple items offline which are queued. To track this in a React component takes a little orchestration, so we have included an `AppWithEdit.js` file in the sample directory that you can rename to `App.js` and use in this example. The mutations for edits are similar to before. 
 
