@@ -202,7 +202,7 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
         elem => elem[idField] === idCustomField :
         elem => elem.id === id || elem._id === _id;
 
-    let version = -1;
+    let version = 0;
 
     Object.keys(opTypeQueriesMap).forEach(opType => {
         const queries = opTypeQueriesMap[opType];
@@ -229,24 +229,19 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
             const cachedItem = arr.find(comparator);
 
             if (cachedItem) {
-                version = cachedItem.version;
+                version = Math.max(version, cachedItem.version);
             }
-
         });
     });
-
-    version++;
-
-    variables.version = version;
 
     const mutationField = resultKeyNameFromField(mutation.definitions[0].selectionSet.selections[0]);
 
     return {
-        variables,
+        variables: { ...variables, version },
         optimisticResponse: typename ? {
             __typename: "Mutation",
             [mutationField]: {
-                __typename: typename, [idField]: variables[idField] || uuid(), ...variables
+                __typename: typename, [idField]: variables[idField] || uuid(), ...variables, version: version + 1
             }
         } : null,
         update: (proxy, { data: { [mutationField]: mutatedItem } }) => {
