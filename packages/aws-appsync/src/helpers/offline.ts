@@ -205,7 +205,7 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
     let version = 0;
 
     Object.keys(opTypeQueriesMap).forEach(opType => {
-        const queries = opTypeQueriesMap[opType];
+        const queries = [].concat(opTypeQueriesMap[opType]);
 
         queries.forEach(queryEntry => {
             const query = (queryEntry && queryEntry.query) || queryEntry;
@@ -246,7 +246,7 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
         } : null,
         update: (proxy, { data: { [mutationField]: mutatedItem } }) => {
             Object.keys(opTypeQueriesMap).forEach(opType => {
-                const queries = opTypeQueriesMap[opType];
+                const queries = [].concat(opTypeQueriesMap[opType]);
 
                 const updaterFn = getUpdater(getEvaluatedOp(opType, mutationField, operationType), idField);
 
