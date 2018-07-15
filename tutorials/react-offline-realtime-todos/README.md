@@ -140,10 +140,10 @@ Then import it as well as the `graphql` HOC at the top of your main application 
 
 ```javascript
 import { graphql, ApolloProvider } from 'react-apollo';
-import listTodos from './GraphQLAllTodos';
+import ListTodos from './GraphQLAllTodos';
 ```
 
-You will pass this `listTodos` query along with the return type `Todos` of the GraphQL schema, into the `graphql` HOC when you wrap your component like so:
+You will pass this `ListTodos` query along with the return type `Todos` of the GraphQL schema, into the `graphql` HOC when you wrap your component like so:
 
 ```javascript
 class Todos extends Component {
@@ -157,7 +157,7 @@ class Todos extends Component {
     )
   }
 }
-const AllTodosWithData = graphql(listTodos)(Todos);
+const AllTodosWithData = graphql(ListTodos)(Todos);
 ```
 
 If you save your file and run this code the queries are automatically persisted offline by the AWS AppSync SDK. To run the code use:
@@ -216,7 +216,7 @@ Import the mutation by dding the following into the top of `App.js`:
 import NewTodo from './GraphQLNewTodo';
 ```
 
-Now create the `<AddTodo />` component and wrap it with the `graphqlMutation()` function along with the `listTodos` query which will be updated in the cache automatically, as well as the `Todo` response type (defined in your GraphQL schema):
+Now create the `<AddTodo />` component and wrap it with the `graphqlMutation()` function along with the `ListTodos` query which will be updated in the cache automatically, as well as the `Todo` response type (defined in your GraphQL schema):
 
 ```javascript
 class AddTodo extends Component {
@@ -244,7 +244,7 @@ class AddTodo extends Component {
     );
   }
 }
-const AddTodoOffline = graphqlMutation(NewTodo, listTodos, 'Todo')(AddTodo);
+const AddTodoOffline = graphqlMutation(NewTodo, ListTodos, 'Todo')(AddTodo);
 
 ```
 
@@ -306,13 +306,13 @@ class Todos extends Component {
 
   componentDidMount(){
     this.props.data.subscribeToMore(
-      buildSubscription(NewTodoSubs, listTodos)
+      buildSubscription(NewTodoSubs, ListTodos)
     );
   }
   //...More code
   ```
 
-`buildSubscription` uses the `NewTodoSubs` document defining the subscription to create and `listTodos` defining what query in the cache to automatically update. It also accepts two additional optional parameters:
+`buildSubscription` uses the `NewTodoSubs` document defining the subscription to create and `ListTodos` defining what query in the cache to automatically update. It also accepts two additional optional parameters:
 - idField, used if your GraphQL subscription response type uses something other than `id`
 - `operationType` override if you do not want to infer actions such as "add" or "update" from the subscription name
 
@@ -513,10 +513,61 @@ subscription{
 }`
 ```
 
-To make updates to items, you can use the AppSync console but the client SDK supports mutations on multiple items offline which are queued. To track this in a React component takes a little orchestration, so we have included an `AppWithEdit.js` file in the sample directory that you can rename to `App.js` and use in this example. The mutations for edits are similar to before. 
+To make updates to items, you can use the AppSync console but the client SDK supports mutations on multiple items offline which are queued. To track this in a React component takes a little orchestration, so we have included a ready to use `App.js` file in the sample directory that you can use in this example. The mutations for edits and deletes are similar to before.
 
-//***************
-// Manuel please steps to add GraphQLUpdateTodo.js file, import it, then add onto <Todos> demonstrating composition
+Create the `./src/GraphQLUpdateTodo.js` file with the following content:
+
+```javascript
+import gql from 'graphql-tag';
+
+export default gql`
+mutation($id: ID! $name: String $description: String $status: TodoStatus $version: Int!) {
+  updateTodo(input:{
+    id: $id
+    name: $name
+    description: $description
+    status: $status
+    expectedVersion: $version
+  }){
+    id
+    name
+    description
+    status
+    version
+  }
+}`
+```
+
+Create the `./src/GraphQLDeleteTodo.js` file with the following content:
+
+```javascript
+import gql from 'graphql-tag';
+
+export default gql`
+mutation($id: ID!) {
+  deleteTodo(input:{id: $id}){
+    id
+    name
+    description
+    status
+    version
+  }
+}`
+```
+ 
+ In `App.js` you'll notce that it is possible to `compose` multiple `graphql` and `graphqlMutation` HOCs into a single component to allow scenarios like a component that does one query and two mutations:
+
+```javascript
+import { graphql, ApolloProvider, compose } from 'react-apollo';
+```
+
+ ```javascript
+ const AllTodosWithData = compose(
+  graphql(ListTodos),
+  graphqlMutation(UpdateTodo, ListTodos, 'Todo'),
+  graphqlMutation(DeleteTodo, ListTodos, 'Todo')
+)(Todos);
+ ```
 
 ## Updating multiple queries with a mutation
 

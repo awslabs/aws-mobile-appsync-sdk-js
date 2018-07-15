@@ -7,5 +7,7 @@ mutation($name: String $description: String $status:TodoStatus) {
     name
     description
     status
+    version
   }
 }`
+

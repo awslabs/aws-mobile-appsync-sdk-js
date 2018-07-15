@@ -8,6 +8,8 @@ query {
       name
       description
       status
+      version
     }
   }
 }`
+
