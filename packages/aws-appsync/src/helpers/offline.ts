@@ -1,5 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import { resultKeyNameFromField, cloneDeep } from 'apollo-utilities';
+import { ApolloClient, MutationOptions } from 'apollo-client';
+import { DocumentNode } from 'graphql';
 
 export enum CacheOperationTypes {
     AUTO = 'auto',
@@ -193,7 +195,15 @@ const setValueByPath = (obj, path = [], value) => path.reduce((acc, elem, i, arr
 
 const isDocument = (doc) => doc && doc.kind === 'Document';
 
-const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, idField = 'id', operationType?: CacheOperationTypes) => {
+const buildMutation = (
+    client: ApolloClient<any>,
+    mutation: DocumentNode,
+    variables: any = {},
+    cacheUpdateQuery,
+    typename: string,
+    idField: string = 'id',
+    operationType?: CacheOperationTypes
+): MutationOptions => {
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
 
     const { id, _id, [idField]: idCustomField } = variables;
@@ -237,6 +247,7 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
     const mutationField = resultKeyNameFromField(mutation.definitions[0].selectionSet.selections[0]);
 
     return {
+        mutation,
         variables: { ...variables, version },
         optimisticResponse: typename ? {
             __typename: "Mutation",
@@ -283,12 +294,6 @@ const buildMutation = (client, mutation, variables, cacheUpdateQuery, typename, 
                 });
             });
         },
-        props: ({ mutate, ...props }) => {
-            return {
-                ...props,
-                [mutationField]: mutate,
-            }
-        }
     }
 }
 

@@ -2,7 +2,8 @@ import * as React from 'react';
 import * as PropTypes from 'prop-types';
 
 import { resultKeyNameFromField } from 'apollo-utilities';
-import { graphql } from 'react-apollo';
+import { DocumentNode } from 'graphql';
+import { graphql, OptionProps, MutationOpts } from 'react-apollo';
 
 import { buildMutation, CacheOperationTypes } from 'aws-appsync';
 
@@ -31,8 +32,16 @@ const withGraphQL = (options) => (Component) => {
     return B;
 }
 
-const reactMutator = (mutation, cacheUpdateQuery, typename, idField, operationType?: CacheOperationTypes) => {
-    return {
+const reactMutator = (
+    mutation: DocumentNode,
+    cacheUpdateQuery,
+    typename: string,
+    idField?: string,
+    operationType?: CacheOperationTypes
+): {
+        document: DocumentNode,
+        props: (props: OptionProps) => any
+    } => ({
         document: mutation,
         props: (props) => {
             const { ownProps: { client } } = props;
@@ -42,10 +51,9 @@ const reactMutator = (mutation, cacheUpdateQuery, typename, idField, operationTy
                 [mutationName]: (variables) => {
                     return props.mutate({
                         variables,
-                        ...buildMutation(client, mutation, variables, cacheUpdateQuery, typename, idField, operationType),
+                        ...(buildMutation(client, mutation, variables, cacheUpdateQuery, typename, idField, operationType) as MutationOpts),
                     });
                 }
             }
         },
-    };
-};
+    });

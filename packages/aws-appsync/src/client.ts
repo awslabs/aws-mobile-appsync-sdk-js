@@ -31,6 +31,7 @@ import { ApolloCache } from 'apollo-cache';
 import { AuthOptions } from './link/auth-link';
 import { ConflictResolutionInfo } from './link/offline-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
+import { OperationDefinitionNode } from 'graphql';
 
 export { defaultDataIdFromObject };
 
@@ -38,7 +39,7 @@ export const createSubscriptionHandshakeLink = (url, resultsFetcherLink = new Ht
     return ApolloLink.split(
         operation => {
             const { query } = operation;
-            const { kind, operation: graphqlOperation } = getMainDefinition(query);
+            const { kind, operation: graphqlOperation } = getMainDefinition(query) as OperationDefinitionNode;
             const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
 
             return isSubscription;
