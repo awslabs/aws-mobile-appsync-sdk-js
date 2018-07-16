@@ -382,7 +382,7 @@ export const discard = (fn = (obj: ConflictResolutionInfo) => 'DISCARD') => (err
 //#region utils
 
 export const replaceUsingMap = (obj, map = {}) => {
-    if (!obj) {
+    if (!obj || !map) {
         return obj;
     }
 

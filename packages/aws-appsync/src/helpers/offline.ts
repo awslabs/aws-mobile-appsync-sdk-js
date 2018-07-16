@@ -2,6 +2,10 @@ import { v4 as uuid } from 'uuid';
 import { resultKeyNameFromField, cloneDeep } from 'apollo-utilities';
 import { ApolloClient, MutationOptions } from 'apollo-client';
 import { DocumentNode } from 'graphql';
+import AWSAppSyncClient from '../client';
+import OfflineCache from '../cache/offline-cache';
+import { ApolloCache } from '../../../../node_modules/apollo-cache';
+import { replaceUsingMap } from '../link';
 
 export enum CacheOperationTypes {
     AUTO = 'auto',
@@ -205,6 +209,12 @@ const buildMutation = (
     operationType?: CacheOperationTypes
 ): MutationOptions => {
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
+
+    const cache: { getIdsMap: () => object, store: any } = (client.cache as any);
+
+    if (cache && cache.store) {
+        variables = replaceUsingMap({ ...variables }, cache.getIdsMap());
+    }
 
     const { id, _id, [idField]: idCustomField } = variables;
 
