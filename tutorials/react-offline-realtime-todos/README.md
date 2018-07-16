@@ -72,6 +72,7 @@ Copy the `AppSync.js` file that you downloaded from the console into the `./todo
 import AWSAppSyncClient, { buildSubscription } from 'aws-appsync';
 import { Rehydrated, graphqlMutation } from 'aws-appsync-react';
 import AppSyncConfig from './AppSync';
+import { ApolloProvider } from 'react-apollo';
 ```
 
 Replace everything __after__ the definition of the `<App />` component with the following configuration:
@@ -139,7 +140,7 @@ Then import it as well as the `graphql` HOC at the top of your main application 
 
 
 ```javascript
-import { graphql, ApolloProvider } from 'react-apollo';
+import { graphql } from 'react-apollo';
 import ListTodos from './GraphQLAllTodos';
 ```
 
@@ -558,7 +559,7 @@ mutation($id: ID!) {
  In `App.js` you'll notce that it is possible to `compose` multiple `graphql` and `graphqlMutation` HOCs into a single component to allow scenarios like a component that does one query and two mutations:
 
 ```javascript
-import { graphql, ApolloProvider, compose } from 'react-apollo';
+import { graphql, compose } from 'react-apollo';
 ```
 
  ```javascript
