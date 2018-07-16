@@ -514,7 +514,7 @@ subscription{
 }`
 ```
 
-To make updates to items, you can use the AppSync console but the client SDK supports mutations on multiple items offline which are queued. To track this in a React component takes a little orchestration, so we have included a ready to use `App.js` file in the sample directory that you can use in this example. The mutations for edits and deletes are similar to before.
+To make updates to items, you can use the AppSync console but the client SDK supports mutations on multiple items offline which are queued. To track this in a React component takes a little orchestration unrelated to AppSync or the SDK, so we have included a ready to use `App.js` file in the sample directory that you can use in this example (called `AppComplete.js`). The mutations for edits and deletes are similar to before.
 
 Create the `./src/GraphQLUpdateTodo.js` file with the following content:
 
@@ -556,7 +556,14 @@ mutation($id: ID!) {
 }`
 ```
  
- In `App.js` you'll notce that it is possible to `compose` multiple `graphql` and `graphqlMutation` HOCs into a single component to allow scenarios like a component that does one query and two mutations:
+Import both of these into your application:
+
+```javascript
+import UpdateTodo from './GraphQLUpdateTodo';
+import DeleteTodo from './GraphQLDeleteTodo';
+```
+
+ In `AppComplete.js` you'll notce that it is possible to `compose` multiple `graphql` and `graphqlMutation` HOCs into a single component to allow scenarios like a component that does one query and two mutations:
 
 ```javascript
 import { graphql, compose } from 'react-apollo';
@@ -569,6 +576,24 @@ import { graphql, compose } from 'react-apollo';
   graphqlMutation(DeleteTodo, ListTodos, 'Todo')
 )(Todos);
  ```
+
+When you run this version of the app, each item in  `<AllTodosWithData />` can be edited and the appropriate mutation will take place. Even though the mutations are being composed, they are still invoked via a prop passed into your component from the GraphQL mutation name:
+
+```javascript
+  handleDeleteClick = (todoId, e) => {
+    this.props.deleteTodo({ id: todoId });
+  }
+
+  handleSaveClick = (todoId) => {
+    this.props.updateTodo({
+      id,
+      name,
+      description,
+      status,
+    });
+  }
+
+```
 
 ## Updating multiple queries with a mutation
 
@@ -585,7 +610,59 @@ With this layout you might want the following in your UI:
 
 Of course for all of these not only do you want the cache management in the client but the mutations should flow through to eventually converge in your backend. The AppSync client supports this flow no matter if the client is online or offline. 
 
-//***************
-// Manuel please steps for updating the UI and also how the graphqlMutation changes for multiple queries. If the code is too verbose like in the Edit case above then lets use a separate file again.
-> NOTE: queryTodosByStatusIndex(status: String!, first: Int, after: String): TodoConnection needs to be changed to queryTodosByStatusIndex(status: TodoStatus!, first: Int, after: String): TodoConnection
-> NOTE: See `./src/AppComplete.js` for the complete sample, also `./src/GraphQLAllTodosByStatus.js`
+First, you'll need to make a slight change in your GraphQL schema. Find the query field `queryTodosByStatusIndex` and alter it to look like this:
+
+```
+queryTodosByStatusIndex(status: TodoStatus!, first: Int, after: String): TodoConnection
+```
+
+Next create `./src/GraphQLAllTodosByStatus.js` file with the following content:
+
+```javascript
+import gql from 'graphql-tag';
+
+export default gql`
+query($status: TodoStatus!) {
+  queryTodosByStatusIndex(status: $status) {
+    items {
+      id
+      name
+      description
+      status
+      version
+    }
+  }
+}`
+```
+
+Import both of this into your application:
+
+```javascript
+import ListTodosByStatus from './GraphQLAllTodosByStatus';
+```
+
+These changes will allow you to use the `status` enum in a query and properly update different parts of the Apollo cache reflected in your UI with a single mutation. The UI code for this is already included in the `AppComplete.js` file, and you will see how similar to the editing case earlier the `compose` function is used to wrap multiple operations in a single component. This time however, you can modify the `graphqlMutation` for `UpdateTodo` and `deleteTodo` so that it conditionally modifies the appropriate "Pending" and "Done" sections of your cache & UI:
+
+```javascript
+const AllTodosWithData = compose(
+  graphql(ListTodos),
+  graphqlMutation(UpdateTodo,
+    ({ status }) => ({
+      'auto': ListTodos,
+
+      // When status is done, add to ListTodosByStatus(status: done), else add to ListTodosByStatus(status: pending)
+      'add': status === 'done' ? { query: ListTodosByStatus, variables: { status: 'done' } } : { query: ListTodosByStatus, variables: { status: 'pending' } },
+
+      // When status is done, remove from ListTodosByStatus(status: pending), else remove from ListTodosByStatus(status: done)
+      'remove': status === 'done' ? { query: ListTodosByStatus, variables: { status: 'pending' } } : { query: ListTodosByStatus, variables: { status: 'done' } },
+    }),
+    'Todo'),
+  graphqlMutation(DeleteTodo, {
+    'auto': [
+      ListTodos,
+      { query: ListTodosByStatus, variables: { status: 'done' } },
+      { query: ListTodosByStatus, variables: { status: 'pending' } }
+    ]
+  }, 'Todo')
+)(Todos);
+```
