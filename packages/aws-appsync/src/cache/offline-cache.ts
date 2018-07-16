@@ -18,7 +18,8 @@ const WRITE_CACHE_ACTION = 'AAS_WRITE_CACHE';
 
 export interface OfflineCache extends NormalizedCache {
     rehydrated: boolean,
-    [NORMALIZED_CACHE_KEY]: { idsMap: object },
+    [NORMALIZED_CACHE_KEY]: any,
+    [METADATA_KEY]: { idsMap: object },
 }
 
 export default class MyCache extends InMemoryCache {
@@ -67,7 +68,7 @@ export default class MyCache extends InMemoryCache {
     }
 
     getIdsMap() {
-        const { [NORMALIZED_CACHE_KEY]: { idsMap } } = this.store.getState();
+        const { [METADATA_KEY]: { idsMap } } = this.store.getState();
 
         return { ...idsMap };
     }
