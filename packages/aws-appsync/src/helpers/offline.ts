@@ -210,12 +210,6 @@ const buildMutation = (
 ): MutationOptions => {
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
 
-    const cache: { getIdsMap: () => object, store: any } = (client.cache as any);
-
-    if (cache && cache.store) {
-        variables = replaceUsingMap({ ...variables }, cache.getIdsMap());
-    }
-
     const { id, _id, [idField]: idCustomField } = variables;
 
     const comparator = idField ?
@@ -256,6 +250,11 @@ const buildMutation = (
 
     const mutationField = resultKeyNameFromField(mutation.definitions[0].selectionSet.selections[0]);
 
+    const cache: { getIdsMap: () => object } = client &&
+        client instanceof AWSAppSyncClient &&
+        (client as AWSAppSyncClient<any>).isOfflineEnabled() &&
+        (client.cache as any);
+
     return {
         mutation,
         variables: { ...variables, version },
@@ -273,9 +272,13 @@ const buildMutation = (
 
                 queries.forEach(queryEntry => {
                     const query = (queryEntry && queryEntry.query) || queryEntry;
-                    const queryVars = (queryEntry && queryEntry.variables) || {};
-
                     const queryField = resultKeyNameFromField(query.definitions[0].selectionSet.selections[0]);
+
+                    let queryVars = (queryEntry && queryEntry.variables) || {};
+
+                    if (cache) {
+                        queryVars = replaceUsingMap({ ...queryVars }, cache.getIdsMap());
+                    }
 
                     let data;
 
