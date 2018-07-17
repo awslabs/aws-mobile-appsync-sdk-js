@@ -77,7 +77,7 @@ import { ApolloProvider } from 'react-apollo';
 
 Replace everything __after__ the definition of the `<App />` component with the following configuration:
 
-```javascript
+```jsx
 const client = new AWSAppSyncClient({
   url: AppSyncConfig.graphqlEndpoint,
   region: AppSyncConfig.region,
@@ -95,7 +95,7 @@ const WithProvider = () => (
   </ApolloProvider>
 )
 
-export default WithProvider
+export default WithProvider;
 ```
 
 Save the file and ensure everything runs in a browser by starting the app from your terminal:
@@ -104,9 +104,9 @@ Save the file and ensure everything runs in a browser by starting the app from y
 
 ## Add offline reads
 
-The first step is to ensure your Todos can be displayed when offline. Alter the  `<App />` component that simply renders a component called `<AllTodosWithData` like so:
+The first step is to ensure your Todos can be displayed when offline. Alter the  `<App />` component that simply renders a component called `<AllTodosWithData />` like so:
 
-```javascript
+```jsx
 class App extends Component {
   render() {
     return (
@@ -146,7 +146,7 @@ import ListTodos from './GraphQLAllTodos';
 
 You will pass this `ListTodos` query along with the return type `Todos` of the GraphQL schema, into the `graphql` HOC when you wrap your component like so:
 
-```javascript
+```jsx
 class Todos extends Component {
   render() {
     const { listTodos, refetch } = this.props.data;
@@ -185,7 +185,7 @@ Press the arrow at the top to run your query and then from the running client ap
 
 ## Add offline writes
 
-Of course some applications will want to write from the client application as well and not just add Todos from the console. Writing data when offline with mutations is a little different. the AWS AppSync SDK has an interface that will automatically perform optimistic writes to the cache for immediate UI updates. 
+Of course some applications will want to write from the client application as well and not just add Todos from the console. Writing data when offline with mutations is a little different. The AWS AppSync SDK has an interface that will automatically perform optimistic writes to the cache for immediate UI updates. 
 
 The SDK will infer the type of operation by the name of your mutation - for example "createTodo" or "addTodo" are automatically mapped to new items in the cache, however you can provide an operation type override. Additionally the SDK will perform automatic versioning of objects if you choose to use the conflict resolution controls of AWS AppSync. We will show you how this is done later.
 
@@ -193,7 +193,7 @@ The main difference when using the AppSync SDK to perform offline mutations is t
 
 **Step 1: Create a mutation component**
 
-Next, you will create a `<AddTodo />` component and wrap it with the same name using an HOC (you could also rename it as we did earlier). You first need to create a file called `GraphQLNewTodo.js`:
+Next, you will create a `<AddTodo />` component and wrap it with a HOC that we assign as `<AddTodoOffline />`. You first need to create a file called `GraphQLNewTodo.js`:
 
 ```javascript
 import gql from 'graphql-tag';
@@ -211,7 +211,7 @@ mutation($name: String $description: String $status:TodoStatus) {
 
 Note the mutation is called `createTodo`,  this will be what your prop is named in the when you add the mutation to the component below that will add Todos on the screen and invoke the operation.
 
-Import the mutation by dding the following into the top of `App.js`:
+Import the mutation by adding the following into the top of `App.js`:
 
 ```javascript
 import NewTodo from './GraphQLNewTodo';
@@ -219,7 +219,7 @@ import NewTodo from './GraphQLNewTodo';
 
 Now create the `<AddTodo />` component and wrap it with the `graphqlMutation()` function along with the `ListTodos` query which will be updated in the cache automatically, as well as the `Todo` response type (defined in your GraphQL schema):
 
-```javascript
+```jsx
 class AddTodo extends Component {
   state = { name: '', description: '' }
 
@@ -252,7 +252,7 @@ const AddTodoOffline = graphqlMutation(NewTodo, ListTodos, 'Todo')(AddTodo);
 The way `graphqlMutation` works is it takes in 3 required arguments:
 - The mutation to run
 - One or more queries to update in the cache
-- The GraphQL response signature of the mutation (__typename)
+- The GraphQL response signature of the mutation (`__typename`)
 
 There are also 2 optional arguments:
 - The name of the 'id' field, if you are not using id on the type
@@ -262,7 +262,7 @@ To invoke the mutation, you will need to call this function which is passed as a
 
 Finally, update your `<App />` component to include the new `<AddTodoOffline />` component:
 
-```javascript
+```jsx
 class App extends Component {
   render() {
     return (
