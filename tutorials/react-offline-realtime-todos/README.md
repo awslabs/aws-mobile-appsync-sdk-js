@@ -729,7 +729,7 @@ Replace the `<AllTodosWithData />` component with this:
 )(Todos);
  ```
 
-When you run this version of the app, each item in  `<AllTodosWithData />` can be edited and the appropriate mutation will take place. Even though the mutations are being composed, they are still invoked via a prop passed into your component from the GraphQL mutation name (e.g `this.props.deleteTodo(...)` and . `this.props.updateTodo(...)`).
+When you run this version of the app, each item in  `<AllTodosWithData />` can be edited and the appropriate mutation will take place. Even though the mutations are being composed, they are still invoked via a prop passed into your component from the GraphQL mutation name (e.g `this.props.deleteTodo(...)` and  `this.props.updateTodo(...)`).
 
 ## Updating multiple queries with a mutation
 
@@ -742,17 +742,11 @@ For example, we have a `status` flag as a GraphQL `enum` in this schema. Your UI
 
 With this layout you might want the following in your UI:
 - When adding a Todo, update the "All Todos" and "Pending Todos" queries with a new item
-- When marking a Todo completed, update the status for that Todo in the "All Todos" list, remove it from the "Pending Todos" cache results, and add it to the "Done Todos" cache
+- When marking a Todo completed, update the status for that Todo in the "All Todos" list, remove it from the "Pending Todos" list, and add it to the "Done Todos" list.
 
-Of course for all of these not only do you want the cache management in the client but the mutations should flow through to eventually converge in your backend. The AppSync client supports this flow no matter if the client is online or offline. 
+Of course, for all of these not only do you want the cache management in the client, but the mutations should flow through to eventually converge in your backend. The AppSync client supports this flow no matter if the client is online or offline. 
 
-First, you'll need to make a slight change in your GraphQL schema. Find the query field `queryTodosByStatusIndex` and alter it to look like this:
-
-```
-queryTodosByStatusIndex(status: TodoStatus!, first: Int, after: String): TodoConnection
-```
-
-Next create `./src/GraphQLAllTodosByStatus.js` file with the following content:
+Create the `./src/GraphQLAllTodosByStatus.js` file with the following content:
 
 ```javascript
 import gql from 'graphql-tag';
@@ -771,13 +765,13 @@ query($status: TodoStatus!) {
 }`
 ```
 
-Import both of this into your application:
+Import it into your application:
 
 ```javascript
 import ListTodosByStatus from './GraphQLAllTodosByStatus';
 ```
 
-These changes will allow you to use the `status` enum in a query and properly update different parts of the Apollo cache reflected in your UI with a single mutation. The UI code for this is already included in the `AppComplete.js` file, and you will see how similar to the editing case earlier the `compose` function is used to wrap multiple operations in a single component. This time however, you can modify the `graphqlMutation` for `UpdateTodo` and `deleteTodo` so that it conditionally modifies the appropriate "Pending" and "Done" sections of your cache & UI:
+This query will allow you to list Todos by `status`. Next modify the `<AllTodosWithData />` component to properly update different parts of the Apollo cache reflected in your UI with a single mutation. Now modify the `graphqlMutation` for `UpdateTodo` and `deleteTodo` so that it conditionally modifies the appropriate "Pending" and "Done" sections of your cache and UI. Replace the `<AllTodosWithData />` component with this:
 
 ```javascript
 const AllTodosWithData = compose(
@@ -802,3 +796,41 @@ const AllTodosWithData = compose(
   }, 'Todo')
 )(Todos);
 ```
+
+Add to the `App.js` file the following component.
+
+```jsx
+const TodosByStatus = ({ data: { queryTodosByStatusIndex: { items } = { items: [] } }, status }) => (
+  <div>
+    <strong>{status}</strong>
+    <pre>
+      {JSON.stringify(items, null, 2)}
+    </pre>
+  </div>
+);
+const TodosByStatusWithData = graphql(ListTodosByStatus)(TodosByStatus);
+```
+
+And finally modify your App component adding two `TodosByStatusWithData` like so:
+```jsx
+class App extends Component {
+  render() {
+    return (
+      <div className="App">
+        <AllTodosWithData />
+        <AddTodoOffline />
+        <hr />
+        <table width="100%">
+          <tbody>
+            <tr>
+              <td width="50%"><TodosByStatusWithData status="done" /></td>
+              <td width="50%"><TodosByStatusWithData status="pending" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+}
+```
+
