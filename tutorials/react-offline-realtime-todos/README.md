@@ -166,7 +166,7 @@ If you save your file and run this code the queries are automatically persisted 
 
 At this point you can test by adding Todos into your GraphQL backend from the console and refreshing your queries by pressing the **Refresh** button displayed in the screen. Go back into the AWS AppSync console and in your API select the **Queries** pane in the lefthand navigation. Enter the following into the text area:
 
-```
+```graphql
 mutation addTodo {
   createTodo(input:{
     name:"My TODO"
@@ -306,19 +306,20 @@ class Todos extends Component {
 
   componentDidMount(){
     this.props.data.subscribeToMore(
-      buildSubscription(SubscribeTodos, {}, ListTodos)
+      buildSubscription(SubscribeTodos, ListTodos)
     );
   }
   //...More code
   ```
 
-`buildSubscription` uses the `SubscribeTodos` document defining the subscription to create, the variables for the subscription (`{}` in this case since `SubscribeTodos` doesn't require them) and `ListTodos` defining what query in the cache to automatically update. It also accepts two additional optional parameters:
+`buildSubscription` uses the `SubscribeTodos` document defining the subscription to create and `ListTodos` defining what query in the cache to automatically update. It also accepts three additional optional parameters:
+- An object with the variables for the subscription
 - `idField`, used if your GraphQL subscription response type uses something other than "id"
 - `operationType` override if you do not want to infer actions such as "add" or "update" from the subscription name
 
 Run the application again, and invoke a mutation from the AppSync console like so:
 
-```
+```graphql
 mutation addTodo {
   createTodo(input:{
     name:"Testing"
@@ -333,18 +334,18 @@ mutation addTodo {
 }
 ```
 
-You should see the change automatically show up in your client application. Note that the `id`, `name`, `description`, and `status` are sent in the GraphQL "selection set". In AWS AppSync it is necessary for mutations that trigger subscriptions to specify all of the fields you want subscribers to recieve. 
+You should see the change automatically show up in your client application. Note that the `id`, `name`, `description`, and `status` are sent in the GraphQL "selection set". In AWS AppSync it is necessary for mutations that trigger subscriptions to specify all of the fields you want subscribers to receive. 
 
 ## Version checks and conflict resolution
 
 If you wanted to add capabilities to perform updates to your Todos you could use the generated `updateTodo` mutation and just create a new component. However if performing offline functions or shared data it is valuable to perform version checks against each individual object.
 
-The SDK will automatically account for this, however you will need to modify the schema as well as your resolvers in order to do server validaton on the versions.   Edit your schema as following:
+The SDK will automatically account for this, however you will need to modify the schema as well as your resolvers in order to do server validaton on the versions. Edit your schema as following:
 
 - Add a `version` field in the `Todo` type
 - Add a required field of `expectedVersion` to `UpdateTodoInput`
 
-```
+```graphql
 type Todo {
 	id: ID!
 	name: String
@@ -358,16 +359,15 @@ input UpdateTodoInput {
 	name: String
 	description: String
 	status: TodoStatus
-        expectedVersion:Int!
+        expectedVersion: Int!
 }
 ```
 
-Also, modify the resolver Request Mapping Template for `createTodo` so that it automatically creates objects with a version of `1` by default:
+Also, replace the resolver Request Mapping Template for `createTodo` mutation (On the resolvers pane, click on the `TodoTable` resolver for the `createTodo` field) with the following content so that it automatically creates objects with a version of `1` by default:
 
 ```
 #set( $attribs = $util.dynamodb.toMapValues($ctx.args.input) )
 #set( $attribs.version = { "N" : 1 } )
-##set( $attribs.status = { "S" : "pending" } )
 {
   "version": "2017-02-28",
   "operation": "PutItem",
@@ -385,8 +385,6 @@ Also, modify the resolver Request Mapping Template for `createTodo` so that it a
 ```
 
 If you are unfamiliar with editing resolvers in AWS AppSync please [reference this section of the documentation](https://docs.aws.amazon.com/appsync/latest/devguide/configuring-resolvers.html).
-
-Notice that we have commented out `set( $attribs.status = { "S" : "pending" } )`. If you wanted the resolver in AppSync to automatically set the status as `pending` for any new items created you can uncomment this line by removing the first `#`.
 
 Now modify the resolver Request Mapping template attached to the `updateTodo` field and overwite it with the contents below:
 
@@ -515,6 +513,42 @@ subscription{
 
 To make updates to items, you can use the AppSync console but the client SDK supports mutations on multiple items offline which are queued. To track this in a React component takes a little orchestration unrelated to AppSync or the SDK, so we have included a ready to use `App.js` file in the sample directory that you can use in this example (called `AppComplete.js`). The mutations for edits and deletes are similar to before.
 
+Update the `./src/GraphQLNewTodo.js` by adding the `version` field to the selection set like so:
+
+```javascript
+import gql from 'graphql-tag';
+
+export default gql`
+mutation($name: String $description: String $status:TodoStatus) {
+  createTodo(input : { name:$name description:$description status:$status}){
+    id
+    name
+    description
+    status
+    version
+  }
+}`
+```
+
+Also update the `./src/GraphQLAllTodos.js` to include the `version` field
+
+```javascript
+import gql from 'graphql-tag';
+
+export default gql`
+query {
+  listTodos {
+    items {
+      id
+      name
+      description
+      status
+      version
+    }
+  }
+}`
+```
+
 Create the `./src/GraphQLUpdateTodo.js` file with the following content:
 
 ```javascript
@@ -555,18 +589,137 @@ mutation($id: ID!) {
 }`
 ```
  
-Import both of these into your application:
+Import both of these into `App.js`:
 
 ```javascript
 import UpdateTodo from './GraphQLUpdateTodo';
 import DeleteTodo from './GraphQLDeleteTodo';
 ```
 
- In `AppComplete.js` you'll notce that it is possible to `compose` multiple `graphql` and `graphqlMutation` HOCs into a single component to allow scenarios like a component that does one query and two mutations:
+Now replace `<Todos />` component with the following code: (It will add basic state management for update/delete operations)
+
+```jsx
+class Todos extends Component {
+  state = {
+    editing: {},
+    edits: {}
+  };
+
+  componentDidMount() {
+    this.props.data.subscribeToMore(
+      buildSubscription(NewTodoSubs, ListTodos)
+    );
+  }
+
+  handleEditClick = (todo, e) => {
+    const { editing, edits } = this.state;
+
+    editing[todo.id] = true;
+    edits[todo.id] = { ...todo };
+
+    this.setState({ editing, edits });
+  }
+
+  handleCancelClick = (id, e) => {
+    const { editing } = this.state;
+
+    delete editing[id];
+
+    this.setState({ editing });
+  }
+
+  handleSaveClick = (todoId) => {
+    const { edits: { [todoId]: data }, editing } = this.state;
+
+    const { id, name, description, status } = data;
+
+    this.props.updateTodo({
+      id,
+      name,
+      description,
+      status,
+    });
+
+    delete editing[todoId];
+
+    this.setState({ editing });
+  }
+
+  handleDeleteClick = (todoId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!global.confirm('Are you sure?')) {
+      return;
+    }
+
+    this.props.deleteTodo({ id: todoId });
+  }
+
+  onChange(todo, field, event) {
+    const { edits } = this.state;
+
+    edits[todo.id] = edits[todo.id] || {};
+
+    let value;
+
+    switch (field) {
+      case 'status':
+        value = event.target.checked ? 'done' : 'pending';
+        break;
+      default:
+        value = event.target.value;
+        break;
+    }
+
+    edits[todo.id][field] = value;
+
+    this.setState({ edits });
+  }
+ 
+  renderTodo = (todo) => {
+    const { editing, edits } = this.state;
+
+    const isEditing = editing[todo.id];
+    const currValues = edits[todo.id];
+
+    return (
+      isEditing ?
+        <li key={todo.id}>
+          <input type="text" value={currValues.name || ''} onChange={this.onChange.bind(this, todo, 'name')} placeholder="Name" />
+          <input type="text" value={currValues.description || ''} onChange={this.onChange.bind(this, todo, 'description')} placeholder="Description" />
+          <input type="checkbox" checked={currValues.status === 'done'} onChange={this.onChange.bind(this, todo, 'status')} />
+          <button onClick={this.handleSaveClick.bind(this, todo.id)}>Save</button>
+          <button onClick={this.handleCancelClick.bind(this, todo.id)}>Cancel</button>
+        </li>
+        :
+        <li key={todo.id} onClick={this.handleEditClick.bind(this, todo)}>
+          {todo.id + ' name: ' + todo.name}
+          <input type="checkbox" checked={todo.status === 'done'} disabled={true} />
+          <button onClick={this.handleDeleteClick.bind(this, todo.id)}>Delete</button>
+        </li>);
+  }
+
+  render() {
+    const { listTodos, refetch } = this.props.data;
+
+    return (
+      <div>
+        <button onClick={() => refetch()}>Refresh</button>
+        <ul>{listTodos && [...listTodos.items].sort((a, b) => a.name.localeCompare(b.name)).map(this.renderTodo)}</ul>
+      </div>
+    );
+  }
+}
+```
+
+In order to use multiple mutations in a single component, we will use the `compose` function from the `react-apollo` package. Modify the import statement from `react-apollo` to look like this:
 
 ```javascript
 import { graphql, compose } from 'react-apollo';
 ```
+
+Replace the `<AllTodosWithData />` component with this:
 
  ```javascript
  const AllTodosWithData = compose(
@@ -576,23 +729,7 @@ import { graphql, compose } from 'react-apollo';
 )(Todos);
  ```
 
-When you run this version of the app, each item in  `<AllTodosWithData />` can be edited and the appropriate mutation will take place. Even though the mutations are being composed, they are still invoked via a prop passed into your component from the GraphQL mutation name:
-
-```javascript
-  handleDeleteClick = (todoId, e) => {
-    this.props.deleteTodo({ id: todoId });
-  }
-
-  handleSaveClick = (todoId) => {
-    this.props.updateTodo({
-      id,
-      name,
-      description,
-      status,
-    });
-  }
-
-```
+When you run this version of the app, each item in  `<AllTodosWithData />` can be edited and the appropriate mutation will take place. Even though the mutations are being composed, they are still invoked via a prop passed into your component from the GraphQL mutation name (e.g `this.props.deleteTodo(...)` and . `this.props.updateTodo(...)`).
 
 ## Updating multiple queries with a mutation
 
