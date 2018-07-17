@@ -13,9 +13,9 @@ If you have never used AWS AppSync before it may be useful [follow the Quickstar
 
 Before connecting your client you need a GraphQL API.
 
-Navigate to the AWS AppSync console, create a new API and navigate to the **Schema** page. Add the following schema:
+Navigate to the AWS AppSync console, create a new API selecting **Author from scratch**, click the **Create** button and navigate to the **Schema** page. Add the following schema:
 
-```
+```graphql
 type Todo {
 	id: ID!
 	name: String
@@ -33,7 +33,7 @@ type Query {
 }
 ```
 
-Press **Save Schema**, then click "Create Resources" and select the "Use existing type" button. Under the table configuration section, add an Index with the name **status-index** that has a Primary key of **status** and Sort key of **none**. Press **Create** at the bottom of the page.
+Press **Save Schema**, then click **Create Resources**, select the "Use existing type" button and under **Select a type** choose `Todo`. Under the table configuration section, add an Index with the name **status-index** that has a Primary key of **status** and Sort key of **none**. Press **Create** at the bottom of the page.
 
 Once the process completes edit the schema input types so that `CreateTodoInput` and `UpdateTodoInput` have a `status: TodoStatus` field:
 
