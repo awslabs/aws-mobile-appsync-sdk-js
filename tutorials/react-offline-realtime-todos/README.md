@@ -631,13 +631,14 @@ class Todos extends Component {
   handleSaveClick = (todoId) => {
     const { edits: { [todoId]: data }, editing } = this.state;
 
-    const { id, name, description, status } = data;
+    const { id, name, description, status,  version } = data;
 
     this.props.updateTodo({
       id,
       name,
       description,
       status,
+      version,
     });
 
     delete editing[todoId];
@@ -695,7 +696,7 @@ class Todos extends Component {
         :
         <li key={todo.id} onClick={this.handleEditClick.bind(this, todo)}>
           {todo.id + ' name: ' + todo.name}
-          <input type="checkbox" checked={todo.status === 'done'} disabled={true} />
+          <input type="checkbox" checked={todo.status === 'done'} onChange={this.onChange.bind(this, todo, 'status')} />
           <button onClick={this.handleDeleteClick.bind(this, todo.id)}>Delete</button>
         </li>);
   }
@@ -834,3 +835,4 @@ class App extends Component {
 }
 ```
 
+When you run this final version of the app, you'll see that updating a Todo to change its status to "done" removes it from the "Pending" list and adds it to the "Done" list. Similarly, updating a Todo to change its status to "pending" removes it from the "Done" list and adds it to the "Pending" list.
