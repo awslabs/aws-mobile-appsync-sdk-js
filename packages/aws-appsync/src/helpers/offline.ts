@@ -47,9 +47,6 @@ const prefixesForAdd = [
 ];
 
 const getOpTypeFromOperationName = (opName = '') => {
-    // const OP_TYPE_REGEX = /^[a-zA-Z][a-z]+/;
-    // const comparator = prefix => prefix === (opName.match(OP_TYPE_REGEX) || [])[0];
-
     // Note: we do a toLowerCase() and startsWith() to avoid ambiguity with operations like "RemoveAddendum"
     const comparator = prefix => opName.toLowerCase().startsWith(prefix) || opName.toLowerCase().startsWith(`on${prefix}`);
 
