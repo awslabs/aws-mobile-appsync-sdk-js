@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.3.0"></a>
+# [1.3.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.2.1...aws-appsync@1.3.0) (2018-07-17)
+
+
+### Features
+
+* **offline:** Offline helpers ([#184](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/184)) ([0c0fe82](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/0c0fe82))
+
+
+
+
 <a name="1.2.1"></a>
 ## [1.2.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.2.0...aws-appsync@1.2.1) (2018-07-10)
 
