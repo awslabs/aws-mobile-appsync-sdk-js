@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync",
-  "version": "1.2.1",
+  "version": "1.2.2-zerocode.27",
   "main": "lib/index.js",
   "license": "SEE LICENSE IN LICENSE",
   "description": "AWS Mobile AppSync SDK for JavaScript",
@@ -28,7 +28,8 @@
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0",
     "setimmediate": "^1.0.5",
-    "url": "^0.11.0"
+    "url": "^0.11.0",
+    "uuid": "3.x"
   },
   "devDependencies": {
     "@types/node": "^8.0.46",
