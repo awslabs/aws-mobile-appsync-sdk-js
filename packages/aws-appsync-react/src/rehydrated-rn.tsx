@@ -11,6 +11,7 @@ import { View, Text, StyleSheet, NetInfo, ViewPropTypes } from "react-native";
 import * as PropTypes from 'prop-types';
 
 import AWSAppSyncClient from 'aws-appsync';
+import { RehydratedState } from './index'
 
 export interface RehydrateProps {
     rehydrated: boolean;
@@ -29,10 +30,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 });
-
-interface RehydratedState {
-    rehydrated: boolean
-}
 
 export interface RehydratedProps {
     render?: ((props: { rehydrated: boolean }) => React.ReactNode);

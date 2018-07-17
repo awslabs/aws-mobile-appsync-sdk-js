@@ -273,7 +273,7 @@ const cacheSnapshotReducer = (state = {}, action) => {
 
 export const saveServerId = (optimisticResponse, data) => ({
     type: actions.SAVE_SERVER_ID,
-    meta: { optimisticResponse },
+    meta: optimisticResponse,
     payload: { data },
 });
 
@@ -324,7 +324,7 @@ export interface ConflictResolutionInfo {
     retries: number,
 }
 
-export const discard = (fn = (obj: ConflictResolutionInfo) => null) => (error, action, retries) => {
+export const discard = (fn = (obj: ConflictResolutionInfo) => 'DISCARD') => (error, action, retries) => {
     const { graphQLErrors = [] } = error;
     const conditionalCheck = graphQLErrors.find(err => err.errorType === 'DynamoDB:ConditionalCheckFailedException');
 
@@ -382,7 +382,7 @@ export const discard = (fn = (obj: ConflictResolutionInfo) => null) => (error, a
 //#region utils
 
 export const replaceUsingMap = (obj, map = {}) => {
-    if (!obj) {
+    if (!obj || !map) {
         return obj;
     }
 
