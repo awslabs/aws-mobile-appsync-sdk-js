@@ -72,8 +72,8 @@ const getOpTypeFromOperationName = (opName = '') => {
 
 const buildSubscription = (
     subscriptionQuery: DocumentNode,
-    variables: any = {},
     cacheUpdateQuery,
+    variables?: any,
     idField?: string,
     operationType?: CacheOperationTypes
 ): SubscribeToMoreOptions => {
