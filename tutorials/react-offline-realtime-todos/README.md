@@ -812,7 +812,7 @@ const TodosByStatus = ({ data: { queryTodosByStatusIndex: { items } = { items: [
 const TodosByStatusWithData = graphql(ListTodosByStatus)(TodosByStatus);
 ```
 
-And finally modify your App component adding two `TodosByStatusWithData` like so:
+Now modify your App component adding two `TodosByStatusWithData` like so:
 ```jsx
 class App extends Component {
   render() {
@@ -833,6 +833,21 @@ class App extends Component {
     );
   }
 }
+```
+
+Finally, update your `<AddTodoOffline />` component to properly update the UI when a Todo is created. Replace the `<AllTodosWithData />` component with this:
+
+```javascript
+const AddTodoOffline = graphqlMutation(
+  NewTodo,
+  {
+    'auto': [
+      ListTodos,
+      { query: ListTodosByStatus, variables: { status: 'pending' } }
+    ],
+  },
+  'Todo'
+)(AddTodo);
 ```
 
 When you run this final version of the app, you'll see that updating a Todo to change its status to "done" removes it from the "Pending" list and adds it to the "Done" list. Similarly, updating a Todo to change its status to "pending" removes it from the "Done" list and adds it to the "Pending" list.
