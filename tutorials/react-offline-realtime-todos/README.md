@@ -33,11 +33,11 @@ type Query {
 }
 ```
 
-Press **Save Schema**, then click **Create Resources**, select the "Use existing type" button and under **Select a type** choose `Todo`. Under the table configuration section, add an Index with the name **status-index** that has a Primary key of **status** and Sort key of **none**. Press **Create** at the bottom of the page.
+Press **Save Schema**, then click **Create Resources**, select the "Use existing type" button and under **Select a type** choose `Todo`. Under the table configuration section, add an Index by clicking **Additional Indexes**, then **Add Index** with the name **status-index** that has a Primary key of **status** and Sort key of **none**. Press **Create** at the bottom of the page.
 
 Once the process completes edit the schema input types so that `CreateTodoInput` and `UpdateTodoInput` have a `status: TodoStatus` field:
 
-```
+```graphql
 input CreateTodoInput {
 	name: String
 	description: String
@@ -52,7 +52,7 @@ input UpdateTodoInput {
 }
 ```
 
-**Save** the schema again. Click the root of the navigation bar in the left of the console, scroll down and select the **Web** section then click **Download** and save the `AppSync.js` file somewhere for later.
+**Save** the schema again. On the navigation bar in the left of the console, click on `<your api name>`, scroll down and select the **Web** section then click **Download** and save the `AppSync.js` file somewhere for later.
 
 ## Imports and configuration
 
