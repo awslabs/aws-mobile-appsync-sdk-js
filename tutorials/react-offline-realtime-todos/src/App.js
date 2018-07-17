@@ -5,7 +5,7 @@ import './App.css';
 import AWSAppSyncClient, { buildSubscription } from 'aws-appsync';
 import { Rehydrated, graphqlMutation } from 'aws-appsync-react';
 import { graphql, ApolloProvider, compose } from 'react-apollo';
-import ListTodosByStatus from './GraphQLAllTodosByStatus';
+
 import ListTodos from './GraphQLAllTodos';
 import NewTodo from './GraphQLNewTodo';
 import NewTodoSubs from './GraphQLSubscribeTodos';
@@ -20,19 +20,19 @@ class App extends Component {
       <div className="App">
         <AllTodosWithData />
         <AddTodoOffline />
-        <hr />
-        <table width="100%">
-          <tbody>
-            <tr>
-              <td width="50%"><TodosByStatusWithData status="done" /></td>
-              <td width="50%"><TodosByStatusWithData status="pending" /></td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     );
   }
 }
+
+const client = new AWSAppSyncClient({
+  url: AppSyncConfig.graphqlEndpoint,
+  region: AppSyncConfig.region,
+  auth: {
+    type: AppSyncConfig.authenticationType,
+    apiKey: AppSyncConfig.apiKey
+  }
+});
 
 class Todos extends Component {
   state = {
@@ -66,14 +66,13 @@ class Todos extends Component {
   handleSaveClick = (todoId) => {
     const { edits: { [todoId]: data }, editing } = this.state;
 
-    const { id, name, description, status,  version } = data;
+    const { id, name, description, status } = data;
 
     this.props.updateTodo({
       id,
       name,
       description,
       status,
-      version,
     });
 
     delete editing[todoId];
@@ -131,7 +130,7 @@ class Todos extends Component {
         :
         <li key={todo.id} onClick={this.handleEditClick.bind(this, todo)}>
           {todo.id + ' name: ' + todo.name}
-          <input type="checkbox" checked={todo.status === 'done'} onChange={this.onChange.bind(this, todo, 'status')} />
+          <input type="checkbox" checked={todo.status === 'done'} disabled={true} />
           <button onClick={this.handleDeleteClick.bind(this, todo.id)}>Delete</button>
         </li>);
   }
@@ -149,24 +148,8 @@ class Todos extends Component {
 }
 const AllTodosWithData = compose(
   graphql(ListTodos),
-  graphqlMutation(UpdateTodo,
-    ({ status }) => ({
-      'auto': ListTodos,
-
-      // When status is done, add to ListTodosByStatus(status: done), else add to ListTodosByStatus(status: pending)
-      'add': status === 'done' ? { query: ListTodosByStatus, variables: { status: 'done' } } : { query: ListTodosByStatus, variables: { status: 'pending' } },
-
-      // When status is done, remove from ListTodosByStatus(status: pending), else remove from ListTodosByStatus(status: done)
-      'remove': status === 'done' ? { query: ListTodosByStatus, variables: { status: 'pending' } } : { query: ListTodosByStatus, variables: { status: 'done' } },
-    }),
-    'Todo'),
-  graphqlMutation(DeleteTodo, {
-    'auto': [
-      ListTodos,
-      { query: ListTodosByStatus, variables: { status: 'done' } },
-      { query: ListTodosByStatus, variables: { status: 'pending' } }
-    ]
-  }, 'Todo')
+  graphqlMutation(UpdateTodo, ListTodos, 'Todo'),
+  graphqlMutation(DeleteTodo, ListTodos, 'Todo')
 )(Todos);
 
 class AddTodo extends Component {
@@ -194,26 +177,7 @@ class AddTodo extends Component {
     );
   }
 }
-const AddTodoOffline = graphqlMutation(
-  NewTodo,
-  {
-    'auto': [
-      ListTodos,
-      { query: ListTodosByStatus, variables: { status: 'pending' } }
-    ],
-  },
-  'Todo'
-)(AddTodo);
-
-
-const client = new AWSAppSyncClient({
-  url: AppSyncConfig.graphqlEndpoint,
-  region: AppSyncConfig.region,
-  auth: {
-    type: AppSyncConfig.authenticationType,
-    apiKey: AppSyncConfig.apiKey
-  }
-})
+const AddTodoOffline = graphqlMutation(NewTodo, ListTodos, 'Todo')(AddTodo);
 
 const WithProvider = () => (
   <ApolloProvider client={client}>
@@ -222,16 +186,5 @@ const WithProvider = () => (
     </Rehydrated>
   </ApolloProvider>
 )
-
-
-const TodosByStatus = ({ data: { queryTodosByStatusIndex: { items } = { items: [] } }, status }) => (
-  <div>
-    <strong>{status}</strong>
-    <pre>
-      {JSON.stringify(items, null, 2)}
-    </pre>
-  </div>
-);
-const TodosByStatusWithData = graphql(ListTodosByStatus)(TodosByStatus);
 
 export default WithProvider;
