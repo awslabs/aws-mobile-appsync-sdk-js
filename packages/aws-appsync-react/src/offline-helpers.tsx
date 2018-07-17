@@ -7,10 +7,15 @@ import { graphql, OptionProps, MutationOpts } from 'react-apollo';
 
 import { buildMutation, CacheOperationTypes } from 'aws-appsync';
 
-export const graphqlMutation = (mutation, cacheUpdateQuery, typename, idField, operationType) =>
-    withGraphQL(
-        reactMutator(mutation, cacheUpdateQuery, typename, idField, operationType)
-    );
+export const graphqlMutation = (
+    mutation: DocumentNode,
+    cacheUpdateQuery,
+    typename: string,
+    idField?: string,
+    operationType?: CacheOperationTypes
+) => withGraphQL(
+    reactMutator(mutation, cacheUpdateQuery, typename, idField, operationType)
+);
 
 const withGraphQL = (options) => (Component) => {
     const { document } = options;

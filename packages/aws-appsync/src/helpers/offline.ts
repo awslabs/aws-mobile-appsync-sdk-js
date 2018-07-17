@@ -1,10 +1,8 @@
 import { v4 as uuid } from 'uuid';
 import { resultKeyNameFromField, cloneDeep } from 'apollo-utilities';
-import { ApolloClient, MutationOptions } from 'apollo-client';
+import { ApolloClient, MutationOptions, SubscribeToMoreOptions } from 'apollo-client';
 import { DocumentNode } from 'graphql';
 import AWSAppSyncClient from '../client';
-import OfflineCache from '../cache/offline-cache';
-import { ApolloCache } from '../../../../node_modules/apollo-cache';
 import { replaceUsingMap } from '../link';
 
 export enum CacheOperationTypes {
@@ -72,12 +70,19 @@ const getOpTypeFromOperationName = (opName = '') => {
     return result;
 };
 
-const buildSubscription = (subscriptionQuery, cacheUpdateQuery, idField?, operationType?: CacheOperationTypes) => {
+const buildSubscription = (
+    subscriptionQuery: DocumentNode,
+    variables: any = {},
+    cacheUpdateQuery,
+    idField?: string,
+    operationType?: CacheOperationTypes
+): SubscribeToMoreOptions => {
 
     const queryField = resultKeyNameFromField(cacheUpdateQuery.definitions[0].selectionSet.selections[0]);
 
     return {
         document: subscriptionQuery,
+        variables,
         updateQuery: (prev, { subscriptionData: { data } }) => {
             const [subField] = Object.keys(data);
             const { [subField]: mutadedItem } = data;

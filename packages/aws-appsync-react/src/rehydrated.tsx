@@ -10,6 +10,7 @@ import * as React from 'react';
 import * as PropTypes from 'prop-types';
 
 import AWSAppSyncClient from 'aws-appsync';
+import { RehydratedState } from './index';
 
 export interface RehydrateProps {
     rehydrated: boolean;
@@ -21,10 +22,6 @@ const Rehydrate = (props: RehydrateProps) => (
         {props.rehydrated ? props.children : <span>Loading...</span>}
     </div>
 );
-
-interface RehydratedState {
-    rehydrated: boolean
-}
 
 export interface RehydratedProps {
     render?: ((props: { rehydrated: boolean }) => React.ReactNode);
