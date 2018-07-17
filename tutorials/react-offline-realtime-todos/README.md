@@ -296,9 +296,8 @@ subscription{
 Import this into your `App.js` file:
 
 ```javascript
-import NewTodoSubs from './GraphQLSubscribeTodos';
+import SubscribeTodos from './GraphQLSubscribeTodos';
 ```
-
 
 It is recommended to initiate the subscription inside of the `componentDidMount()` lifecyle method of the `<Todos />` component like so:
 
@@ -307,14 +306,14 @@ class Todos extends Component {
 
   componentDidMount(){
     this.props.data.subscribeToMore(
-      buildSubscription(NewTodoSubs, ListTodos)
+      buildSubscription(SubscribeTodos, {}, ListTodos)
     );
   }
   //...More code
   ```
 
-`buildSubscription` uses the `NewTodoSubs` document defining the subscription to create and `ListTodos` defining what query in the cache to automatically update. It also accepts two additional optional parameters:
-- idField, used if your GraphQL subscription response type uses something other than `id`
+`buildSubscription` uses the `SubscribeTodos` document defining the subscription to create, the variables for the subscription (`{}` in this case since `SubscribeTodos` doesn't require them) and `ListTodos` defining what query in the cache to automatically update. It also accepts two additional optional parameters:
+- `idField`, used if your GraphQL subscription response type uses something other than "id"
 - `operationType` override if you do not want to infer actions such as "add" or "update" from the subscription name
 
 Run the application again, and invoke a mutation from the AppSync console like so:
