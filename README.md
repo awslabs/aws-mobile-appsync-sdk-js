@@ -1,6 +1,6 @@
 ![AWS AppSync](https://s3.amazonaws.com/aws-mobile-hub-images/awsappsyncgithub.png)
 
-## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK
+## [AWS AppSync](https://aws.amazon.com/appsync/) Apollo JavaScript SDK
 
  This SDK can be used with the Apollo JavaScript client found [here](https://github.com/apollographql/apollo-client).
 
