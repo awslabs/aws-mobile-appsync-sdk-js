@@ -67,9 +67,20 @@ const getOpTypeFromOperationName = (opName = '') => {
     return result;
 };
 
+type CacheUpdateQuery = {
+    query: DocumentNode,
+    variables?: object,
+} | DocumentNode;
+
+type CacheUpdatesDefinitions = {
+    [key in CacheOperationTypes]?: CacheUpdateQuery | CacheUpdateQuery[]
+};
+
+type CacheUpdatesOptions = (variables?: object) => CacheUpdatesDefinitions | CacheUpdatesDefinitions;
+
 const buildSubscription = (
     subscriptionQuery: DocumentNode,
-    cacheUpdateQuery,
+    cacheUpdateQuery: DocumentNode,
     variables?: any,
     idField?: string,
     operationType?: CacheOperationTypes
@@ -111,7 +122,7 @@ const buildSubscription = (
     }
 }
 
-const getUpdater = (opType, idField = 'id'): (arr: object[], newItem?: object) => object[] => {
+const getUpdater = <T>(opType: CacheOperationTypes, idField = 'id'): (arr: T[], newItem?: T) => T[] => {
     let updater;
 
     switch (opType) {
@@ -129,26 +140,26 @@ const getUpdater = (opType, idField = 'id'): (arr: object[], newItem?: object) =
     return updater;
 }
 
-const getOpTypeQueriesMap = (cacheUpdateQuery, variables) => {
+const getOpTypeQueriesMap = (cacheUpdateQuery: CacheUpdatesOptions, variables): CacheUpdatesDefinitions => {
     const cacheUpdateQueryVal = typeof cacheUpdateQuery === 'function' ?
         cacheUpdateQuery(variables) :
         cacheUpdateQuery || {};
     const opTypeQueriesMap = isDocument(cacheUpdateQueryVal) ?
-        { 'auto': [].concat(cacheUpdateQueryVal) } :
+        { [CacheOperationTypes.AUTO]: [].concat(cacheUpdateQueryVal) } as CacheUpdatesDefinitions :
         cacheUpdateQueryVal;
 
     return opTypeQueriesMap;
 };
 
-const getEvaluatedOp = (opType, mutationField, operationType) => {
-    const evaluatedOP = opType === 'auto' ?
+const getEvaluatedOp = (opType: CacheOperationTypes, mutationField: string, operationType: CacheOperationTypes) => {
+    const evaluatedOP = opType === CacheOperationTypes.AUTO ?
         (operationType || getOpTypeFromOperationName(mutationField)) :
         opType;
 
     return evaluatedOP;
 };
 
-const findArrayInObject = (obj, path = []) => {
+const findArrayInObject = (obj, path: string[] = []): string[] => {
     if (Array.isArray(obj)) {
         return path;
     }
@@ -157,7 +168,7 @@ const findArrayInObject = (obj, path = []) => {
         return undefined;
     }
 
-    let result;
+    let result: string[];
 
     Object.keys(obj).some(key => {
         const newPath = findArrayInObject(obj[key], path.concat(key));
@@ -173,7 +184,7 @@ const findArrayInObject = (obj, path = []) => {
     return result;
 };
 
-const getValueByPath = (obj, path) => {
+const getValueByPath = (obj, path: string[]) => {
     if (typeof obj !== 'object') {
         return obj;
     }
@@ -189,7 +200,7 @@ const getValueByPath = (obj, path) => {
     }, obj);
 };
 
-const setValueByPath = (obj, path = [], value) => path.reduce((acc, elem, i, arr) => {
+const setValueByPath = <T>(obj: T, path: string[] = [], value): T => path.reduce((acc, elem, i, arr) => {
     if (arr.length - 1 === i) {
         acc[elem] = value;
 
@@ -199,13 +210,13 @@ const setValueByPath = (obj, path = [], value) => path.reduce((acc, elem, i, arr
     return acc[elem];
 }, obj);
 
-const isDocument = (doc) => doc && doc.kind === 'Document';
+const isDocument = (doc) => !!doc && doc.kind === 'Document';
 
 const buildMutation = (
     client: ApolloClient<any>,
     mutation: DocumentNode,
     variables: any = {},
-    cacheUpdateQuery,
+    cacheUpdateQuery: CacheUpdatesOptions,
     typename: string,
     idField: string = 'id',
     operationType?: CacheOperationTypes
@@ -220,8 +231,8 @@ const buildMutation = (
 
     let version = 0;
 
-    Object.keys(opTypeQueriesMap).forEach(opType => {
-        const queries = [].concat(opTypeQueriesMap[opType]);
+    for (let opType in opTypeQueriesMap) {
+        const queries: CacheUpdateQuery[] = [].concat(opTypeQueriesMap[opType]);
 
         queries.forEach(queryEntry => {
             const query = (queryEntry && queryEntry.query) || queryEntry;
@@ -248,7 +259,7 @@ const buildMutation = (
                 version = Math.max(version, cachedItem.version);
             }
         });
-    });
+    };
 
     const mutationField = resultKeyNameFromField(mutation.definitions[0].selectionSet.selections[0]);
 
@@ -263,14 +274,17 @@ const buildMutation = (
         optimisticResponse: typename ? {
             __typename: "Mutation",
             [mutationField]: {
-                __typename: typename, [idField]: variables[idField] || uuid(), ...variables, version: version + 1
+                __typename: typename,
+                [idField]: variables[idField] || uuid(),
+                ...variables,
+                version: version + 1
             }
         } : null,
         update: (proxy, { data: { [mutationField]: mutatedItem } }) => {
-            Object.keys(opTypeQueriesMap).forEach(opType => {
-                const queries = [].concat(opTypeQueriesMap[opType]);
+            for (let opType in opTypeQueriesMap) {
+                const queries: CacheUpdateQuery[] = [].concat(opTypeQueriesMap[opType]);
 
-                const updaterFn = getUpdater(getEvaluatedOp(opType, mutationField, operationType), idField);
+                const updaterFn = getUpdater(getEvaluatedOp(opType as CacheOperationTypes, mutationField, operationType), idField);
 
                 queries.forEach(queryEntry => {
                     const query = (queryEntry && queryEntry.query) || queryEntry;
@@ -307,7 +321,7 @@ const buildMutation = (
 
                     proxy.writeQuery({ query, variables: queryVars, data });
                 });
-            });
+            }
         },
     }
 }
