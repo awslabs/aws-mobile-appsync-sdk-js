@@ -280,10 +280,10 @@ class App extends React.Component {
 }
 
 export default graphql(listPosts, {
+  options: {
+    fetchPolicy: 'cache-and-network'
+  },
   props: props => ({
-    options: {
-      fetchPolicy: 'cache-and-network'
-    },
     posts: props.data.listPosts ? props.data.listPosts.items : [],
     data: props.data
   })
@@ -334,10 +334,10 @@ class App extends React.Component {
 }
 
 export default graphql(listPosts, {
+  options: {
+    fetchPolicy: 'cache-and-network'
+  },
   props: props => ({
-    options: {
-      fetchPolicy: 'cache-and-network'
-    },
     posts: props.data.listPosts ? props.data.listPosts.items : [],
     subscribeToNewPosts: params => {
       props.data.subscribeToMore({
