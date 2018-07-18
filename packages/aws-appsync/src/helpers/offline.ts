@@ -80,13 +80,14 @@ type CacheUpdatesOptions = (variables?: object) => CacheUpdatesDefinitions | Cac
 
 const buildSubscription = (
     subscriptionQuery: DocumentNode,
-    cacheUpdateQuery: DocumentNode,
+    cacheUpdateQuery: CacheUpdateQuery,
     variables?: any,
     idField?: string,
     operationType?: CacheOperationTypes
 ): SubscribeToMoreOptions => {
 
-    const queryField = resultKeyNameFromField(cacheUpdateQuery.definitions[0].selectionSet.selections[0]);
+    const query = (cacheUpdateQuery && cacheUpdateQuery.query) || cacheUpdateQuery;
+    const queryField = resultKeyNameFromField(query.definitions[0].selectionSet.selections[0]);
 
     return {
         document: subscriptionQuery,
