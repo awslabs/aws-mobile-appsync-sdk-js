@@ -34,6 +34,7 @@ yarn add aws-appsync
 - [queries](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries)
 - [mutations](https://github.com/awslabs/aws-mobile-appsync-sdk-js#mutations--optimistic-ui-with-graphqlmutation-helper)
 - [subscriptions](https://github.com/awslabs/aws-mobile-appsync-sdk-js#subscriptions-with-buildsubscription-helper)
+- [offline helpers](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-helpers)
 - [Tutorial](https://github.com/awslabs/aws-mobile-appsync-sdk-js/tree/master/tutorials/react-offline-realtime-todos)
 
 [Vue](https://github.com/awslabs/aws-mobile-appsync-sdk-js#vue)   
@@ -351,6 +352,11 @@ export default graphql(listPosts, {
   })
 })(App)
 ```
+
+
+#### Offline helpers
+
+For detailed documentation about the offline helpers, look at the [API Definifion](OFFLINE_HELPERS.md).
 
 ### Vue    
 
