@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as PropTypes from 'prop-types';
 
 import { resultKeyNameFromField } from 'apollo-utilities';
-import { DocumentNode } from 'graphql';
+import { DocumentNode, OperationDefinitionNode, FieldNode } from 'graphql';
 import { graphql, OptionProps, MutationOpts } from 'react-apollo';
 
 import { buildMutation, CacheOperationTypes } from 'aws-appsync';
@@ -50,7 +50,7 @@ const reactMutator = (
         document: mutation,
         props: (props) => {
             const { ownProps: { client } } = props;
-            const mutationName = resultKeyNameFromField(mutation.definitions[0].selectionSet.selections[0]);
+            const mutationName = resultKeyNameFromField((mutation.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode);
 
             return {
                 [mutationName]: (variables) => {
