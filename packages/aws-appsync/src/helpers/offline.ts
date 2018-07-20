@@ -67,18 +67,18 @@ const getOpTypeFromOperationName = (opName = '') => {
     return result;
 };
 
-type QueryWithVariables = {
+export type QueryWithVariables = {
     query: DocumentNode,
     variables?: object,
 };
 
-type CacheUpdateQuery = QueryWithVariables | DocumentNode;
+export type CacheUpdateQuery = QueryWithVariables | DocumentNode;
 
-type CacheUpdatesDefinitions = {
+export type CacheUpdatesDefinitions = {
     [key in CacheOperationTypes]?: CacheUpdateQuery | CacheUpdateQuery[]
 };
 
-type CacheUpdatesOptions = (variables?: object) => CacheUpdatesDefinitions | CacheUpdatesDefinitions;
+export type CacheUpdatesOptions = (variables?: object) => CacheUpdatesDefinitions | CacheUpdatesDefinitions;
 
 const getOperationFieldName = (operation: DocumentNode): string => resultKeyNameFromField(
     (operation.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode

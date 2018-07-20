@@ -25,6 +25,7 @@
     "react-apollo": "2.x"
   },
   "devDependencies": {
+    "@types/graphql": "0.12.4",
     "@types/react": "^16.0.25",
     "react": "^16.1.1",
     "react-apollo": "2.1.0-rc.1",
