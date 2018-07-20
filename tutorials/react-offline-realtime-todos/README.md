@@ -312,8 +312,7 @@ class Todos extends Component {
   //...More code
   ```
 
-`buildSubscription` uses the `SubscribeTodos` document defining the subscription to create and `ListTodos` defining what query in the cache to automatically update. It also accepts three additional optional parameters:
-- An object with the variables for the subscription
+`buildSubscription` uses the `SubscribeTodos` document defining the subscription to create and `ListTodos` defining what query in the cache to automatically update. It also accepts two additional optional parameters:
 - `idField`, used if your GraphQL subscription response type uses something other than "id"
 - `operationType` override if you do not want to infer actions such as "add" or "update" from the subscription name
 

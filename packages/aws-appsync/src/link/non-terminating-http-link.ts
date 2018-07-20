@@ -9,6 +9,7 @@
 import { ApolloLink, Observable } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { createHttpLink } from 'apollo-link-http';
+import { ExecutionResult } from 'graphql';
 
 export class NonTerminatingHttpLink extends ApolloLink {
 

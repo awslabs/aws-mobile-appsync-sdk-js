@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import { resultKeyNameFromField, cloneDeep } from 'apollo-utilities';
 import { ApolloClient, MutationOptions, SubscribeToMoreOptions } from 'apollo-client';
-import { DocumentNode } from 'graphql';
+import { DocumentNode, OperationDefinitionNode, FieldNode } from 'graphql';
 import AWSAppSyncClient from '../client';
 import { replaceUsingMap } from '../link';
 
@@ -67,30 +67,47 @@ const getOpTypeFromOperationName = (opName = '') => {
     return result;
 };
 
-type CacheUpdateQuery = {
+export type QueryWithVariables = {
     query: DocumentNode,
     variables?: object,
-} | DocumentNode;
+};
 
-type CacheUpdatesDefinitions = {
+export type CacheUpdateQuery = QueryWithVariables | DocumentNode;
+
+export type CacheUpdatesDefinitions = {
     [key in CacheOperationTypes]?: CacheUpdateQuery | CacheUpdateQuery[]
 };
 
-type CacheUpdatesOptions = (variables?: object) => CacheUpdatesDefinitions | CacheUpdatesDefinitions;
+export type CacheUpdatesOptions = (variables?: object) => CacheUpdatesDefinitions | CacheUpdatesDefinitions;
 
+const getOperationFieldName = (operation: DocumentNode): string => resultKeyNameFromField(
+    (operation.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode
+);
+
+/**
+ * Builds a SubscribeToMoreOptions object ready to be used by Apollo's subscribeToMore() to automatically update the query result in the
+ * cache according to the cacheUpdateQuery parameter
+ * 
+ * @param subscriptionQuery The GraphQL subscription DocumentNode or CacheUpdateQuery
+ * @param cacheUpdateQuery The query for which the result needs to be updated
+ * @param idField 
+ * @param operationType 
+ */
 const buildSubscription = (
-    subscriptionQuery: DocumentNode,
+    subscriptionQuery: CacheUpdateQuery,
     cacheUpdateQuery: CacheUpdateQuery,
-    variables?: any,
     idField?: string,
     operationType?: CacheOperationTypes
 ): SubscribeToMoreOptions => {
+    const document = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).query) || (subscriptionQuery as DocumentNode);
+    const variables = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).variables) || {};
 
-    const query = (cacheUpdateQuery && cacheUpdateQuery.query) || cacheUpdateQuery;
-    const queryField = resultKeyNameFromField(query.definitions[0].selectionSet.selections[0]);
+    const query = (cacheUpdateQuery && (cacheUpdateQuery as QueryWithVariables).query) || (cacheUpdateQuery as DocumentNode);
+    const queryField = getOperationFieldName(query);
+
 
     return {
-        document: subscriptionQuery,
+        document,
         variables,
         updateQuery: (prev, { subscriptionData: { data } }) => {
             const [subField] = Object.keys(data);
@@ -213,10 +230,24 @@ const setValueByPath = <T>(obj: T, path: string[] = [], value): T => path.reduce
 
 const isDocument = (doc) => !!doc && doc.kind === 'Document';
 
+/**
+ * Builds a MutationOptions object ready to be used by the ApolloClient to automatically update the cache according to the cacheUpdateQuery 
+ * parameter
+ * 
+ * @param client An ApolloClient instance
+ * @param mutation DocumentNode for the muation
+ * @param variables An object with the mutation variables
+ * @param cacheUpdateQuery The queries to update in the cache
+ * @param typename __typename from your schema
+ * @param idField The name of the field with the ID
+ * @param operationType Override for the operation type
+ * 
+ * @returns Mutation options to be used by the ApolloClient
+ */
 const buildMutation = (
     client: ApolloClient<any>,
     mutation: DocumentNode,
-    variables: any = {},
+    variables: object = {},
     cacheUpdateQuery: CacheUpdatesOptions,
     typename: string,
     idField: string = 'id',
@@ -224,11 +255,9 @@ const buildMutation = (
 ): MutationOptions => {
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
 
-    const { id, _id, [idField]: idCustomField } = variables;
+    const { [idField || 'id']: idCustomField } = variables;
 
-    const comparator = idField ?
-        elem => elem[idField] === idCustomField :
-        elem => elem.id === id || elem._id === _id;
+    const comparator = elem => elem[idField] === idCustomField;
 
     let version = 0;
 
@@ -236,9 +265,9 @@ const buildMutation = (
         const queries: CacheUpdateQuery[] = [].concat(opTypeQueriesMap[opType]);
 
         queries.forEach(queryEntry => {
-            const query = (queryEntry && queryEntry.query) || queryEntry;
-            const queryVars = (queryEntry && queryEntry.variables) || {};
-            const queryField = resultKeyNameFromField(query.definitions[0].selectionSet.selections[0]);
+            const query = (queryEntry && (queryEntry as QueryWithVariables).query) || (queryEntry as DocumentNode);
+            const queryVars = (queryEntry && (queryEntry as QueryWithVariables).variables) || {};
+            const queryField = getOperationFieldName(query);
 
             let result;
             try {
@@ -262,7 +291,7 @@ const buildMutation = (
         });
     };
 
-    const mutationField = resultKeyNameFromField(mutation.definitions[0].selectionSet.selections[0]);
+    const mutationField = getOperationFieldName(mutation);
 
     const cache: { getIdsMap: () => object } = client &&
         client instanceof AWSAppSyncClient &&
@@ -288,10 +317,10 @@ const buildMutation = (
                 const updaterFn = getUpdater(getEvaluatedOp(opType as CacheOperationTypes, mutationField, operationType), idField);
 
                 queries.forEach(queryEntry => {
-                    const query = (queryEntry && queryEntry.query) || queryEntry;
-                    const queryField = resultKeyNameFromField(query.definitions[0].selectionSet.selections[0]);
+                    const query = (queryEntry && (queryEntry as QueryWithVariables).query) || (queryEntry as DocumentNode);
+                    const queryField = getOperationFieldName(query);
 
-                    let queryVars = (queryEntry && queryEntry.variables) || {};
+                    let queryVars = (queryEntry && (queryEntry as QueryWithVariables).variables) || {};
 
                     if (cache) {
                         queryVars = replaceUsingMap({ ...queryVars }, cache.getIdsMap());
