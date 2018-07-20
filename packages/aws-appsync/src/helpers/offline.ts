@@ -90,7 +90,6 @@ const getOperationFieldName = (operation: DocumentNode): string => resultKeyName
  * 
  * @param subscriptionQuery The GraphQL subscription DocumentNode or CacheUpdateQuery
  * @param cacheUpdateQuery The query for which the result needs to be updated
- * @param variables 
  * @param idField 
  * @param operationType 
  */
