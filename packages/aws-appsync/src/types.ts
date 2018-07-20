@@ -9,9 +9,9 @@
 
 import { GraphQLError } from "graphql";
 
-class AWSAppsyncGraphQLError extends GraphQLError {
+interface AWSAppsyncGraphQLError extends GraphQLError {
     errorType: string;
-    data?: object
+    data?: object;
 }
 
 export {

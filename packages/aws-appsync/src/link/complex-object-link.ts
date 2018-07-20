@@ -10,7 +10,7 @@ import { ApolloError } from 'apollo-client';
 import { Observable, Operation } from 'apollo-link';
 import { ApolloLink } from 'apollo-link';
 import { getOperationDefinition } from "apollo-utilities";
-import { ExecutionResult } from 'graphql';
+import { ExecutionResult, GraphQLError } from 'graphql';
 
 import upload from "./complex-object-link-uploader";
 import { AWSAppsyncGraphQLError } from '../types';
@@ -50,8 +50,8 @@ export const complexObjectLink = (credentials) => {
 
                     return operation;
                 }).catch(err => {
-                    const error = new AWSAppsyncGraphQLError(err.message);
-                    error.errorType = 'AWSAppSyncClient:S3UploadException'
+                    const error = new GraphQLError(err.message);
+                    (error as AWSAppsyncGraphQLError).errorType = 'AWSAppSyncClient:S3UploadException'
 
                     throw new ApolloError({
                         graphQLErrors: [error],
