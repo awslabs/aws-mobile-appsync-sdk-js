@@ -88,25 +88,27 @@ const getOperationFieldName = (operation: DocumentNode): string => resultKeyName
  * Builds a SubscribeToMoreOptions object ready to be used by Apollo's subscribeToMore() to automatically update the query result in the
  * cache according to the cacheUpdateQuery parameter
  * 
- * @param subscriptionQuery DocumentNode for the subscription
+ * @param subscriptionQuery The GraphQL subscription DocumentNode or CacheUpdateQuery
  * @param cacheUpdateQuery The query for which the result needs to be updated
  * @param variables 
  * @param idField 
  * @param operationType 
  */
 const buildSubscription = (
-    subscriptionQuery: DocumentNode,
+    subscriptionQuery: CacheUpdateQuery,
     cacheUpdateQuery: CacheUpdateQuery,
     idField?: string,
     operationType?: CacheOperationTypes
 ): SubscribeToMoreOptions => {
-
+    const document = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).query)
+    const variables = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).variables) || {};
+    
     const query = (cacheUpdateQuery && (cacheUpdateQuery as QueryWithVariables).query) || (cacheUpdateQuery as DocumentNode);
     const queryField = getOperationFieldName(query);
-    const variables = (cacheUpdateQuery && (cacheUpdateQuery as QueryWithVariables).variables) || {};
+
 
     return {
-        document: subscriptionQuery,
+        document,
         variables,
         updateQuery: (prev, { subscriptionData: { data } }) => {
             const [subField] = Object.keys(data);
