@@ -100,9 +100,9 @@ const buildSubscription = (
     idField?: string,
     operationType?: CacheOperationTypes
 ): SubscribeToMoreOptions => {
-    const document = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).query)
+    const document = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).query) || (subscriptionQuery as DocumentNode);
     const variables = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).variables) || {};
-    
+
     const query = (cacheUpdateQuery && (cacheUpdateQuery as QueryWithVariables).query) || (cacheUpdateQuery as DocumentNode);
     const queryField = getOperationFieldName(query);
 
