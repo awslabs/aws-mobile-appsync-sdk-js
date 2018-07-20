@@ -9,11 +9,11 @@
 import { readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
 import { ApolloLink, Observable, Operation } from "apollo-link";
 import { getOperationDefinition, getOperationName, getMutationDefinition, resultKeyNameFromField } from "apollo-utilities";
-import { Store, combineReducers } from "redux";
 import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
-import { DocumentNode } from "graphql";
+import { DocumentNode, FieldNode } from "graphql";
 
 import { NORMALIZED_CACHE_KEY, METADATA_KEY } from "../cache";
+import { AWSAppsyncGraphQLError } from "../types";
 
 const actions = {
     SAVE_SNAPSHOT: 'SAVE_SNAPSHOT',
@@ -68,7 +68,7 @@ export class OfflineLink extends ApolloLink {
                         }
                     }
 
-                    const data = enqueueMutation(operation, this.store, observer);
+                    const data = enqueueMutation(operation, this.store);
 
                     observer.next({ data });
                     observer.complete();
@@ -139,10 +139,10 @@ const processOfflineQuery = (operation, theStore) => {
  * @param {Operation} operation
  * @param {Store} theStore
  */
-const enqueueMutation = (operation, theStore, observer) => {
+const enqueueMutation = (operation, theStore): object => {
     const { query: mutation, variables } = operation;
-    const { cache, optimisticResponse,
-        AASContext: { doIt = false, refetchQueries = undefined, update = undefined } = {}
+    const { optimisticResponse,
+        AASContext: { refetchQueries = undefined, update = undefined } = {}
     } = operation.getContext();
 
     setImmediate(() => {
@@ -172,7 +172,7 @@ const enqueueMutation = (operation, theStore, observer) => {
     } else {
         const mutationDefinition = getMutationDefinition(mutation);
 
-        result = mutationDefinition.selectionSet.selections.reduce((acc, elem) => {
+        result = mutationDefinition.selectionSet.selections.reduce((acc, elem: FieldNode) => {
             acc[resultKeyNameFromField(elem)] = null
 
             return acc;
@@ -325,12 +325,12 @@ export interface ConflictResolutionInfo {
 }
 
 export const discard = (fn = (obj: ConflictResolutionInfo) => 'DISCARD') => (error, action, retries) => {
-    const { graphQLErrors = [] } = error;
+    const { graphQLErrors = [] }: { graphQLErrors: AWSAppsyncGraphQLError[] } = error;
     const conditionalCheck = graphQLErrors.find(err => err.errorType === 'DynamoDB:ConditionalCheckFailedException');
 
     if (conditionalCheck) {
         if (typeof fn === 'function') {
-            const { data, path } = conditionalCheck;
+            const { data } = (conditionalCheck as AWSAppsyncGraphQLError);
             const { meta: { offline: { effect: { mutation, variables } } } } = action;
             const mutationName = getOperationName(mutation);
             const operationDefinition = getOperationDefinition(mutation)
