@@ -11,7 +11,7 @@ By default, the helpers look at the GraphQL operation name of the subscription/m
 ## `graphqlMutation`
 ### Import
 ```javascript
-import { buildSubscription } from "aws-appsync";
+import { graphqlMutation } from 'aws-appsync-react';
 ```
 
 ### Signature
@@ -26,9 +26,10 @@ graphqlMutation(
 ```
 
 ### Parameters
-- `subscriptionQuery: CacheUpdateQuery` - The GraphQL subscription DocumentNode or CacheUpdateQuery
-- `cacheUpdateQuery: CacheUpdateQuery` - The query for which the result needs to be updated
-- (Optional) `idField: string`
+- `mutation: DocumentNode` - A DocumentNode for the GraphQL mutation
+- `cacheUpdateQuery: CacheUpdatesOptions` - The queries for which the result needs to be updated
+- `typename: string` - Type name of the result of your mutation (__typename from your GraphQL schema)
+- (Optional) `idField: string` - Name of the field used to uniquely identify your records
 - (Optional) `operationType: CacheOperationTypes` - One of `'auto'`, `'add'`, `'remove'`, `'update'`.
 - Returns `React.Component` - A react HOC with a prop named after the graphql mutation (e.g. `this.props.addTodo`) 
 
@@ -40,7 +41,7 @@ Builds a SubscribeToMoreOptions object ready to be used by Apollo's `subscribeTo
 
 ### Import
 ```javascript
-import { graphqlMutation } from 'aws-appsync-react';
+import { buildSubscription } from "aws-appsync";
 ```
 
 ### Signature
