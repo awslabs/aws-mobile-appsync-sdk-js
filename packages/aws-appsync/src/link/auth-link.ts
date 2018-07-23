@@ -8,6 +8,7 @@
  */
 import { Observable, Operation, NextLink } from 'apollo-link';
 import { ApolloLink } from 'apollo-link';
+import { ExecutionResult } from 'graphql';
 import { print } from 'graphql/language/printer';
 
 import { Signer } from './signer';

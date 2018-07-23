@@ -10,9 +10,10 @@ import { ApolloError } from 'apollo-client';
 import { Observable, Operation } from 'apollo-link';
 import { ApolloLink } from 'apollo-link';
 import { getOperationDefinition } from "apollo-utilities";
-import { GraphQLError } from 'graphql';
+import { ExecutionResult, GraphQLError } from 'graphql';
 
 import upload from "./complex-object-link-uploader";
+import { AWSAppsyncGraphQLError } from '../types';
 
 export class ComplexObjectLink extends ApolloLink {
 
@@ -36,8 +37,10 @@ export const complexObjectLink = (credentials) => {
             const isMutation = operationType === 'mutation';
             const _a = isMutation ? findInObject(operation.variables) : [];
             let uploadPromise = Promise.resolve(operation);
+
             if (Object.keys(_a).length > 0) {
-                var uploadCredentials = typeof credentials === 'function' ? credentials.call() : credentials;                
+                const uploadCredentials = typeof credentials === 'function' ? credentials.call() : credentials;
+              
                 let fileFieldKey;
                 const _uploadFiles = function (obj) {
                     Object.keys(obj).find(function (indexKey: any) {
@@ -55,10 +58,11 @@ export const complexObjectLink = (credentials) => {
                                     }else{
                                         operation.variables[indexKey] = { bucket: bucket, key: key, region: region };
                                     }
+                              
                                     return operation;
                                 }).catch(err => {                
                                     const error = new GraphQLError(err.message);
-                                    error.errorType = 'AWSAppSyncClient:S3UploadException'
+                                     (error as AWSAppsyncGraphQLError).errorType = 'AWSAppSyncClient:S3UploadException'
 
                                     throw new ApolloError({
                                         graphQLErrors: [error],

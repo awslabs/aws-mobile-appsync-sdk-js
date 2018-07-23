@@ -29,6 +29,19 @@ yarn add aws-appsync
 
 ## Usage
 
+[React / React Native](https://github.com/awslabs/aws-mobile-appsync-sdk-js#react--react-native)   
+- [Creating an AppSync client](https://github.com/awslabs/aws-mobile-appsync-sdk-js#creating-a-client)
+- [queries](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries)
+- [mutations](https://github.com/awslabs/aws-mobile-appsync-sdk-js#mutations--optimistic-ui-with-graphqlmutation-helper)
+- [subscriptions](https://github.com/awslabs/aws-mobile-appsync-sdk-js#subscriptions-with-buildsubscription-helper)
+- [offline helpers](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-helpers)
+- [Tutorial](https://github.com/awslabs/aws-mobile-appsync-sdk-js/tree/master/tutorials/react-offline-realtime-todos)
+
+[Vue](https://github.com/awslabs/aws-mobile-appsync-sdk-js#vue)   
+[Angular](https://github.com/awslabs/aws-mobile-appsync-sdk-js#angular--ionic-examples-coming-soon)   
+[Creating a new AWS AppSync API](https://github.com/awslabs/aws-mobile-appsync-sdk-js#creating-an-appsync-project)   
+[License](https://github.com/awslabs/aws-mobile-appsync-sdk-js#license)   
+
 ### React / React Native    
 
 For more documentation on `graphql` operations performed by React Apollo click [here](https://www.apollographql.com/docs/react/api/react-apollo.html#graphql).
@@ -49,7 +62,7 @@ const client = new AWSAppSyncClient({
   auth: {
     type: AppSyncConfig.authenticationType,
     apiKey: AppSyncConfig.apiKey,
-    jwtToken: async () => token, // Required when you use Cognito UserPools OR OpenID Connect. token object is obtained previously
+    // jwtToken: async () => token, // Required when you use Cognito UserPools OR OpenID Connect. token object is obtained previously
   }
 })
 
@@ -81,57 +94,163 @@ const listPosts = gql`
   }
 `
 class App extends Component {
-  // component you are connecting
-  // data will be available as this.props.posts
+  render() {
+    return (
+      <div>
+        {
+          this.props.posts.map((post, index) => (
+            <h2 key={index}>{post.name}</h2>
+          ))
+        }
+      </div>
+    )
+  }
 }
 
 export default graphql(listPosts, {
+  options: {
+    fetchPolicy: 'cache-and-network'
+  },
   props: props => ({
-    posts: props.data.listPosts && props.data.listPosts.items
+    posts: props.data.listPosts ? props.data.listPosts.items : []
   })
 })(App)
 
 ```
 
-#### Mutations
+#### Mutations & optimistic UI (with graphqlMutation helper)
 
 ```js
 import gql from 'graphql-tag'
-import { graphql } from 'react-apollo'
+import { graphql, compose } from 'react-apollo'
+import { graphqlMutation } from 'aws-appsync-react'
 
-const createPost = gql`
-  mutation createPost($id: ID!, $name: String!) {
+const CreatePost = gql`
+  mutation createPost($name: String!) {
     createPost(input: {
-      id: $id
       name: $name
     }) {
-      id
+      name
     }
   }
 `
 
 class App extends Component {
-  // component you are connecting
-  // onAdd function will be available as this.props.onAdd
-  // add new item -> this.props.onAdd({ id: 0, name: 'Get Groceries' })
+  state = { name: '' }
+  onChange = (e) => { this.setState({ name: e.target.value }) }
+  addTodo = () => this.props.createPost({ name: this.state.name })
+  render() {
+    return (
+      <div>
+        <input onChange={this.onChange} placeholder='Todo name' />
+        <button onClick={this.addTodo}>Add Todo</button>
+        {
+          this.props.posts.map((post, index) => (
+            <h2 key={index}>{post.name}</h2>
+          ))
+        }
+      </div>
+    )
+  }
 }
 
-export default graphql(createPost, {
-  props: (props) => ({
-    onAdd: (post) => {
-      props.mutate({
-        variables: post
-      })
-    }
+export default compose(
+  graphql(listPosts, {
+    options: {
+      fetchPolicy: 'cache-and-network'
+    },
+    props: props => ({
+      posts: props.data.listPosts ? props.data.listPosts.items : []
+    })
   }),
-})(App)
+  graphqlMutation(CreatePost, listPosts, 'Post')
+)(App)
 ```
 
-### Subscriptions
+#### Mutations & optimistic UI (without graphqlMutation helper)
+
+```js
+import gql from 'graphql-tag'
+import uuidV4 from 'uuid/v4'
+import { graphql, compose } from 'react-apollo'
+
+const CreatePost = gql`
+  mutation createPost($name: String!) {
+    createPost(input: {
+      name: $name
+    }) {
+      name
+    }
+  }
+`
+
+class App extends Component {
+  state = { name: '' }
+  onChange = (e) => { this.setState({ name: e.target.value }) }
+  addTodo = () => this.props.onAdd({ id: uuidV4(), name: this.state.name })
+  render() {
+    return (
+      <div>
+        <input onChange={this.onChange} placeholder='Todo name' />
+        <button onClick={this.addTodo}>Add Todo</button>
+        {
+          this.props.posts.map((post, index) => (
+            <h2 key={index}>{post.name}</h2>
+          ))
+        }
+      </div>
+    )
+  }
+}
+
+export default compose(
+  graphql(listPosts, {
+    options: {
+      fetchPolicy: 'cache-and-network'
+    },
+    props: props => ({
+      posts: props.data.listPosts ? props.data.listPosts.items : []
+    })
+  }),
+  graphql(CreatePost, {
+    options: {
+      update: (dataProxy, { data: { createPost } }) => {
+        const query = listPosts
+        const data = dataProxy.readQuery({ query })
+        data.listPosts.items.push(createPost)
+        dataProxy.writeQuery({ query, data })
+      }
+    },
+    props: (props) => ({
+      onAdd: (post) => {
+        props.mutate({
+          variables: post,
+          optimisticResponse: () => ({
+            createPost: { ...post, __typename: 'Post' }
+          }),
+        })
+      }
+    }),
+  })
+)(App)
+```
+#### Subscriptions (with buildSubscription helper)
 
 ```js
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
+import  { buildSubscription } from 'aws-appsync'
+
+const listPosts = gql`
+  query listPosts {
+    listPosts {
+      items {
+        id
+        name
+      }
+    }
+  }
+`
 
 const PostSubscription = gql`
   subscription postSubscription {
@@ -143,15 +262,84 @@ const PostSubscription = gql`
 `
 
 class App extends React.Component {
-  // component you are connecting
   componentDidMount() {
-    this.props.subscribeToNewPosts()
+    this.props.data.subscribeToMore(
+      buildSubscription(PostSubscription, listPosts)
+    )
+  }
+  render() {
+    return (
+      <div>
+        {
+          this.props.posts.map((post, index) => (
+            <h2 key={index}>{post.name}</h2>
+          ))
+        }
+      </div>
+    )
   }
 }
 
 export default graphql(listPosts, {
+  options: {
+    fetchPolicy: 'cache-and-network'
+  },
   props: props => ({
-    posts: props.data.listPosts && props.data.listPosts,
+    posts: props.data.listPosts ? props.data.listPosts.items : [],
+    data: props.data
+  })
+})(App)
+```
+
+#### Subscriptions (without buildSubscription helper)
+
+```js
+import gql from 'graphql-tag'
+import { graphql } from 'react-apollo'
+
+const listPosts = gql`
+  query listPosts {
+    listPosts {
+      items {
+        id
+        name
+      }
+    }
+  }
+`
+
+const PostSubscription = gql`
+  subscription postSubscription {
+    onCreatePost {
+      id
+      name
+    }
+  } 
+`
+
+class App extends React.Component {
+  componentDidMount() {
+    this.props.subscribeToNewPosts()
+  }
+  render() {
+    return (
+      <div>
+        {
+          this.props.posts.map((post, index) => (
+            <h2 key={index}>{post.name}</h2>
+          ))
+        }
+      </div>
+    )
+  }
+}
+
+export default graphql(listPosts, {
+  options: {
+    fetchPolicy: 'cache-and-network'
+  },
+  props: props => ({
+    posts: props.data.listPosts ? props.data.listPosts.items : [],
     subscribeToNewPosts: params => {
       props.data.subscribeToMore({
         document: PostSubscription,
@@ -159,11 +347,16 @@ export default graphql(listPosts, {
           ...prev,
           listPosts: { __typename: 'PostConnection', items: [onCreatePost, ...prev.listPosts.items.filter(post => post.id !== onCreatePost.id)] }
         })
-      });
+      })
     },
   })
 })(App)
 ```
+
+
+#### Offline helpers
+
+For detailed documentation about the offline helpers, look at the [API Definifion](OFFLINE_HELPERS.md).
 
 ### Vue    
 
@@ -225,8 +418,8 @@ export default {
   name: 'App',
   data: () => ({ hydrated: false }),
   async mounted() {
-    await this.$apollo.provider.defaultClient.hydrated();
-    this.hydrated = true;
+    await this.$apollo.provider.defaultClient.hydrated()
+    this.hydrated = true
   },
 }
 </script>
@@ -390,13 +583,11 @@ export default {
 }
 ```
 
-#### Angular / Ionic examples coming soon
+### Angular / Ionic examples coming soon
 
 ## Creating an AppSync Project    
 
 To create a new AppSync project, go to https://aws.amazon.com/appsync/.
-
-For a video walkthrough of how to create a new AppSync project, check out [this](https://www.youtube.com/watch?v=0Xbt7VqkJNc) video.
 
 ## License
 

@@ -6,9 +6,11 @@
         "target": "es5",
         "moduleResolution": "node",
         "noEmitOnError": true,
+        "declaration": true,
         "lib": [
             "dom",
-            "es6"
+            "es6",
+            "esnext.asynciterable"
         ],
         "jsx": "react"
     },
