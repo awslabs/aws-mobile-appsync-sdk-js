@@ -66,15 +66,15 @@ buildSubscription(
 ## Actions and their list of prefixes when using `CacheOperationTypes.AUTO`
 | | add | remove | update |
 | --- | ---- | ---- | ---- |
-| | update | delete | create
-| | updated | deleted | created
-| | upsert | discard | put
-| | upserted | discarded | set
-| | edit | erase | add
-| | edited | erased | added
-| | modify | remove | new
-| | modified | removed | insert
-| | | | inserted
+| |create | delete |  update
+| |created | deleted |  updated
+| |put | discard |  upsert
+| |set | discarded |  upserted
+| |add | erase |  edit
+| |added | erased |  edited
+| |new | remove |  modify
+| |insert | removed |  modified
+| |inserted |  |
 
 ---
 
