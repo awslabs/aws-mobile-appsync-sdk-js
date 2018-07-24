@@ -239,7 +239,7 @@ export default compose(
 ```js
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
-import  { buildSubscription } from 'aws-appsync'
+import { buildSubscription } from 'aws-appsync'
 
 const listPosts = gql`
   query listPosts {
