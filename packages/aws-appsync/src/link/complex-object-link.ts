@@ -9,113 +9,139 @@
 import { ApolloError } from 'apollo-client';
 import { Observable, Operation } from 'apollo-link';
 import { ApolloLink } from 'apollo-link';
-import { getOperationDefinition } from "apollo-utilities";
+import { getOperationDefinition } from 'apollo-utilities';
 import { ExecutionResult, GraphQLError } from 'graphql';
 
-import upload from "./complex-object-link-uploader";
+import upload from './complex-object-link-uploader';
 import { AWSAppsyncGraphQLError } from '../types';
 
 export class ComplexObjectLink extends ApolloLink {
+  private link: ApolloLink;
 
-    private link: ApolloLink;
+  constructor(credentials) {
+    super();
 
-    constructor(credentials) {
-        super();
+    this.link = complexObjectLink(credentials);
+  }
 
-        this.link = complexObjectLink(credentials);
-    }
-
-    request(operation, forward) {
-        return this.link.request(operation, forward);
-    }
+  request(operation, forward) {
+    return this.link.request(operation, forward);
+  }
 }
 
-export const complexObjectLink = (credentials) => {
-    return new ApolloLink((operation, forward) => {
-        return new Observable(observer => {
-            let handle;
+const replace = (obj, path, newValue) => {
+  if (path.length === 1) {
+    obj[path] = newValue;
+  } else {
+    const newPath = path.shift();
+    replace(obj[newPath], path, newValue);
+  }
+};
 
-            const { operation: operationType } = getOperationDefinition(operation.query);
-            const isMutation = operationType === 'mutation';
-            const [fileFieldKey = undefined, fileField = undefined] = isMutation ? findInObject(operation.variables) : [];
+export const complexObjectLink = credentials => {
+  return new ApolloLink((operation, forward) => {
+    return new Observable(observer => {
+      let handle;
 
-            let uploadPromise = Promise.resolve(operation);
+      const { operation: operationType } = getOperationDefinition(
+        operation.query,
+      );
+      const isMutation = operationType === 'mutation';
+      const files = isMutation ? findInObject(operation.variables) : {};
 
-            if (fileField) {
-                const uploadCredentials = typeof credentials === 'function' ? credentials.call() : credentials;
+      let uploadPromise = Promise.resolve(operation);
 
-                uploadPromise = Promise.resolve(uploadCredentials).then(credentials => upload(fileField, { credentials }).then(() => {
-                    const { bucket, key, region } = fileField;
-                    operation.variables[fileFieldKey] = { bucket, key, region };
+      if (Object.keys(files).length > 0) {
+        const uploadCredentials =
+          typeof credentials === 'function' ? credentials.call() : credentials;
 
-                    return operation;
-                }).catch(err => {
-                    const error = new GraphQLError(err.message);
-                    (error as AWSAppsyncGraphQLError).errorType = 'AWSAppSyncClient:S3UploadException'
+        uploadPromise = Promise.resolve(uploadCredentials)
+          .then(credentials =>
+            Promise.all(
+              Object.keys(files).map(
+                async key => await upload(files[key], { credentials }),
+              ),
+            ),
+          )
+          .then(() => {
+            Object.keys(files).forEach(path => {
+              const { bucket, key, region } = files[path];
+              replace(operation.variables, path.split('.'), {
+                bucket,
+                key,
+                region,
+              });
+            });
+            return operation;
+          })
+          .catch(err => {
+            const error = new GraphQLError(err.message);
+            (error as AWSAppsyncGraphQLError).errorType =
+              'AWSAppSyncClient:S3UploadException';
 
-                    throw new ApolloError({
-                        graphQLErrors: [error],
-                    });
-                }));
-            }
+            throw new ApolloError({
+              graphQLErrors: [error],
+            });
+          });
+      }
 
-            uploadPromise
-                .then(forward)
-                .then(observable => {
-                    handle = observable.subscribe({
-                        next: observer.next.bind(observer),
-                        error: observer.error.bind(observer),
-                        complete: observer.complete.bind(observer),
-                    });
-                }).catch(err => {
-                    observer.error(err);
-                });
-
-            return () => {
-                if (handle) handle.unsubscribe();
-            };
+      uploadPromise
+        .then(forward)
+        .then(observable => {
+          handle = observable.subscribe({
+            next: observer.next.bind(observer),
+            error: observer.error.bind(observer),
+            complete: observer.complete.bind(observer),
+          });
+        })
+        .catch(err => {
+          observer.error(err);
         });
+
+      return () => {
+        if (handle) handle.unsubscribe();
+      };
     });
-}
+  });
+};
 
 const complexObjectFields = [
-    { name: 'bucket', type: 'string' },
-    { name: 'key', type: 'string' },
-    { name: 'region', type: 'string' },
-    { name: 'mimeType', type: 'string' },
-    { name: 'localUri', type: 'object' },
+  { name: 'bucket', type: 'string' },
+  { name: 'key', type: 'string' },
+  { name: 'region', type: 'string' },
+  { name: 'mimeType', type: 'string' },
+  { name: 'localUri', type: 'object' },
 ];
-const findInObject = obj => {
-    let which;
 
-    const _findInObject = obj => {
-        return Object.keys(obj).find(key => {
-            const val = obj[key];
+const findInObject = (obj, prefix = undefined, data = {}) => {
+  const result = Object.keys(obj).forEach(key => {
+    const val = obj[key];
 
-            if (val && typeof val === 'object') {
-                const hasFields = complexObjectFields.every(field => {
-                    const hasValue = val[field.name];
-                    const types: string[] = Array.isArray(field.type) ? field.type : [field.type];
-                    const isOfType = hasValue && types.reduce((prev, curr) => {
-                        return prev || typeof val[field.name] === curr;
-                    }, false);
+    if (val && typeof val === 'object') {
+      const hasFields = complexObjectFields.every(field => {
+        const hasValue = val[field.name];
+        const types: string[] = Array.isArray(field.type)
+          ? field.type
+          : [field.type];
+        const isOfType =
+          hasValue &&
+          types.reduce((prev, curr) => {
+            return prev || typeof val[field.name] === curr;
+          }, false);
 
-                    return isOfType;
-                });
+        return isOfType;
+      });
 
-                if (hasFields) {
-                    which = val;
-                    return true;
-                }
-
-                return _findInObject(val);
-            }
-
-            return false;
-        });
+      if (hasFields) {
+        data = { ...data, [prefix ? `${prefix}.${key}` : key]: val };
+      } else {
+        data = {
+          ...data,
+          ...findInObject(val, prefix ? `${prefix}.${key}` : key, data),
+        };
+      }
     }
+  });
 
-    const key = _findInObject(obj);
-
-    return [key, which];
+  return data;
 };
