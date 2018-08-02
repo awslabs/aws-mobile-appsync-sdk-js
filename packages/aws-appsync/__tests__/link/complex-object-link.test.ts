@@ -1,11 +1,11 @@
 import { ApolloLink, execute, Observable } from "apollo-link";
 import gql from 'graphql-tag';
 import { complexObjectLink, ComplexObjectLink } from "../../src/link/complex-object-link";
-import upload from "../../src/link/complex-object-link-uploader";
+import * as S3 from 'aws-sdk/clients/s3';
 
-jest.mock('../../src/link/complex-object-link-uploader');
+const uploadMock = jest.fn(() => ({ promise: () => Promise.resolve() }));
 
-(upload as jest.Mocked<any>).mockImplementation(() => Promise.resolve());
+S3.prototype.upload = uploadMock;
 
 const inspectionLink = jest.fn((operation, forward) => forward(operation));
 
@@ -38,7 +38,7 @@ test('Is ignored for queries', done => {
 
     execute(prepareLinkForTest(link), { query }).subscribe({
         next: () => {
-            expect(upload).toHaveBeenCalledTimes(0);
+            expect(S3.prototype.upload).toHaveBeenCalledTimes(0);
             done();
         },
         error: fail
@@ -52,7 +52,7 @@ test('Is ignored for subscriptions', done => {
 
     execute(prepareLinkForTest(link), { query }).subscribe({
         next: () => {
-            expect(upload).toHaveBeenCalledTimes(0);
+            expect(S3.prototype.upload).toHaveBeenCalledTimes(0);
             done();
         },
         error: fail
@@ -71,7 +71,7 @@ test('Is ignored for mutations with no S3Object', done => {
 
     execute(prepareLinkForTest(link), operation).subscribe({
         next: () => {
-            expect(upload).toHaveBeenCalledTimes(0);
+            expect(S3.prototype.upload).toHaveBeenCalledTimes(0);
             done();
         },
         error: fail
@@ -96,7 +96,7 @@ test('Is run for mutations with a S3Object', done => {
 
     execute(prepareLinkForTest(link), operation).subscribe({
         next: () => {
-            expect(upload).toHaveBeenCalled();
+            expect(S3.prototype.upload).toHaveBeenCalled();
             done();
         },
         error: fail
@@ -128,7 +128,7 @@ test('Is run for mutations with multiple S3Objects', done => {
 
     execute(prepareLinkForTest(link), operation).subscribe({
         next: () => {
-            expect(upload).toHaveBeenCalledTimes(2);
+            expect(S3.prototype.upload).toHaveBeenCalledTimes(2);
             done();
         },
         error: fail
@@ -169,7 +169,7 @@ test('Is run for mutations with multiple S3Objects (array)', done => {
 
     execute(prepareLinkForTest(link), operation).subscribe({
         next: () => {
-            expect(upload).toHaveBeenCalledTimes(3);
+            expect(S3.prototype.upload).toHaveBeenCalledTimes(3);
             done();
         },
         error: fail
@@ -192,14 +192,14 @@ test('Calls observable.error on error', done => {
         },
     };
 
-    (upload as jest.Mocked<any>).mockImplementationOnce(() => {
-        throw new Error('Some error');
-    });
+    (S3.prototype.upload as jest.Mocked<any>).mockImplementationOnce(() => ({
+        promise: () => { throw new Error('Some S3 error') }
+    }));
 
     execute(prepareLinkForTest(link), operation).subscribe({
         next: done,
         error: (err) => {
-            expect(err.message).toBe('GraphQL error: Some error')
+            expect(err.message).toBe('GraphQL error: Some S3 error')
             expect(err.graphQLErrors.length).toBe(1);
             expect(err.graphQLErrors[0].errorType).toBe('AWSAppSyncClient:S3UploadException');
             expect(err).toBeInstanceOf(Error);
@@ -232,11 +232,12 @@ test('Is run for mutations with a nested S3Object', done => {
 
     execute(prepareLinkForTest(link), operation).subscribe({
         next: () => {
-            expect(upload).toHaveBeenCalledWith({
-                bucket: 'bucket',
-                key: 'key',
-                region: 'region',
-            }, { credentials: null });
+            expect(S3.prototype.upload).toHaveBeenCalledWith({
+                Bucket: 'bucket',
+                Key: 'key',
+                Body: {},
+                ContentType: 'mimeType'
+            });
 
             const [vars] = [...inspectionLink.mock.calls].pop();
             expect(vars).toMatchObject({
@@ -288,13 +289,14 @@ test('Removes localUri and mimeType from variables sent to api and keeps everyth
 
     execute(prepareLinkForTest(link), operation).subscribe({
         next: () => {
-            expect(upload).toHaveBeenCalledWith({
-                bucket: 'bucket',
-                key: 'key',
-                region: 'region',
-            }, { credentials: null });
+            expect(S3.prototype.upload).toHaveBeenCalledWith({
+                Bucket: 'bucket',
+                Key: 'key',
+                Body: {},
+                ContentType: 'mimeType'
+            });
 
-            const [{variables: vars}] = [...inspectionLink.mock.calls].pop();
+            const [{ variables: vars }] = [...inspectionLink.mock.calls].pop();
             expect(vars.levelOne.levelTwo.levelThree.aFile.aField).toBe('a value');
             expect(vars.levelOne.levelTwo.levelThree.aFile.localUri).toBeUndefined();
             expect(vars.levelOne.levelTwo.levelThree.aFile.mimeType).toBeUndefined();

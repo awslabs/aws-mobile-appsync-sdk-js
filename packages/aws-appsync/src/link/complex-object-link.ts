@@ -46,7 +46,7 @@ export const complexObjectLink = (credentials) => {
 
                 uploadPromise = Promise.resolve(uploadCredentials)
                     .then(credentials => {
-                        const uploadPromises = Object.entries(objectsToUpload).map(([path, fileField]) => upload(fileField, { credentials }));
+                        const uploadPromises = Object.entries(objectsToUpload).map(([_, fileField]) => upload(fileField, { credentials }));
 
                         return Promise.all([operation, ...uploadPromises] as Promise<any>[]);
                     })
@@ -107,8 +107,7 @@ const findInObject = obj => {
         }
 
         if (testFn(obj)) {
-            const { bucket, key, region } = obj;
-            acc[path] = { bucket, key, region };
+            acc[path] = { ...obj };
             delete obj.mimeType;
             delete obj.localUri;
         }
