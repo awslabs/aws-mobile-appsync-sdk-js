@@ -14,7 +14,24 @@
     "url": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git"
   },
   "scripts": {
-    "prepare": "tsc && cp -r src/vendor lib/vendor"
+    "prepare": "tsc && cp -r src/vendor lib/vendor",
+    "test": "jest --coverage --coverageReporters=text",
+    "test-watch": "jest --watch"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ],
+    "testURL": "http://localhost"
   },
   "dependencies": {
     "@redux-offline/redux-offline": "^2.2.1",
@@ -33,8 +50,12 @@
   },
   "devDependencies": {
     "@types/graphql": "0.12.4",
+    "@types/jest": "^23.3.1",
     "@types/node": "^8.0.46",
     "@types/zen-observable": "^0.5.3",
+    "graphql-tag": "^2.9.2",
+    "jest": "^23.4.2",
+    "ts-jest": "^23.0.1",
     "typescript": "^2.5.3"
   }
 }

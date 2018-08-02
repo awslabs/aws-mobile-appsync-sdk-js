@@ -37,26 +37,29 @@ export const complexObjectLink = (credentials) => {
 
             const { operation: operationType } = getOperationDefinition(operation.query);
             const isMutation = operationType === 'mutation';
-            const [fileFieldKey = undefined, fileField = undefined] = isMutation ? findInObject(operation.variables) : [];
+            const objectsToUpload = isMutation && findInObject(operation.variables);
 
             let uploadPromise = Promise.resolve(operation);
 
-            if (fileField) {
+            if (Object.keys(objectsToUpload).length) {
                 const uploadCredentials = typeof credentials === 'function' ? credentials.call() : credentials;
 
-                uploadPromise = Promise.resolve(uploadCredentials).then(credentials => upload(fileField, { credentials }).then(() => {
-                    const { bucket, key, region } = fileField;
-                    operation.variables[fileFieldKey] = { bucket, key, region };
+                uploadPromise = Promise.resolve(uploadCredentials)
+                    .then(credentials => {
+                        const uploadPromises = Object.entries(objectsToUpload).map(([path, fileField]) => upload(fileField, { credentials }));
 
-                    return operation;
-                }).catch(err => {
-                    const error = new GraphQLError(err.message);
-                    (error as AWSAppsyncGraphQLError).errorType = 'AWSAppSyncClient:S3UploadException'
+                        return Promise.all([operation, ...uploadPromises] as Promise<any>[]);
+                    })
+                    .then(([operation, ...all]) => operation)
+                    .catch(err => {
+                        const error = new GraphQLError(err.message);
+                        (error as AWSAppsyncGraphQLError).errorType = 'AWSAppSyncClient:S3UploadException'
 
-                    throw new ApolloError({
-                        graphQLErrors: [error],
+                        throw new ApolloError({
+                            graphQLErrors: [error],
+                            extraInfo: err,
+                        });
                     });
-                }));
             }
 
             uploadPromise
@@ -83,39 +86,45 @@ const complexObjectFields = [
     { name: 'key', type: 'string' },
     { name: 'region', type: 'string' },
     { name: 'mimeType', type: 'string' },
-    { name: 'localUri', type: 'object' },
+    { name: 'localUri', type: ['object', 'string'] },
 ];
 const findInObject = obj => {
-    let which;
+    const testFn = val => {
+        return complexObjectFields.every(field => {
+            const hasValue = val[field.name];
+            const types: string[] = Array.isArray(field.type) ? field.type : [field.type];
+            const isOfType = hasValue && types.reduce((prev, curr) => {
+                return prev || typeof val[field.name] === curr;
+            }, false);
 
-    const _findInObject = obj => {
-        return Object.keys(obj).find(key => {
+            return isOfType;
+        });
+    };
+
+    const _findInObject = (obj, path = '', acc = {}) => {
+        if (!obj) {
+            return acc;
+        }
+
+        if (testFn(obj)) {
+            const { bucket, key, region } = obj;
+            acc[path] = { bucket, key, region };
+            delete obj.mimeType;
+            delete obj.localUri;
+        }
+
+        Object.keys(obj).forEach(key => {
             const val = obj[key];
 
-            if (val && typeof val === 'object') {
-                const hasFields = complexObjectFields.every(field => {
-                    const hasValue = val[field.name];
-                    const types: string[] = Array.isArray(field.type) ? field.type : [field.type];
-                    const isOfType = hasValue && types.reduce((prev, curr) => {
-                        return prev || typeof val[field.name] === curr;
-                    }, false);
-
-                    return isOfType;
-                });
-
-                if (hasFields) {
-                    which = val;
-                    return true;
-                }
-
-                return _findInObject(val);
+            if (Array.isArray(val)) {
+                val.forEach((v, i) => _findInObject(v, `${path}.${key}[${i}]`, acc));
+            } else if (typeof val === 'object') {
+                _findInObject(val, `${path}${path && '.'}${key}`, acc);
             }
-
-            return false;
         });
-    }
 
-    const key = _findInObject(obj);
+        return _findInObject(null, path, acc);
+    };
 
-    return [key, which];
+    return _findInObject(obj);
 };
