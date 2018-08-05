@@ -203,7 +203,7 @@ const findArrayInObject = (obj, path: string[] = []): string[] => {
 };
 
 const getValueByPath = (obj, path: string[]) => {
-    if (!isObject(obj))
+    if (!isObject(obj)) {
         return obj;
     }
 
