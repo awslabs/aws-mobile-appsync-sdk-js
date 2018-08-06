@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.1.3"></a>
+## [1.1.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@1.1.2...aws-appsync-react@1.1.3) (2018-08-06)
+
+
+### Bug Fixes
+
+* **typescript:** Fixed Rehydrated children type ([#206](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/206)) ([ad7db47](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/ad7db47))
+
+
+
+
 <a name="1.1.2"></a>
 ## [1.1.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@1.1.1...aws-appsync-react@1.1.2) (2018-07-20)
 
