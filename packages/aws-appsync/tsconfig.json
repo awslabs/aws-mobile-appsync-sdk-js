@@ -15,7 +15,8 @@
         ]
     },
     "exclude": [
-        "lib"
+        "lib",
+        "__tests__"
     ],
     "compileOnSave": true
 }
