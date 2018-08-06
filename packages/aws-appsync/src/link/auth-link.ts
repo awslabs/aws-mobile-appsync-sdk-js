@@ -116,8 +116,8 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
 export interface AuthOptions {
     type: AUTH_TYPE,
     credentials?: (() => Credentials | CredentialsOptions | null | Promise<Credentials | CredentialsOptions | null>) | Credentials | CredentialsOptions | null,
-    apiKey?: () => (string | Promise<string>) | string,
-    jwtToken?: () => (string | Promise<string>) | string,
+    apiKey?: (() => (string | Promise<string>)) | string,
+    jwtToken?: (() => (string | Promise<string>)) | string,
 };
 
 export const authLink = ({ url, region, auth: { type = AUTH_TYPE.NONE, credentials = {}, apiKey = '', jwtToken = '' } = <AuthOptions>{} }) => {
