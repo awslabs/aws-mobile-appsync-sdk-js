@@ -9,9 +9,9 @@
     babel-runtime "^6.26.0"
     redux-persist "^4.5.0"
 
-"@types/async@2.0.47":
-  version "2.0.47"
-  resolved "https://registry.yarnpkg.com/@types/async/-/async-2.0.47.tgz#f49ba1dd1f189486beb6e1d070a850f6ab4bd521"
+"@types/async@2.0.49":
+  version "2.0.49"
+  resolved "https://registry.npmjs.org/@types/async/-/async-2.0.49.tgz#92e33d13f74c895cb9a7f38ba97db8431ed14bc0"
 
 "@types/graphql@0.12.4":
   version "0.12.4"
@@ -32,6 +32,10 @@
 "@types/zen-observable@^0.5.3":
   version "0.5.3"
   resolved "https://registry.yarnpkg.com/@types/zen-observable/-/zen-observable-0.5.3.tgz#91b728599544efbb7386d8b6633693a3c2e7ade5"
+
+"@types/zen-observable@^0.8.0":
+  version "0.8.0"
+  resolved "https://registry.npmjs.org/@types/zen-observable/-/zen-observable-0.8.0.tgz#8b63ab7f1aa5321248aad5ac890a485656dcea4d"
 
 JSONStream@^1.0.4:
   version "1.3.2"
@@ -145,25 +149,31 @@ apollo-cache-inmemory@^1.0.0:
     apollo-utilities "^1.0.11"
     graphql-anywhere "^4.1.8"
 
-apollo-cache@^1.1.5, apollo-cache@^1.1.7:
+apollo-cache@^1.1.13:
+  version "1.1.13"
+  resolved "https://registry.npmjs.org/apollo-cache/-/apollo-cache-1.1.13.tgz#75c28091825992b2eec9fb63c9a367db3b4714a8"
+  dependencies:
+    apollo-utilities "^1.0.17"
+
+apollo-cache@^1.1.7:
   version "1.1.7"
   resolved "https://registry.yarnpkg.com/apollo-cache/-/apollo-cache-1.1.7.tgz#5817018a2fbfc05a21ba319bd17a3e7538110cc5"
   dependencies:
     apollo-utilities "^1.0.11"
 
-apollo-client@2.2.6:
-  version "2.2.6"
-  resolved "https://registry.yarnpkg.com/apollo-client/-/apollo-client-2.2.6.tgz#38b5a197976f3c22b63623c455d4c4606e420b66"
+apollo-client@2.3.7:
+  version "2.3.7"
+  resolved "https://registry.npmjs.org/apollo-client/-/apollo-client-2.3.7.tgz#891cd2392851f861a62fe334fa76fc629ed19fd3"
   dependencies:
-    "@types/zen-observable" "^0.5.3"
-    apollo-cache "^1.1.5"
+    "@types/zen-observable" "^0.8.0"
+    apollo-cache "^1.1.13"
     apollo-link "^1.0.0"
     apollo-link-dedup "^1.0.0"
-    apollo-utilities "^1.0.9"
+    apollo-utilities "^1.0.17"
     symbol-observable "^1.0.2"
-    zen-observable "^0.7.0"
+    zen-observable "^0.8.0"
   optionalDependencies:
-    "@types/async" "2.0.47"
+    "@types/async" "2.0.49"
 
 apollo-link-context@^1.0.0:
   version "1.0.7"
@@ -198,9 +208,15 @@ apollo-link@^1.0.0, apollo-link@^1.2.1:
     apollo-utilities "^1.0.0"
     zen-observable-ts "^0.8.6"
 
-apollo-utilities@^1.0.0, apollo-utilities@^1.0.11, apollo-utilities@^1.0.9:
+apollo-utilities@^1.0.0, apollo-utilities@^1.0.11:
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/apollo-utilities/-/apollo-utilities-1.0.11.tgz#cd36bfa6e5c04eea2caf0c204a0f38a0ad550802"
+
+apollo-utilities@^1.0.17:
+  version "1.0.17"
+  resolved "https://registry.npmjs.org/apollo-utilities/-/apollo-utilities-1.0.17.tgz#04cd22db5c5dba8dbd349e28b0d9f9f525ab8e8a"
+  dependencies:
+    fast-json-stable-stringify "^2.0.0"
 
 aproba@^1.0.3:
   version "1.2.0"
@@ -2435,9 +2451,9 @@ hoek@4.x.x:
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/hoek/-/hoek-4.2.1.tgz#9634502aa12c445dd5a7c5734b572bb8738aacbb"
 
-hoist-non-react-statics@^2.3.1:
+hoist-non-react-statics@^2.5.0:
   version "2.5.5"
-  resolved "https://registry.yarnpkg.com/hoist-non-react-statics/-/hoist-non-react-statics-2.5.5.tgz#c5903cf409c0dfd908f388e619d86b9c1174cb47"
+  resolved "https://registry.npmjs.org/hoist-non-react-statics/-/hoist-non-react-statics-2.5.5.tgz#c5903cf409c0dfd908f388e619d86b9c1174cb47"
 
 home-or-tmp@^2.0.0:
   version "2.0.0"
@@ -3115,13 +3131,17 @@ lodash.templatesettings@^4.0.0:
   dependencies:
     lodash._reinterpolate "~3.0.0"
 
-lodash@4.17.5, lodash@^4.0.0, lodash@^4.14.0, lodash@^4.16.6, lodash@^4.17.4, lodash@^4.2.1, lodash@^4.3.0, lodash@^4.6.1:
-  version "4.17.5"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.5.tgz#99a92d65c0272debe8c96b6057bc8fbfa3bed511"
-
 lodash@^3.5.0:
   version "3.10.1"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
+
+lodash@^4.0.0, lodash@^4.14.0, lodash@^4.16.6, lodash@^4.17.4, lodash@^4.2.1, lodash@^4.3.0, lodash@^4.6.1:
+  version "4.17.5"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.5.tgz#99a92d65c0272debe8c96b6057bc8fbfa3bed511"
+
+lodash@^4.17.10:
+  version "4.17.10"
+  resolved "https://registry.npmjs.org/lodash/-/lodash-4.17.10.tgz#1b7793cf7259ea38fb3661d4d38b3260af8ae4e7"
 
 longest@^1.0.1:
   version "1.0.1"
@@ -3943,14 +3963,14 @@ rc@^1.0.1, rc@^1.1.6, rc@^1.1.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react-apollo@2.1.0-rc.1:
-  version "2.1.0-rc.1"
-  resolved "https://registry.yarnpkg.com/react-apollo/-/react-apollo-2.1.0-rc.1.tgz#2add0910ad730e0acdb6fe54aedf3303515b23a1"
+react-apollo@^2.1.9:
+  version "2.1.9"
+  resolved "https://registry.npmjs.org/react-apollo/-/react-apollo-2.1.9.tgz#1fd30ea2116375197bd53daa725e6fb8ab43ab80"
   dependencies:
     fbjs "^0.8.16"
-    hoist-non-react-statics "^2.3.1"
+    hoist-non-react-statics "^2.5.0"
     invariant "^2.2.2"
-    lodash "4.17.5"
+    lodash "^4.17.10"
     prop-types "^15.6.0"
 
 react-clone-referenced-element@^1.0.1:
@@ -5363,3 +5383,7 @@ zen-observable-ts@^0.8.6:
 zen-observable@^0.7.0:
   version "0.7.1"
   resolved "https://registry.yarnpkg.com/zen-observable/-/zen-observable-0.7.1.tgz#f84075c0ee085594d3566e1d6454207f126411b3"
+
+zen-observable@^0.8.0:
+  version "0.8.9"
+  resolved "https://registry.npmjs.org/zen-observable/-/zen-observable-0.8.9.tgz#0475c760ff0eda046bbdfa4dc3f95d392807ac53"
