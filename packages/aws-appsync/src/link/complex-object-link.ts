@@ -29,36 +29,51 @@ export class ComplexObjectLink extends ApolloLink {
         return this.link.request(operation, forward);
     }
 }
-
 export const complexObjectLink = (credentials) => {
     return new ApolloLink((operation, forward) => {
         return new Observable(observer => {
             let handle;
-
             const { operation: operationType } = getOperationDefinition(operation.query);
             const isMutation = operationType === 'mutation';
-            const [fileFieldKey = undefined, fileField = undefined] = isMutation ? findInObject(operation.variables) : [];
-
+            const _a = isMutation ? findInObject(operation.variables) : [];
             let uploadPromise = Promise.resolve(operation);
 
-            if (fileField) {
+            if (Object.keys(_a).length > 0) {
                 const uploadCredentials = typeof credentials === 'function' ? credentials.call() : credentials;
+              
+                let fileFieldKey;
+                const _uploadFiles = function (obj) {
+                    Object.keys(obj).find(function (indexKey: any) {
+                        let fileField = obj[indexKey];
+                        if (fileField && typeof fileField === 'object') {
+                            if(Array.isArray(fileField)){
+                                fileFieldKey = indexKey;
+                                _uploadFiles(fileField)
+                                return false
+                            }
+                            uploadPromise = Promise.resolve(uploadCredentials).then(credentials => upload(fileField, { credentials }).then(() => {
+                                    const { bucket, key, region } = fileField;
+                                    if(obj instanceof Array){
+                                        operation.variables[fileFieldKey][indexKey] = { bucket: bucket, key: key, region: region };
+                                    }else{
+                                        operation.variables[indexKey] = { bucket: bucket, key: key, region: region };
+                                    }
+                              
+                                    return operation;
+                                }).catch(err => {                
+                                    const error = new GraphQLError(err.message);
+                                     (error as AWSAppsyncGraphQLError).errorType = 'AWSAppSyncClient:S3UploadException'
 
-                uploadPromise = Promise.resolve(uploadCredentials).then(credentials => upload(fileField, { credentials }).then(() => {
-                    const { bucket, key, region } = fileField;
-                    operation.variables[fileFieldKey] = { bucket, key, region };
-
-                    return operation;
-                }).catch(err => {
-                    const error = new GraphQLError(err.message);
-                    (error as AWSAppsyncGraphQLError).errorType = 'AWSAppSyncClient:S3UploadException'
-
-                    throw new ApolloError({
-                        graphQLErrors: [error],
+                                    throw new ApolloError({
+                                        graphQLErrors: [error],
+                                    });
+                                })
+                            );
+                        }
                     });
-                }));
+                }
+                _uploadFiles(_a);
             }
-
             uploadPromise
                 .then(forward)
                 .then(observable => {
@@ -70,14 +85,12 @@ export const complexObjectLink = (credentials) => {
                 }).catch(err => {
                     observer.error(err);
                 });
-
             return () => {
                 if (handle) handle.unsubscribe();
             };
         });
     });
 }
-
 const complexObjectFields = [
     { name: 'bucket', type: 'string' },
     { name: 'key', type: 'string' },
@@ -85,37 +98,39 @@ const complexObjectFields = [
     { name: 'mimeType', type: 'string' },
     { name: 'localUri', type: 'object' },
 ];
-const findInObject = obj => {
+const findInObject = function (obj) {
+    let s3Files = {}
     let which;
-
-    const _findInObject = obj => {
-        return Object.keys(obj).find(key => {
-            const val = obj[key];
-
+    let prevKey;
+    const _findInObject = function (obj) {
+        let s3Obj = [];
+        return Object.keys(obj).find(function (key: any) {
+            let val = obj[key];
             if (val && typeof val === 'object') {
-                const hasFields = complexObjectFields.every(field => {
+                const hasFields = complexObjectFields.every(function (field) {
                     const hasValue = val[field.name];
                     const types: string[] = Array.isArray(field.type) ? field.type : [field.type];
-                    const isOfType = hasValue && types.reduce((prev, curr) => {
+                    const isOfType = hasValue && types.reduce(function (prev, curr) {
                         return prev || typeof val[field.name] === curr;
                     }, false);
-
                     return isOfType;
                 });
-
                 if (hasFields) {
                     which = val;
-                    return true;
+                    if(obj instanceof Array){
+                        s3Obj[key] = which;
+                        s3Files[prevKey] = s3Obj;                        
+                    }else{
+                        s3Files[key] = which;
+                    }
+                    return false;
                 }
-
-                return _findInObject(val);
+                prevKey = key;                
+                _findInObject(val);
             }
-
             return false;
         });
-    }
-
-    const key = _findInObject(obj);
-
-    return [key, which];
+    };
+    _findInObject(obj);
+    return s3Files;
 };
