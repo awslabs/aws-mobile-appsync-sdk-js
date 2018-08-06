@@ -182,7 +182,7 @@ const findArrayInObject = (obj, path: string[] = []): string[] => {
         return path;
     }
 
-    if (typeof obj !== 'object') {
+    if (!isObject(obj)) {
         return undefined;
     }
 
@@ -203,7 +203,7 @@ const findArrayInObject = (obj, path: string[] = []): string[] => {
 };
 
 const getValueByPath = (obj, path: string[]) => {
-    if (typeof obj !== 'object') {
+    if (!isObject(obj)) {
         return obj;
     }
 
@@ -229,6 +229,9 @@ const setValueByPath = <T>(obj: T, path: string[] = [], value): T => path.reduce
 }, obj);
 
 const isDocument = (doc) => !!doc && doc.kind === 'Document';
+
+// make sure that the object is of type object and is not null.
+const isObject = (object) => object != null && (typeof object === 'object')
 
 /**
  * Builds a MutationOptions object ready to be used by the ApolloClient to automatically update the cache according to the cacheUpdateQuery 
