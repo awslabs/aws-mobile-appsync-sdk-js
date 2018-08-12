@@ -33,6 +33,13 @@ import { ConflictResolutionInfo } from './link/offline-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 import { OperationDefinitionNode } from 'graphql';
 
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+
+interface ApolloMinimalOptions extends Omit<Omit<ApolloClientOptions<InMemoryCache>, 'link'>, 'cache'> {
+    link?: ApolloLink;
+    cache?: ApolloCache<InMemoryCache>;
+};
+
 export { defaultDataIdFromObject };
 
 export const createSubscriptionHandshakeLink = (url, resultsFetcherLink = new HttpLink({ uri: url })) => {
@@ -132,7 +139,7 @@ class AWSAppSyncClient<TCacheShape> extends ApolloClient<TCacheShape> {
     /**
      *
      * @param {object} appSyncOptions
-     * @param {ApolloClientOptions<InMemoryCache>} options
+     * @param {ApolloMinimalOptions} options
      */
     constructor({
         url,
@@ -142,7 +149,7 @@ class AWSAppSyncClient<TCacheShape> extends ApolloClient<TCacheShape> {
         complexObjectsCredentials,
         cacheOptions = {},
         disableOffline = false
-    }: AWSAppSyncClientOptions, options?: ApolloClientOptions<InMemoryCache>) {
+    }: AWSAppSyncClientOptions, options?: ApolloMinimalOptions) {
         const { cache: customCache = undefined, link: customLink = undefined } = options || {};
 
         if (!customLink && (!url || !region || !auth)) {
