@@ -20,7 +20,7 @@ export class NonTerminatingHttpLink extends ApolloLink {
     constructor(contextKey, options) {
         super();
         this.contextKey = contextKey;
-        this.link = createHttpLink(options);
+        this.link = options.resultsFetcherLink;
     }
 
     request(operation, forward) {
