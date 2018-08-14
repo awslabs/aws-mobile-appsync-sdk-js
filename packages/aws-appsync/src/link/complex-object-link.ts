@@ -37,7 +37,7 @@ export const complexObjectLink = (credentials) => {
 
             const { operation: operationType } = getOperationDefinition(operation.query);
             const isMutation = operationType === 'mutation';
-            const objectsToUpload = isMutation && findInObject(operation.variables);
+            const objectsToUpload = isMutation ? findInObject(operation.variables) : {};
 
             let uploadPromise = Promise.resolve(operation);
 
