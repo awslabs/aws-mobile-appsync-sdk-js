@@ -129,11 +129,6 @@ class AWSAppSyncClient<TCacheShape> extends ApolloClient<TCacheShape> {
         }
     }
 
-    /**
-     *
-     * @param {object} appSyncOptions
-     * @param {ApolloClientOptions<InMemoryCache>} options
-     */
     constructor({
         url,
         region,
@@ -142,7 +137,7 @@ class AWSAppSyncClient<TCacheShape> extends ApolloClient<TCacheShape> {
         complexObjectsCredentials,
         cacheOptions = {},
         disableOffline = false
-    }: AWSAppSyncClientOptions, options?: ApolloClientOptions<InMemoryCache>) {
+    }: AWSAppSyncClientOptions, options?: Partial<ApolloClientOptions<TCacheShape>>) {
         const { cache: customCache = undefined, link: customLink = undefined } = options || {};
 
         if (!customLink && (!url || !region || !auth)) {
