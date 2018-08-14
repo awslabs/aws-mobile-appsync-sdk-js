@@ -356,7 +356,7 @@ export default graphql(listPosts, {
 
 #### Offline helpers
 
-For detailed documentation about the offline helpers, look at the [API Definifion](OFFLINE_HELPERS.md).
+For detailed documentation about the offline helpers, look at the [API Definition](OFFLINE_HELPERS.md).
 
 ### Vue    
 
