@@ -21,7 +21,7 @@ import {
     replaceUsingMap,
     saveServerId,
     AuthLink,
-    NonTerminatingHttpLink,
+    NonTerminatingLink,
     SubscriptionHandshakeLink,
     ComplexObjectLink,
     AUTH_TYPE
@@ -45,7 +45,7 @@ export const createSubscriptionHandshakeLink = (url, resultsFetcherLink = new Ht
             return isSubscription;
         },
         ApolloLink.from([
-            new NonTerminatingHttpLink('subsInfo', { uri: url }),
+            new NonTerminatingLink('subsInfo', { link: resultsFetcherLink }),
             new SubscriptionHandshakeLink('subsInfo'),
         ]),
         resultsFetcherLink,
