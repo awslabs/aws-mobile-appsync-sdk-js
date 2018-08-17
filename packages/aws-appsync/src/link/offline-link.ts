@@ -393,44 +393,48 @@ export const replaceUsingMap = (obj, map = {}) => {
         return obj;
     }
 
-    Object.keys(obj).forEach(key => {
-        const val = obj[key];
+    if (typeof obj === 'object') {
+        Object.keys(obj).forEach(key => {
+            const val = obj[key];
 
-        if (Array.isArray(val)) {
-            val.forEach((v, i) => replaceUsingMap(v, map));
-        } else if (typeof val === 'object') {
-            replaceUsingMap(val, map);
-        } else {
-            const newVal = map[val];
-            if (newVal) {
-                obj[key] = newVal;
+            if (Array.isArray(val)) {
+                obj[key] = val.map((v, i) => replaceUsingMap(v, map));
+            } else if (typeof val === 'object') {
+                obj[key] = replaceUsingMap(val, map);
+            } else {
+                const newVal = map[val];
+                if (newVal) {
+                    obj[key] = newVal;
+                }
             }
-        }
-    });
+        });
+    }
 
     return obj;
 };
 
-const getIds = (dataIdFromObject, obj, path = '', acc = {}) => {
+export const getIds = (dataIdFromObject, obj, path = '', acc = {}) => {
     if (!obj) {
         return acc;
     }
 
-    const dataId = dataIdFromObject(obj);
-    if (dataId) {
-        const [, id] = dataId.split(':');
+    const dataId = typeof obj === 'object' ? dataIdFromObject(obj) : obj;
+    if (dataId && path) {
+        const [, , id] = dataId.match(/(.+:)?(.+)/);
         acc[path] = id;
     }
 
-    Object.keys(obj).forEach(key => {
-        const val = obj[key];
+    if (typeof obj === 'object') {
+        Object.keys(obj).forEach(key => {
+            const val = obj[key];
 
-        if (Array.isArray(val)) {
-            val.forEach((v, i) => getIds(dataIdFromObject, v, `${path}.${key}[${i}]`, acc));
-        } else if (typeof val === 'object') {
-            getIds(dataIdFromObject, val, `${path}${path && '.'}${key}`, acc);
-        }
-    });
+            if (Array.isArray(val)) {
+                val.forEach((v, i) => getIds(dataIdFromObject, v, `${path}.${key}[${i}]`, acc));
+            } else if (typeof val === 'object') {
+                getIds(dataIdFromObject, val, `${path}${path && '.'}${key}`, acc);
+            }
+        });
+    }
 
     return getIds(dataIdFromObject, null, path, acc);
 };
