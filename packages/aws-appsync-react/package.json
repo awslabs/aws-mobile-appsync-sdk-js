@@ -30,7 +30,7 @@
     "react": "^16.1.1",
     "react-apollo": "^2.1.9",
     "react-native": "^0.50.3",
-    "typescript": "^2.6.1"
+    "typescript": "^3.0.1"
   },
   "react-native": {
     "./lib/rehydrated": "./lib/rehydrated-rn"
