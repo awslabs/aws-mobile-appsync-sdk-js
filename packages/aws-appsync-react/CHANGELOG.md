@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.1.4"></a>
+## [1.1.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@1.1.3...aws-appsync-react@1.1.4) (2018-08-20)
+
+
+### Bug Fixes
+
+* **typescript:** Make all fields in ApolloClientOptions optional ([#226](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/226)) ([332e912](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/332e912))
+
+
+
+
 <a name="1.1.3"></a>
 ## [1.1.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@1.1.2...aws-appsync-react@1.1.3) (2018-08-06)
 
