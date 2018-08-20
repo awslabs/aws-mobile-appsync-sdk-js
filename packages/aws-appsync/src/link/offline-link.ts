@@ -413,18 +413,24 @@ export const replaceUsingMap = (obj, map = {}) => {
     return obj;
 };
 
+const isUuid = val => typeof val === 'string' && val.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+
 export const getIds = (dataIdFromObject, obj, path = '', acc = {}) => {
     if (!obj) {
         return acc;
     }
 
-    const dataId = typeof obj === 'object' ? dataIdFromObject(obj) : obj;
-    if (dataId && path) {
-        const [, , id] = dataId.match(/(.+:)?(.+)/);
-        acc[path] = id;
-    }
-
     if (typeof obj === 'object') {
+        const dataId = dataIdFromObject(obj);
+
+        if (dataId) {
+            const [, , id] = dataId.match(/(.+:)?(.+)/);
+
+            if (isUuid(dataId)) {
+                acc[path] = id;
+            }
+        }
+
         Object.keys(obj).forEach(key => {
             const val = obj[key];
 

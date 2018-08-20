@@ -1,5 +1,6 @@
 import { replaceUsingMap, getIds } from "../../src/link/offline-link";
 import { defaultDataIdFromObject } from "../../src/cache";
+import { v4 as uuid } from "uuid";
 
 describe("replaceUsingMap", function () {
     test("it replaces", function () {
@@ -131,13 +132,26 @@ describe("getIds", function () {
         const source = {
             anOperation: {
                 __typename: 'aType',
-                id: '123'
+                id: uuid()
             }
         };
 
         const expected = {
-            "anOperation": '123'
+            anOperation: source.anOperation.id
         };
+
+        expect(getIds(defaultDataIdFromObject, source)).toEqual(expected);
+    });
+
+    test("it doesn't return ids that are not uuids", function () {
+        const source = {
+            anOperation: {
+                __typename: 'aType',
+                id: 'not-a-uuid'
+            }
+        };
+
+        const expected = {};
 
         expect(getIds(defaultDataIdFromObject, source)).toEqual(expected);
     });
@@ -146,7 +160,7 @@ describe("getIds", function () {
         const source = {
             anOperation: {
                 __typename: 'aType',
-                aField: '123'
+                aField: uuid()
             }
         };
 
@@ -161,13 +175,13 @@ describe("getIds", function () {
                 __typename: 'aType',
                 aField: {
                     __typename: 'anotherType',
-                    id: '456'
+                    id: uuid()
                 }
             }
         };
 
         const expected = {
-            "anOperation.aField": '456'
+            "anOperation.aField": source.anOperation.aField.id
         };
 
         expect(getIds(defaultDataIdFromObject, source)).toEqual(expected);
@@ -177,43 +191,41 @@ describe("getIds", function () {
         const source = {
             anOperation: {
                 __typename: 'aType',
-                id: '123',
+                id: uuid(),
                 aField: {
                     __typename: 'anotherType',
-                    id: '456'
+                    id: uuid()
                 }
             }
         };
 
         const expected = {
-            "anOperation": '123',
-            "anOperation.aField": '456'
+            "anOperation": source.anOperation.id,
+            "anOperation.aField": source.anOperation.aField.id
         };
 
         expect(getIds(defaultDataIdFromObject, source)).toEqual(expected);
     });
 
-    test("it returns ids from arrays", function () {
+    test("it doesn't return ids from arrays", function () {
         const source = {
             anOperation: {
                 __typename: 'aType',
-                id: '123',
+                id: uuid(),
                 aField: {
                     __typename: 'anotherType',
-                    id: '456',
+                    id: uuid(),
                     anArray: [
-                        '789',
-                        '012',
+                        uuid(),
+                        uuid(),
                     ]
                 }
             }
         };
 
         const expected = {
-            "anOperation": '123',
-            "anOperation.aField": '456',
-            "anOperation.aField.anArray[0]": '789',
-            "anOperation.aField.anArray[1]": '012'
+            "anOperation": source.anOperation.id,
+            "anOperation.aField": source.anOperation.aField.id,
         };
 
         expect(getIds(defaultDataIdFromObject, source)).toEqual(expected);
@@ -223,17 +235,17 @@ describe("getIds", function () {
         const source = {
             anOperation: {
                 __typename: 'aType',
-                idField: '123',
+                idField: uuid(),
                 aField: {
                     __typename: 'anotherType',
-                    idField: '456'
+                    idField: uuid()
                 }
             }
         };
 
         const expected = {
-            "anOperation": '123',
-            "anOperation.aField": '456',
+            "anOperation": source.anOperation.idField,
+            "anOperation.aField": source.anOperation.aField.idField,
         };
 
         // only use "idField" instead of "__typename" and "id"
