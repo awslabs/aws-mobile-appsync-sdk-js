@@ -31,7 +31,7 @@
       "json",
       "node"
     ],
-    "testURL": "http://localhost"
+    "testEnvironment": "node"
   },
   "dependencies": {
     "@redux-offline/redux-offline": "^2.2.1",

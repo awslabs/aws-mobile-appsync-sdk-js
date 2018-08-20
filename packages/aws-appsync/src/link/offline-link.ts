@@ -393,44 +393,54 @@ export const replaceUsingMap = (obj, map = {}) => {
         return obj;
     }
 
-    Object.keys(obj).forEach(key => {
-        const val = obj[key];
+    if (typeof obj === 'object') {
+        Object.keys(obj).forEach(key => {
+            const val = obj[key];
 
-        if (Array.isArray(val)) {
-            val.forEach((v, i) => replaceUsingMap(v, map));
-        } else if (typeof val === 'object') {
-            replaceUsingMap(val, map);
-        } else {
-            const newVal = map[val];
-            if (newVal) {
-                obj[key] = newVal;
+            if (Array.isArray(val)) {
+                obj[key] = val.map((v, i) => replaceUsingMap(v, map));
+            } else if (typeof val === 'object') {
+                obj[key] = replaceUsingMap(val, map);
+            } else {
+                const newVal = map[val];
+                if (newVal) {
+                    obj[key] = newVal;
+                }
             }
-        }
-    });
+        });
+    }
 
     return obj;
 };
 
-const getIds = (dataIdFromObject, obj, path = '', acc = {}) => {
+const isUuid = val => typeof val === 'string' && val.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+
+export const getIds = (dataIdFromObject, obj, path = '', acc = {}) => {
     if (!obj) {
         return acc;
     }
 
-    const dataId = dataIdFromObject(obj);
-    if (dataId) {
-        const [, id] = dataId.split(':');
-        acc[path] = id;
-    }
+    if (typeof obj === 'object') {
+        const dataId = dataIdFromObject(obj);
 
-    Object.keys(obj).forEach(key => {
-        const val = obj[key];
+        if (dataId) {
+            const [, , id] = dataId.match(/(.+:)?(.+)/);
 
-        if (Array.isArray(val)) {
-            val.forEach((v, i) => getIds(dataIdFromObject, v, `${path}.${key}[${i}]`, acc));
-        } else if (typeof val === 'object') {
-            getIds(dataIdFromObject, val, `${path}${path && '.'}${key}`, acc);
+            if (isUuid(dataId)) {
+                acc[path] = id;
+            }
         }
-    });
+
+        Object.keys(obj).forEach(key => {
+            const val = obj[key];
+
+            if (Array.isArray(val)) {
+                val.forEach((v, i) => getIds(dataIdFromObject, v, `${path}.${key}[${i}]`, acc));
+            } else if (typeof val === 'object') {
+                getIds(dataIdFromObject, val, `${path}${path && '.'}${key}`, acc);
+            }
+        });
+    }
 
     return getIds(dataIdFromObject, null, path, acc);
 };
