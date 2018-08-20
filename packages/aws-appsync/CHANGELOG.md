@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.3.4"></a>
+## [1.3.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.3.3...aws-appsync@1.3.4) (2018-08-20)
+
+
+### Bug Fixes
+
+* **link:** Create and use generic non terminating link ([4d91751](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/4d91751))
+* **offline:** Fix handling of objects when getting ids for local mapping ([#231](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/231)) ([29c4ff4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/29c4ff4))
+* **react-native:** Discrepancy in JavaScriptCore iOS vs Android ([#222](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/222)) ([7c3a86c](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/7c3a86c))
+* **typescript:** Make all fields in ApolloClientOptions optional ([#226](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/226)) ([332e912](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/332e912))
+* **typescript:** Make client.mutate use the same types as Apollo's ([#224](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/224)) ([7fe7087](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/7fe7087))
+
+
+
+
 <a name="1.3.3"></a>
 ## [1.3.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.3.2...aws-appsync@1.3.3) (2018-08-06)
 
