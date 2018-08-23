@@ -1,9 +1,18 @@
+/*!
+ * Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of
+ * the License is located at
+ *     http://aws.amazon.com/asl/
+ * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
+ */
 import { v4 as uuid } from 'uuid';
-import { resultKeyNameFromField, cloneDeep } from 'apollo-utilities';
+import { cloneDeep } from 'apollo-utilities';
 import { ApolloClient, MutationOptions, SubscribeToMoreOptions } from 'apollo-client';
-import { DocumentNode, OperationDefinitionNode, FieldNode } from 'graphql';
+import { DocumentNode } from 'graphql';
 import AWSAppSyncClient from '../client';
 import { replaceUsingMap } from '../link';
+import { getOperationFieldName } from '../utils';
 
 export enum CacheOperationTypes {
     AUTO = 'auto',
@@ -79,10 +88,6 @@ export type CacheUpdatesDefinitions = {
 };
 
 export type CacheUpdatesOptions = (variables?: object) => CacheUpdatesDefinitions | CacheUpdatesDefinitions;
-
-const getOperationFieldName = (operation: DocumentNode): string => resultKeyNameFromField(
-    (operation.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode
-);
 
 /**
  * Builds a SubscribeToMoreOptions object ready to be used by Apollo's subscribeToMore() to automatically update the query result in the
