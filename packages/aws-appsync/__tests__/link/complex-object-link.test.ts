@@ -15,8 +15,12 @@ const prepareLinkForTest = link => ApolloLink.from([
     new ApolloLink(() => Observable.of({ data: { x: 'fakeResult' } }))
 ]);
 
+const oldObjectKeys = Object.keys;
+
 afterEach(() => {
     jest.clearAllMocks();
+
+    Object.keys = oldObjectKeys;
 });
 
 test('Can instantiate link', () => {
@@ -170,6 +174,37 @@ test('Is run for mutations with multiple S3Objects (array)', done => {
     execute(prepareLinkForTest(link), operation).subscribe({
         next: () => {
             expect(S3.prototype.upload).toHaveBeenCalledTimes(3);
+            done();
+        },
+        error: fail
+    });
+});
+
+test('https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/237', done => {
+    Object.keys = (obj) => { 
+        if (typeof obj !== 'object') {
+            fail("Object.keys was called with a non-object");
+        }
+
+        return oldObjectKeys(obj);
+    };
+
+    const link = complexObjectLink(null);
+
+    const operation = {
+        query: gql`mutation { someMutation { aField } }`,
+        variables: {
+            media: [
+                "media1",
+                "media2",
+            ],
+            name: "Something",
+        },
+    };
+
+    execute(prepareLinkForTest(link), operation).subscribe({
+        next: () => {
+            expect(S3.prototype.upload).not.toHaveBeenCalled();
             done();
         },
         error: fail

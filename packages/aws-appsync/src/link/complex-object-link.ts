@@ -1,5 +1,5 @@
 /*!
- * Copyright 2017-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of 
  * the License is located at
  *     http://aws.amazon.com/asl/
@@ -112,15 +112,17 @@ const findInObject = obj => {
             delete obj.localUri;
         }
 
-        Object.keys(obj).forEach(key => {
-            const val = obj[key];
+        if (typeof obj === 'object') {
+            Object.keys(obj).forEach(key => {
+                const val = obj[key];
 
-            if (Array.isArray(val)) {
-                val.forEach((v, i) => _findInObject(v, `${path}.${key}[${i}]`, acc));
-            } else if (typeof val === 'object') {
-                _findInObject(val, `${path}${path && '.'}${key}`, acc);
-            }
-        });
+                if (Array.isArray(val)) {
+                    val.forEach((v, i) => _findInObject(v, `${path}.${key}[${i}]`, acc));
+                } else if (typeof val === 'object') {
+                    _findInObject(val, `${path}${path && '.'}${key}`, acc);
+                }
+            });
+        }
 
         return _findInObject(null, path, acc);
     };
