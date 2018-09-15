@@ -7,7 +7,6 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { ApolloLink, Observable } from 'apollo-link';
-import { isTerminating } from 'apollo-link/lib/linkUtils';
 import { setContext } from 'apollo-link-context';
 import { ExecutionResult } from 'graphql';
 
@@ -18,10 +17,6 @@ export class NonTerminatingLink extends ApolloLink {
 
     constructor(contextKey: string, { link }: { link: ApolloLink }) {
         super();
-
-        if (!isTerminating(link)) {
-            throw new Error('The link provided is not a terminating link');
-        }
 
         this.contextKey = contextKey;
         this.link = link;
