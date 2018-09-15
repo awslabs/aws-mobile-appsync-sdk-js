@@ -1,5 +1,5 @@
 /*!
- * Copyright 2017-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of
  * the License is located at
  *     http://aws.amazon.com/asl/
@@ -10,15 +10,36 @@ import { ApolloLink, Observable } from "apollo-link";
 
 import * as Paho from '../vendor/paho-mqtt';
 
-const { Client } = Paho;
+type SubscriptionExtension = {
+    mqttConnections: MqttConnectionInfo[],
+    newSubscriptions: NewSubscriptions,
+}
+
+type MqttConnectionInfo = {
+    client: string,
+    url: string,
+    topics: string[],
+};
+
+type NewSubscriptions = {
+    [key: string]: {
+        topic: string,
+        expireTime: number,
+    }
+};
+
+type ClientObservers = {
+    client: any,
+    observers: Set<ZenObservable.Observer<any>>,
+}
 
 export class SubscriptionHandshakeLink extends ApolloLink {
 
     private subsInfoContextKey: string;
 
-    private clientTopics: Map<Paho.Client, string[]> = new Map();
+    private topicObservers: Map<string, Set<ZenObservable.Observer<any>>> = new Map();
 
-    private topicObserver: Map<string, ZenObservable.SubscriptionObserver<object>> = new Map();
+    private clientObservers: Map<string, ClientObservers> = new Map();
 
     constructor(subsInfoContextKey) {
         super();
@@ -31,174 +52,124 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             extensions: {
                 subscription: { newSubscriptions, mqttConnections }
             }
-        } = subsInfo;
+        }: { extensions: { subscription: SubscriptionExtension } } = subsInfo;
 
-        const newTopics = Object.keys(newSubscriptions).map(subKey => newSubscriptions[subKey].topic);
-        const prevTopicsSet = new Set(this.topicObserver.keys());
-        const newTopicsSet = new Set(newTopics);
-        const lastTopicObserver = new Map(this.topicObserver);
-
-        const connectionsInfo = mqttConnections.map(connInfo => {
-            const connTopics = connInfo.topics;
-
-            const topicsForClient = new Set([
-                ...connTopics.filter(x => prevTopicsSet.has(x)),
-                ...connTopics.filter(x => newTopicsSet.has(x)),
-            ]);
-
-            return {
-                ...connInfo,
-                topics: Array.from(topicsForClient.values())
-            };
-        }).filter(connInfo => connInfo.topics.length);
+        const newSubscriptionTopics = Object.keys(newSubscriptions).map(subKey => newSubscriptions[subKey].topic);
+        const existingTopicsWithObserver = new Set(newSubscriptionTopics.filter(t => this.topicObservers.has(t)));
+        const newTopics = new Set(newSubscriptionTopics.filter(t => !existingTopicsWithObserver.has(t)));
 
         return new Observable(observer => {
-            Promise.resolve()
-                // Disconnect existing clients, wait for them to disconnect
-                .then(this.disconnectAll)
-                // Connect to all topics
-                .then(this.connectAll.bind(this, observer, connectionsInfo, lastTopicObserver));
+            existingTopicsWithObserver.forEach(t => {
+                this.topicObservers.get(t).add(observer);
+                const anObserver = Array.from(this.topicObservers.get(t)).find(() => true);
+
+                const [clientId] = Array.from(this.clientObservers).find(([, { observers }]) => observers.has(anObserver));
+                this.clientObservers.get(clientId).observers.add(observer);
+            });
+
+            const newTopicsConnectionInfo = mqttConnections
+                .filter(c => c.topics.some(t => newTopics.has(t)))
+                .map(({ topics, ...rest }) => ({
+                    ...rest,
+                    topics: topics.filter(t => newTopics.has(t))
+                } as MqttConnectionInfo));
+
+            this.connectNewClients(newTopicsConnectionInfo, observer);
 
             return () => {
-                const [topic = undefined,] = Array.from(this.topicObserver).find(([topic, obs]) => obs === observer) || [];
+                const clientsForCurrentObserver = Array.from(this.clientObservers).filter(([, { observers }]) => observers.has(observer));
+                clientsForCurrentObserver.forEach(([clientId]) => this.clientObservers.get(clientId).observers.delete(observer));
 
-                const [client = undefined,] = Array.from(this.clientTopics).find(([client, t]) => t.indexOf(topic) > -1) || [];
+                this.clientObservers.forEach(({ observers, client }) => {
+                    if (observers.size === 0) {
+                        client.disconnect();
+                        this.clientObservers.delete(client.clientId);
+                    }
+                });
+                this.clientObservers = new Map(
+                    Array.from(this.clientObservers).filter(([, { observers }]) => observers.size > 0)
+                );
 
-                if (client && topic) {
-                    this.unsubscribeFromTopic(client, topic).then(() => {
-                        const activeTopics = this.clientTopics.get(client) || [];
+                this.topicObservers.forEach(observers => observers.delete(observer));
 
-                        if (!activeTopics.length) {
-                            this.disconnectClient(client, activeTopics);
-                        }
-                    });
-                }
+                this.topicObservers = new Map(
+                    Array.from(this.topicObservers)
+                        .filter(([, observers]) => observers.size > 0)
+                );
             };
         });
     }
 
-    /**
-     * @returns  {Promise<void>}
-     */
-    disconnectAll = () => {
-        const disconnectPromises = Array.from(this.clientTopics)
-            .map(([client, topics]) => this.disconnectClient(client, topics));
+    connectNewClients<T>(connectionInfo: MqttConnectionInfo[], observer: ZenObservable.Observer<T>) {
+        return Promise.all(connectionInfo.map(c => this.connectNewClient(c, observer)));
+    };
 
-        return Promise.all(disconnectPromises).then(() => undefined);
-    }
+    async connectNewClient<T>(connectionInfo: MqttConnectionInfo, observer: ZenObservable.Observer<T>) {
+        const { client: clientId, url, topics } = connectionInfo;
+        const client: any = new Paho.Client(url, clientId);
 
-    unsubscribeFromTopic = (client, topic) => {
-        return new Promise((resolve, reject) => {
-            if (!client.isConnected()) {
-                const topics = this.clientTopics.get(client).filter(t => t !== topic);
-                this.clientTopics.set(client, topics);
-                this.topicObserver.delete(topic);
-                return resolve(topic);
+        // client.trace = console.log.bind(null, clientId);
+        client.onConnectionLost = ({ errorCode, ...args }) => {
+            if (errorCode !== 0) {
+                topics.forEach(t => {
+                    this.topicObservers.get(t).forEach(observer => observer.error(args))
+                });
             }
 
-            client.unsubscribe(topic, {
-                onSuccess: () => {
-                    const topics = this.clientTopics.get(client).filter(t => t !== topic);
-                    this.clientTopics.set(client, topics);
-                    this.topicObserver.delete(topic);
-                    resolve(topic);
-                },
-                onFailure: reject,
-            });
-        })
-    }
-
-    /**
-     *
-     * @param {Paho.Client} client
-     * @param {Set<string>} topics
-     */
-    disconnectClient = (client, topics) => {
-        // console.log(`Unsubscribing from ${topics.length} topics`, topics);
-
-        const unsubPromises = [];
-        topics.forEach(topic => {
-            unsubPromises.push(this.unsubscribeFromTopic(client, topic));
-        });
-
-        return Promise.all(unsubPromises).then(([...topics]) => {
-            // console.log(`Unsubscribed from ${topics.length} topics`, topics);
-
-            return new Promise((resolve, reject) => {
-                if (!client.isConnected()) {
-                    return resolve({ client, topics });
-                }
-
-                client.onConnectionLost = () => resolve({ client, topics });
-
-                client.disconnect();
-            });
-        });
-    }
-
-    /**
-     *
-     * @param {ZenObservable.Observer} observer
-     * @param {[any]} connectionsInfo
-     * @returns {Promise<void>}
-     */
-    connectAll = (observer, connectionsInfo = [], lastTopicObserver) => {
-        const connectPromises = connectionsInfo.map(this.connect.bind(this, observer, lastTopicObserver));
-
-        return Promise.all(connectPromises).then(() => undefined);
-    }
-
-    connect = (observer, lastTopicObserver, connectionInfo) => {
-        const { topics, client: clientId, url } = connectionInfo;
-
-        const client: any = new Paho.Client(url, clientId);
-        // client.trace = console.log.bind(null, clientId);
+            topics.forEach(t => this.topicObservers.delete(t));
+        };
 
         (client as any).onMessageArrived = ({ destinationName, payloadString }) => this.onMessage(destinationName, payloadString);
 
-        return new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
             client.connect({
                 useSSL: url.indexOf('wss://') === 0,
                 mqttVersion: 3,
                 onSuccess: () => resolve(client),
                 onFailure: reject,
             });
-        }).then(client => {
-            // console.log(`Doing setup for ${topics.length} topics`, topics);
+        });
 
-            const subPromises = topics.map(topic => new Promise((resolve, reject) => {
-                (client as any).subscribe(topic, {
-                    onSuccess: () => {
-                        if (!this.topicObserver.has(topic)) {
-                            this.topicObserver.set(topic, lastTopicObserver.get(topic) || observer);
-                        }
+        await this.subscribeToTopics(client, topics, observer);
 
-                        resolve(topic);
-                    },
-                    onFailure: reject,
-                });
-            }));
+        return client;
+    }
 
-            return Promise.all(subPromises).then(([...topics]: any[]) => {
-                // console.log('All topics subscribed', topics);
+    subscribeToTopics<T>(client, topics: string[], observer: ZenObservable.Observer<T>) {
+        return Promise.all(topics.map(topic => this.subscribeToTopic(client, topic, observer)));
+    }
 
-                this.clientTopics.set(client, topics);
+    subscribeToTopic<T>(client, topic: string, observer: ZenObservable.Observer<T>) {
+        return new Promise((resolve, reject) => {
+            (client as any).subscribe(topic, {
+                onSuccess: () => {
+                    if (!this.topicObservers.has(topic)) {
+                        this.topicObservers.set(topic, new Set());
+                    }
+                    if (!this.clientObservers.has(client.clientId)) {
+                        this.clientObservers.set(client.clientId, { client, observers: new Set() });
+                    }
 
-                return { client, topics };
+                    this.topicObservers.get(topic).add(observer);
+                    this.clientObservers.get(client.clientId).observers.add(observer);
+
+                    resolve(topic);
+                },
+                onFailure: reject,
             });
         });
     }
 
     onMessage = (topic, message) => {
         const parsedMessage = JSON.parse(message);
-        const observer = this.topicObserver.get(topic);
+        const observers = this.topicObservers.get(topic);
 
-        // console.log(topic, parsedMessage);
-
-        try {
-            observer.next(parsedMessage);
-        } catch (err) {
-            // console.error(err);
-        }
+        observers.forEach(observer => {
+            try {
+                observer.next(parsedMessage)
+            } catch (err) {
+                // console.error(err);
+            }
+        });
     }
 }
