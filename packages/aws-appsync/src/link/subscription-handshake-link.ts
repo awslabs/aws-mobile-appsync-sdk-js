@@ -167,6 +167,9 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             // console.log(`Doing setup for ${topics.length} topics`, topics);
 
             const subPromises = topics.map(topic => new Promise((resolve, reject) => {
+                (client as any).onConnectionLost = function (e) {
+                    this.onError(topic, e);
+                };
                 (client as any).subscribe(topic, {
                     onSuccess: () => {
                         if (!this.topicObserver.has(topic)) {
@@ -179,7 +182,8 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 });
             }));
 
-            return Promise.all(subPromises).then(([...topics]: any[]) => {
+            return Promise.all(
+            ).then(([...topics]: any[]) => {
                 // console.log('All topics subscribed', topics);
 
                 this.clientTopics.set(client, topics);
@@ -201,4 +205,13 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             // console.error(err);
         }
     }
+    
+    onError = (topic, error) => {
+        const observer = this.topicObserver.get(topic);
+        try {
+            observer.error(error);
+        } catch (err) {
+            // console.error(err);
+        }
+    };
 }
