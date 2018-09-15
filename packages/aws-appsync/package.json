@@ -18,21 +18,6 @@
     "test": "jest --coverage --coverageReporters=text",
     "test-watch": "jest --watch"
   },
-  "jest": {
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json",
-      "node"
-    ],
-    "testEnvironment": "node"
-  },
   "dependencies": {
     "@redux-offline/redux-offline": "^2.2.1",
     "apollo-cache-inmemory": "^1.0.0",
@@ -40,6 +25,7 @@
     "apollo-link": "^1.0.0",
     "apollo-link-context": "^1.0.0",
     "apollo-link-http": "^1.0.0",
+    "apollo-link-retry": "^2.2.4",
     "aws-sdk": "^2.139.0",
     "graphql": "^0.11.7",
     "redux": "^3.7.2",
@@ -55,6 +41,7 @@
     "@types/zen-observable": "^0.5.3",
     "graphql-tag": "^2.9.2",
     "jest": "^23.4.2",
+    "node-fetch": "^2.2.0",
     "ts-jest": "^23.0.1",
     "typescript": "^3.0.1"
   }

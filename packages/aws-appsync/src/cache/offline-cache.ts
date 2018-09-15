@@ -7,8 +7,9 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { Cache } from 'apollo-cache';
-import { InMemoryCache, ApolloReducerConfig, NormalizedCache, defaultDataIdFromObject, NormalizedCacheObject } from 'apollo-cache-inmemory';
-import { Store, Action } from 'redux';
+import { InMemoryCache, ApolloReducerConfig, defaultDataIdFromObject, NormalizedCacheObject } from 'apollo-cache-inmemory';
+import { Store } from 'redux';
+import { AppState } from '@redux-offline/redux-offline/lib/types';
 
 export const NORMALIZED_CACHE_KEY = 'appsync';
 export const METADATA_KEY = 'appsync-metadata';
@@ -16,10 +17,18 @@ export { defaultDataIdFromObject };
 
 const WRITE_CACHE_ACTION = 'AAS_WRITE_CACHE';
 
-export interface OfflineCache extends NormalizedCache {
+export interface OfflineCache extends AppState {
     rehydrated: boolean,
-    [NORMALIZED_CACHE_KEY]: any,
-    [METADATA_KEY]: { idsMap: object },
+    [NORMALIZED_CACHE_KEY]: NormalizedCacheObject,
+    [METADATA_KEY]: {
+        idsMap: {
+            [key: string]: string
+        },
+        snapshot: {
+            cache: NormalizedCacheObject,
+            enqueuedMutations: number,
+        }
+    },
 }
 
 export default class MyCache extends InMemoryCache {

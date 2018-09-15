@@ -1,19 +1,29 @@
 /*!
- * Copyright 2017-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of
  * the License is located at
  *     http://aws.amazon.com/asl/
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import { readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
-import { ApolloLink, Observable, Operation } from "apollo-link";
-import { getOperationDefinition, getOperationName, getMutationDefinition, resultKeyNameFromField } from "apollo-utilities";
+import { readQueryFromStore, defaultNormalizedCacheFactory, NormalizedCacheObject } from "apollo-cache-inmemory";
+import { ApolloLink, Observable, Operation, execute, GraphQLRequest, NextLink, FetchResult } from "apollo-link";
+import { getOperationDefinition, getMutationDefinition, resultKeyNameFromField, tryFunctionOrLogError } from "apollo-utilities";
 import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
-import { DocumentNode, FieldNode } from "graphql";
+import { OfflineAction } from "@redux-offline/redux-offline/lib/types";
+import { FieldNode, ExecutionResult } from "graphql";
 
 import { NORMALIZED_CACHE_KEY, METADATA_KEY } from "../cache";
 import { AWSAppsyncGraphQLError } from "../types";
+import { Observer } from "apollo-client/util/Observable";
+import { Store } from "redux";
+import { OfflineCache } from "../cache/offline-cache";
+import { isUuid, getOperationFieldName } from "../utils";
+import AWSAppSyncClient from "..";
+import { ApolloCache } from "apollo-cache";
+import { MutationUpdaterFn, MutationQueryReducersMap } from "apollo-client";
+import { RefetchQueryDescription } from "apollo-client/core/watchQueryOptions";
+import { OfflineCallback } from "../client";
 
 const actions = {
     SAVE_SNAPSHOT: 'SAVE_SNAPSHOT',
@@ -23,24 +33,21 @@ const actions = {
     SAVE_SERVER_ID: 'SAVE_SERVER_ID',
 };
 
+const IS_OPTIMISTIC_KEY = typeof Symbol !== 'undefined' ? Symbol('isOptimistic') : '@@isOptimistic';
+
+export const isOptimistic = obj => typeof obj[IS_OPTIMISTIC_KEY] !== undefined ? obj[IS_OPTIMISTIC_KEY] : undefined;
+
 export class OfflineLink extends ApolloLink {
 
-    /**
-     * @type {Store}
-     * @private
-     */
-    store;
+    private store: Store<OfflineCache>;
 
-    /**
-     *
-     * @param {Store} store
-     */
-    constructor(store) {
+    constructor(store: Store<OfflineCache>) {
         super();
+
         this.store = store;
     }
 
-    request(operation, forward) {
+    request(operation: Operation, forward: NextLink) {
         return new Observable(observer => {
             const { offline: { online } } = this.store.getState();
             const { operation: operationType } = getOperationDefinition(operation.query);
@@ -57,47 +64,28 @@ export class OfflineLink extends ApolloLink {
             }
 
             if (isMutation) {
-                const { optimisticResponse, AASContext: { doIt = false } = {} } = operation.getContext();
+                const { AASContext: { doIt = false } = {}, cache } = operation.getContext();
 
                 if (!doIt) {
-                    if (!optimisticResponse) {
-                        console.warn('An optimisticResponse was not provided, it is required when using offline capabilities.');
+                    const { [METADATA_KEY]: { snapshot: { enqueuedMutations } } } = this.store.getState();
 
-                        if (!online) {
-                            throw new Error('Missing optimisticResponse while offline.');
-                        }
+                    if (enqueuedMutations === 0) {
+                        boundSaveSnapshot(this.store, cache);
                     }
 
-                    const data = enqueueMutation(operation, this.store);
+                    const data = enqueueMutation(operation, this.store, observer);
 
-                    observer.next({ data });
-                    observer.complete();
+                    if (!online) {
+                        observer.next({ data, [IS_OPTIMISTIC_KEY]: true });
+                        observer.complete();
+                    }
 
                     return () => null;
                 }
             }
 
             const handle = forward(operation).subscribe({
-                next: data => {
-                    if (isMutation) {
-                        const { cache, AASContext: { client } } = operation.getContext();
-
-                        if (client && client.queryManager) {
-                            const { [METADATA_KEY]: { snapshot: { cache: cacheSnapshot } } } = this.store.getState();
-
-                            client.queryManager.broadcastQueries = () => { };
-
-                            const silenceBroadcast = cache.silenceBroadcast;
-                            cache.silenceBroadcast = true;
-
-                            cache.restore({ ...cacheSnapshot });
-
-                            cache.silenceBroadcast = silenceBroadcast;
-                        }
-                    }
-
-                    observer.next(data);
-                },
+                next: observer.next.bind(observer),
                 error: observer.error.bind(observer),
                 complete: observer.complete.bind(observer),
             });
@@ -109,17 +97,13 @@ export class OfflineLink extends ApolloLink {
     }
 }
 
-export const saveSnapshot = (cache) => ({
+const boundSaveSnapshot = (store, cache) => store.dispatch(saveSnapshot(cache));
+const saveSnapshot = (cache) => ({
     type: actions.SAVE_SNAPSHOT,
     payload: { cache },
 });
 
-/**
- *
- * @param {Operation} operation
- * @param {Store} theStore
- */
-const processOfflineQuery = (operation, theStore) => {
+const processOfflineQuery = (operation: Operation, theStore: Store<OfflineCache>) => {
     const { [NORMALIZED_CACHE_KEY]: normalizedCache = {} } = theStore.getState();
     const { query, variables } = operation;
 
@@ -134,16 +118,27 @@ const processOfflineQuery = (operation, theStore) => {
     return data;
 }
 
-/**
- *
- * @param {Operation} operation
- * @param {Store} theStore
- */
-const enqueueMutation = (operation, theStore): object => {
+type EnqueuedMutationEffect<T> = {
+    optimisticResponse: object,
+    operation: GraphQLRequest,
+    update: MutationUpdaterFn<T>,
+    updateQueries: MutationQueryReducersMap<T>,
+    refetchQueries: ((result: ExecutionResult) => RefetchQueryDescription) | RefetchQueryDescription,
+    observer: Observer<T>,
+};
+
+const enqueueMutation = <T>(operation: Operation, theStore: Store<OfflineCache>, observer: Observer<T>): object => {
     const { query: mutation, variables } = operation;
-    const { optimisticResponse,
-        AASContext: { refetchQueries = undefined, update = undefined } = {}
+    const {
+        AASContext: {
+            optimisticResponse: origOptimistic,
+            update,
+            updateQueries,
+            refetchQueries,
+        },
     } = operation.getContext();
+
+    const optimisticResponse = typeof origOptimistic === 'function' ? origOptimistic(variables) : origOptimistic;
 
     setImmediate(() => {
         theStore.dispatch({
@@ -152,13 +147,14 @@ const enqueueMutation = (operation, theStore): object => {
             meta: {
                 offline: {
                     effect: {
-                        mutation,
-                        variables,
-                        refetchQueries,
-                        update,
                         optimisticResponse,
-                    },
-                    commit: { type: actions.COMMIT, meta: { optimisticResponse } },
+                        operation,
+                        update,
+                        updateQueries,
+                        refetchQueries,
+                        observer,
+                    } as EnqueuedMutationEffect<any>,
+                    commit: { type: actions.COMMIT },
                     rollback: { type: actions.ROLLBACK },
                 }
             }
@@ -182,30 +178,137 @@ const enqueueMutation = (operation, theStore): object => {
     return result;
 }
 
-/**
- *
- * @param {*} client
- * @param {*} effect
- * @param {*} action
- */
-export const offlineEffect = (store, client, effect, action) => {
-    const doIt = true;
-    const { variables: origVars = {}, optimisticResponse: origOptimistic, ...otherOptions } = effect;
+interface CanBeSilenced<TCache> extends ApolloCache<TCache> {
+    silenceBroadcast?: boolean
+};
 
-    const context = { AASContext: { doIt } };
+export const offlineEffect = async <TCache extends NormalizedCacheObject>(
+    store: Store<OfflineCache>,
+    client: AWSAppSyncClient<TCache>,
+    effect: EnqueuedMutationEffect<any>,
+    action: OfflineAction,
+    callback: OfflineCallback,
+): Promise<FetchResult<Record<string, any>, Record<string, any>>> => {
+    const doIt = true;
+    const { cache }: { cache: CanBeSilenced<TCache> } = client;
+    const {
+        optimisticResponse: origOptimistic,
+        operation: { variables: origVars, query: mutation, context },
+        update,
+        updateQueries,
+        refetchQueries,
+        observer,
+    } = effect;
+
+    await client.hydrated();
 
     const { [METADATA_KEY]: { idsMap } } = store.getState();
     const variables = replaceUsingMap({ ...origVars }, idsMap);
     const optimisticResponse = replaceUsingMap({ ...origOptimistic }, idsMap);
 
-    const options = {
-        ...otherOptions,
-        variables,
-        optimisticResponse,
-        context,
-    };
+    return new Promise((resolve, reject) => {
+        if (!client.queryManager) {
+            client.initQueryManager();
+        }
 
-    return client.mutate(options);
+        const buildOperationForLink: Function = (client.queryManager as any).buildOperationForLink;
+        const extraContext = {
+            AASContext: {
+                doIt
+            },
+            ...context,
+            optimisticResponse
+        };
+        const operation = buildOperationForLink.call(client.queryManager, mutation, variables, extraContext);
+
+        execute(client.link, operation).subscribe({
+            next: data => {
+                boundSaveServerId(store, optimisticResponse, data.data);
+
+                const {
+                    [METADATA_KEY]: { idsMap, snapshot: { cache: cacheSnapshot } },
+                    offline: { outbox: [, ...enquededMutations] }
+                } = store.getState();
+
+                // Restore from cache snapshot
+                client.cache.restore(cacheSnapshot as TCache);
+
+                const dataStore = client.queryManager.dataStore;
+
+                dataStore.markMutationResult({
+                    mutationId: null,
+                    result: data,
+                    document: mutation,
+                    variables,
+                    updateQueries: {}, // TODO: populate this?
+                    update
+                });
+
+                boundSaveSnapshot(store, client.cache);
+
+                // Apply enqueued update functions to new cache
+                enquededMutations.forEach(({ meta: { offline: { effect } } }) => {
+                    const {
+                        operation: { variables, query: document },
+                        update,
+                        optimisticResponse: origOptimisticResponse,
+                    } = effect as EnqueuedMutationEffect<any>;
+
+                    if (typeof update !== 'function') {
+                        return;
+                    }
+
+                    const optimisticResponse = replaceUsingMap({ ...origOptimisticResponse }, idsMap);
+                    const result = { data: optimisticResponse };
+
+                    dataStore.markMutationResult({
+                        mutationId: null,
+                        result,
+                        document,
+                        variables,
+                        updateQueries: {}, // TODO: populate this?
+                        update
+                    });
+                });
+
+                client.queryManager.broadcastQueries();
+
+                resolve({ data });
+
+                if (observer.next) {
+                    observer.next({ ...data, [IS_OPTIMISTIC_KEY]: false });
+                    observer.complete();
+                } else {
+                    // throw new Error('Manually interact with cache');
+                }
+
+                if (typeof callback === 'function') {
+                    const mutationName = getOperationFieldName(mutation);
+                    const { additionalDataContext: { newVars = operation.variables } = {}, ...restContext } = data.context || {};
+
+                    if (!Object.keys(restContext || {}).length) {
+                        delete data.context;
+                    } else {
+                        data.context = restContext;
+                    }
+
+                    tryFunctionOrLogError(() => {
+                        callback(null, {
+                            mutation: mutationName,
+                            variables: newVars,
+                            ...data,
+                            notified: !!observer.next,
+                        })
+                    });
+                }
+            },
+            error: err => {
+                // TODO: Undo cache updates?
+
+                reject(err);
+            }
+        });
+    });
 }
 
 export const reducer = dataIdFromObject => ({
@@ -264,27 +367,26 @@ const cacheSnapshotReducer = (state = {}, action) => {
     switch (type) {
         case actions.SAVE_SNAPSHOT:
             const { cache } = payload;
+            const cacheContents = { ...cache.extract(false) };
 
-            return { ...cache.extract(false) };
+            return cacheContents;
         default:
             return state;
     }
 };
 
-export const saveServerId = (optimisticResponse, data) => ({
+const boundSaveServerId = (store, optimisticResponse, data) => store.dispatch(saveServerId(optimisticResponse, data));
+const saveServerId = (optimisticResponse, data) => ({
     type: actions.SAVE_SERVER_ID,
-    meta: optimisticResponse,
-    payload: { data },
+    payload: { data, optimisticResponse },
 });
 
 const idsMapReducer = (state = {}, action, dataIdFromObject) => {
-    const { type, payload, meta } = action;
-    let optimisticResponse;
+    const { type, payload = {} } = action;
+    const { optimisticResponse } = payload;
 
     switch (type) {
         case actions.ENQUEUE:
-            optimisticResponse = payload;
-
             const ids = getIds(dataIdFromObject, optimisticResponse);
             const entries = Object.values(ids).reduce((acc: { [key: string]: string }, id: string) => (acc[id] = null, acc), {});
 
@@ -298,7 +400,6 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
             // Clear ids map on last mutation
             return remainingMutations ? state : {};
         case actions.SAVE_SERVER_ID:
-            optimisticResponse = meta;
             const { data } = payload;
 
             const oldIds = getIds(dataIdFromObject, optimisticResponse);
@@ -315,53 +416,29 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
     }
 };
 
-export interface ConflictResolutionInfo {
-    mutation: DocumentNode,
-    mutationName: string,
-    operationType: string,
-    variables: object,
-    data: object,
-    retries: number,
+export const discard = (callback: OfflineCallback) => (error, action, retries) => {
+    const discardResult = _discard(error, action, retries);
+
+    if (discardResult) {
+        // Call global error callback or observer
+        try {
+            if (typeof callback === 'function') {
+                tryFunctionOrLogError(() => {
+                    callback({ error }, null);
+                });
+            }
+        } catch (error) {
+            // TODO: warn
+        }
+    }
+
+    return discardResult;
 }
 
-export const discard = (fn = (obj: ConflictResolutionInfo) => 'DISCARD') => (error, action, retries) => {
+const _discard = (error, action: OfflineAction, retries) => {
     const { graphQLErrors = [] }: { graphQLErrors: AWSAppsyncGraphQLError[] } = error;
-    const conditionalCheck = graphQLErrors.find(err => err.errorType === 'DynamoDB:ConditionalCheckFailedException');
 
-    if (conditionalCheck) {
-        if (typeof fn === 'function') {
-            const { data } = (conditionalCheck as AWSAppsyncGraphQLError);
-            const { meta: { offline: { effect: { mutation, variables } } } } = action;
-            const mutationName = getOperationName(mutation);
-            const operationDefinition = getOperationDefinition(mutation)
-            const { operation: operationType } = operationDefinition;
-
-            try {
-                const conflictResolutionResult = fn({
-                    mutation,
-                    mutationName,
-                    operationType,
-                    variables,
-                    data,
-                    retries,
-                });
-
-                if (conflictResolutionResult === 'DISCARD') {
-                    return true;
-                }
-
-                if (conflictResolutionResult) {
-                    action.meta.offline.effect.variables = conflictResolutionResult;
-
-                    return false;
-                }
-            } catch (err) {
-                // console.error('Error running conflict resolution. Discarding mutation.', err);
-
-                return true;
-            }
-        }
-    } else if (graphQLErrors.length) {
+    if (graphQLErrors.length) {
         // console.error('Discarding action.', action, graphQLErrors);
 
         return true;
@@ -413,8 +490,6 @@ export const replaceUsingMap = (obj, map = {}) => {
     return obj;
 };
 
-const isUuid = val => typeof val === 'string' && val.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-
 export const getIds = (dataIdFromObject, obj, path = '', acc = {}) => {
     if (!obj) {
         return acc;
@@ -424,7 +499,7 @@ export const getIds = (dataIdFromObject, obj, path = '', acc = {}) => {
         const dataId = dataIdFromObject(obj);
 
         if (dataId) {
-            const [, , id] = dataId.match(/(.+:)?(.+)/);
+            const [, , id = null] = dataId.match(/(.+:)?(.+)/) || [];
 
             if (isUuid(dataId)) {
                 acc[path] = id;
