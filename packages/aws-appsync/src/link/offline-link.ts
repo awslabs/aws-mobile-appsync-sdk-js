@@ -420,11 +420,11 @@ export const discard = (callback: OfflineCallback) => (error, action, retries) =
     const discardResult = _discard(error, action, retries);
 
     if (discardResult) {
-        // TODO: Call global error callback or observer
+        // Call global error callback or observer
         try {
             if (typeof callback === 'function') {
                 tryFunctionOrLogError(() => {
-                    callback({ error: 'Something' }, null);
+                    callback({ error }, null);
                 });
             }
         } catch (error) {
