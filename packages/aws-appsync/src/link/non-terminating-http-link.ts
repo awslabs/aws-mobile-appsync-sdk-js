@@ -11,6 +11,8 @@ import { NonTerminatingLink } from './non-terminating-link';
 
 export class NonTerminatingHttpLink extends NonTerminatingLink {
     constructor(contextKey: string, options: FetchOptions) {
-        super(contextKey, { link: createHttpLink(options) });
+        const link = createHttpLink(options);
+
+        super(contextKey, { link });
     }
 }
