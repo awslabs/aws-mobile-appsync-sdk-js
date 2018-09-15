@@ -82,7 +82,9 @@ export class SubscriptionHandshakeLink extends ApolloLink {
 
                 this.clientObservers.forEach(({ observers, client }) => {
                     if (observers.size === 0) {
-                        client.disconnect();
+                        if (client.isConnected()) {
+                            client.disconnect();
+                        }
                         this.clientObservers.delete(client.clientId);
                     }
                 });
