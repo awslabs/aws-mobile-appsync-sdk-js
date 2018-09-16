@@ -7,7 +7,7 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import 'setimmediate';
-import ApolloClient, { ApolloClientOptions, MutationOptions, OperationVariables } from 'apollo-client';
+import ApolloClient, { ApolloClientOptions, MutationOptions, OperationVariables, MutationUpdaterFn } from 'apollo-client';
 import { InMemoryCache, ApolloReducerConfig, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloLink, Observable, FetchResult } from 'apollo-link';
 import { createHttpLink } from 'apollo-link-http';
@@ -32,6 +32,7 @@ import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
 import { createRetryLink } from './link/retry-link';
+import { boundEnqueueDeltaSync } from "./deltaSync";
 
 export { defaultDataIdFromObject };
 
@@ -248,7 +249,30 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             ...otherOptions,
         });
     }
+
+    subscribeWithSync<T, TVariables = OperationVariables>(options: SubscribeWithSyncOptions<T, TVariables>): Observable<T> {
+        if (!this.isOfflineEnabled()) {
+            throw new Error('Not supported');
+        }
+
+        return new Observable<T>(observer => {
+            boundEnqueueDeltaSync(this._store, { ...options }, observer);
+
+            return () => {
+                observer.complete();
+            }
+        });
+    }
+
 }
+
+export declare type SubscribeWithSyncOptions<T, TVariables = OperationVariables> = {
+    initialQuery: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
+    subscriptionQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
+    deltaQuery: { query: DocumentNode, variables: TVariables },
+    lastSyncTimestamp?: number,
+};
+
 
 export default AWSAppSyncClient;
 export { AWSAppSyncClient };
