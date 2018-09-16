@@ -15,15 +15,15 @@ import { FieldNode, ExecutionResult } from "graphql";
 
 import { NORMALIZED_CACHE_KEY, METADATA_KEY } from "../cache";
 import { AWSAppsyncGraphQLError } from "../types";
-import { Observer } from "apollo-client/util/Observable";
 import { Store } from "redux";
-import { OfflineCache } from "../cache/offline-cache";
+import { OfflineCache, AppSyncMetadataState } from "../cache/offline-cache";
 import { isUuid, getOperationFieldName } from "../utils";
 import AWSAppSyncClient from "..";
 import { ApolloCache } from "apollo-cache";
 import { MutationUpdaterFn, MutationQueryReducersMap } from "apollo-client";
 import { RefetchQueryDescription } from "apollo-client/core/watchQueryOptions";
 import { OfflineCallback } from "../client";
+import { OfflineEffectConfig } from "../store";
 
 const actions = {
     SAVE_SNAPSHOT: 'SAVE_SNAPSHOT',
@@ -124,10 +124,10 @@ type EnqueuedMutationEffect<T> = {
     update: MutationUpdaterFn<T>,
     updateQueries: MutationQueryReducersMap<T>,
     refetchQueries: ((result: ExecutionResult) => RefetchQueryDescription) | RefetchQueryDescription,
-    observer: Observer<T>,
+    observer: ZenObservable.SubscriptionObserver<T>,
 };
 
-const enqueueMutation = <T>(operation: Operation, theStore: Store<OfflineCache>, observer: Observer<T>): object => {
+const enqueueMutation = <T>(operation: Operation, theStore: Store<OfflineCache>, observer: ZenObservable.SubscriptionObserver<T>): object => {
     const { query: mutation, variables } = operation;
     const {
         AASContext: {
@@ -182,7 +182,7 @@ interface CanBeSilenced<TCache> extends ApolloCache<TCache> {
     silenceBroadcast?: boolean
 };
 
-export const offlineEffect = async <TCache extends NormalizedCacheObject>(
+const effect = async <TCache extends NormalizedCacheObject>(
     store: Store<OfflineCache>,
     client: AWSAppSyncClient<TCache>,
     effect: EnqueuedMutationEffect<any>,
@@ -247,29 +247,35 @@ export const offlineEffect = async <TCache extends NormalizedCacheObject>(
                 boundSaveSnapshot(store, client.cache);
 
                 // Apply enqueued update functions to new cache
-                enquededMutations.forEach(({ meta: { offline: { effect } } }) => {
-                    const {
-                        operation: { variables, query: document },
-                        update,
-                        optimisticResponse: origOptimisticResponse,
-                    } = effect as EnqueuedMutationEffect<any>;
+                // TODO: Adjust filter
+                const enqueuedActionsFilter = [
+                    offlineEffectConfig.enqueueAction
+                ];
+                enquededMutations
+                    .filter(({ type }) => enqueuedActionsFilter.indexOf(type) > -1)
+                    .forEach(({ meta: { offline: { effect } } }) => {
+                        const {
+                            operation: { variables = {}, query: document = null } = {},
+                            update,
+                            optimisticResponse: origOptimisticResponse,
+                        } = effect as EnqueuedMutationEffect<any>;
 
-                    if (typeof update !== 'function') {
-                        return;
-                    }
+                        if (typeof update !== 'function') {
+                            return;
+                        }
 
-                    const optimisticResponse = replaceUsingMap({ ...origOptimisticResponse }, idsMap);
-                    const result = { data: optimisticResponse };
+                        const optimisticResponse = replaceUsingMap({ ...origOptimisticResponse }, idsMap);
+                        const result = { data: optimisticResponse };
 
-                    dataStore.markMutationResult({
-                        mutationId: null,
-                        result,
-                        document,
-                        variables,
-                        updateQueries: {}, // TODO: populate this?
-                        update
+                        dataStore.markMutationResult({
+                            mutationId: null,
+                            result,
+                            document,
+                            variables,
+                            updateQueries: {}, // TODO: populate this?
+                            update
+                        });
                     });
-                });
 
                 client.queryManager.broadcastQueries();
 
@@ -311,11 +317,7 @@ export const offlineEffect = async <TCache extends NormalizedCacheObject>(
     });
 }
 
-export const reducer = dataIdFromObject => ({
-    [METADATA_KEY]: metadataReducer(dataIdFromObject),
-});
-
-const metadataReducer = dataIdFromObject => (state, action) => {
+const reducer = dataIdFromObject => (state: AppSyncMetadataState, action) => {
     const { type, payload } = action;
 
     switch (type) {
@@ -324,10 +326,12 @@ const metadataReducer = dataIdFromObject => (state, action) => {
 
             return rehydratedState || state;
         default:
-            const snapshot = snapshotReducer(state && state.snapshot, action);
-            const idsMap = idsMapReducer(state && state.idsMap, { ...action, remainingMutations: snapshot.enqueuedMutations }, dataIdFromObject);
+            const { idsMap: origIdsMap = {}, snapshot: origSnapshot = {}, ...restState } = state || {};
+            const snapshot = snapshotReducer(origSnapshot, action);
+            const idsMap = idsMapReducer(origIdsMap, { ...action, remainingMutations: snapshot.enqueuedMutations }, dataIdFromObject);
 
             return {
+                ...restState,
                 snapshot,
                 idsMap,
             };
@@ -416,7 +420,7 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
     }
 };
 
-export const discard = (callback: OfflineCallback) => (error, action, retries) => {
+const discard = (callback: OfflineCallback, error, action, retries) => {
     const discardResult = _discard(error, action, retries);
 
     if (discardResult) {
@@ -529,3 +533,10 @@ const intersectingKeys = (obj1 = {}, obj2 = {}) => {
 
 const mapIds = (obj1, obj2) => intersectingKeys(obj1, obj2).reduce((acc, k) => (acc[obj1[k]] = obj2[k], acc), {});
 //#endregion
+
+export const offlineEffectConfig: OfflineEffectConfig = {
+    enqueueAction: actions.ENQUEUE,
+    effect,
+    discard,
+    reducer,
+};
