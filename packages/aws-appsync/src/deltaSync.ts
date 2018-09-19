@@ -16,6 +16,7 @@ import { tryFunctionOrLogError } from "apollo-utilities";
 import { OperationVariables } from "apollo-client";
 import { hash } from "./utils";
 import { Observable } from "apollo-link";
+import { Subscription } from "apollo-client/util/Observable";
 
 const actions = {
     ENQUEUE: 'DELTASYNC_ENQUEUE_RECONNECT',
@@ -29,17 +30,20 @@ declare type DeltaSyncSyncAction<T, TVariables = OperationVariables> = AnyAction
 export declare type DeltaSyncEffect<T> = {
     options: SubscribeWithSyncOptions<any>,
     observer: ZenObservable.SubscriptionObserver<T>,
+    callback: (Subscription) => void,
 };
+
+const BUFFER_MILLISECONDS = 2000;
 
 const effect = async <TCache extends NormalizedCacheObject>(
     store: Store<OfflineCache>,
     client: AWSAppSyncClient<TCache>,
     effect: DeltaSyncEffect<any>,
     action: OfflineAction,
-    callback: OfflineCallback,
+    offlineCallback: OfflineCallback,
     offlineStatusChangeObservable: Observable<any>
 ): Promise<void> => {
-    const { options, observer: origObserver } = effect;
+    const { options, observer: origObserver, callback = () => { } } = effect;
 
     if (!origObserver || typeof origObserver.next !== 'function' || origObserver.closed) {
         return;
@@ -49,7 +53,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
     const itemInHash = store.getState()[METADATA_KEY][DELTASYNC_KEY].metadata[hash];
 
     let {
-        lastSyncTimestamp = (itemInHash && itemInHash[DELTASYNC_LASTSYNC_KEY]) || new Date().getTime()
+        lastSyncTimestamp = (itemInHash && itemInHash[DELTASYNC_LASTSYNC_KEY]) || new Date().getTime() - BUFFER_MILLISECONDS
     } = options;
 
     // Initial query
@@ -59,7 +63,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
         variables: options.initialQuery.variables,
     });
 
-    let subscription;
+    let subscription: Subscription;
 
     if (options.subscriptionQuery) {
         subscription = client.subscribe({
@@ -73,13 +77,17 @@ const effect = async <TCache extends NormalizedCacheObject>(
                     client.queryManager.broadcastQueries();
                 });
 
-                lastSyncTimestamp = new Date().getTime();
+                lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
                 boundUpdateLastSync(store, { ...options, lastSyncTimestamp });
             },
             error: () => {
-                boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp }, origObserver);
+                boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp }, origObserver, callback);
             }
         });
+
+        if (typeof callback === 'function') {
+            callback(subscription);
+        }
     }
 
     const deltaQuery = await client.query({
@@ -91,27 +99,25 @@ const effect = async <TCache extends NormalizedCacheObject>(
         },
     });
 
-
     tryFunctionOrLogError(() => {
         options.initialQuery.update(client.cache, deltaQuery);
 
         client.queryManager.broadcastQueries();
     });
 
-    lastSyncTimestamp = new Date().getTime();
+    lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
     boundUpdateLastSync(store, { ...options, lastSyncTimestamp });
 
     let handle = offlineStatusChangeObservable.subscribe({
         next: ({ online }) => {
             if (!online) {
-                boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp }, origObserver);
+                boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp }, origObserver, callback);
 
                 if (subscription) {
                     subscription.unsubscribe();
                 }
-                if (handle) {
-                    handle.unsubscribe();
-                }
+
+                handle.unsubscribe();
             }
         }
     });
@@ -120,13 +126,14 @@ const effect = async <TCache extends NormalizedCacheObject>(
 export const boundEnqueueDeltaSync = <T, TVariables = OperationVariables>(
     store: Store<any>,
     options: SubscribeWithSyncOptions<T, TVariables>,
-    observer: ZenObservable.SubscriptionObserver<T>
+    observer: ZenObservable.SubscriptionObserver<T>,
+    callback: (Subscription) => void,
 ) => {
     store.dispatch({
         type: offlineEffectConfig.enqueueAction,
         meta: {
             offline: {
-                effect: { options: { ...options }, observer } as DeltaSyncEffect<any>
+                effect: { options: { ...options }, observer, callback } as DeltaSyncEffect<any>
             },
         }
     });
