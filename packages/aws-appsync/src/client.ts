@@ -32,6 +32,7 @@ import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
 import { boundEnqueueDeltaSync } from "./deltaSync";
+import { Subscription } from 'apollo-client/util/Observable';
 
 export { defaultDataIdFromObject };
 
@@ -253,10 +254,16 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         }
 
         return new Observable<T>(observer => {
-            boundEnqueueDeltaSync(this._store, { ...options }, observer);
+            let handle: Subscription;
+            const callback = (subscription: Subscription) => {
+                handle = subscription;
+            };
+            boundEnqueueDeltaSync(this._store, { ...options }, observer, callback);
 
             return () => {
-                observer.complete();
+                if (handle) {
+                    handle.unsubscribe();
+                }
             }
         });
     }
