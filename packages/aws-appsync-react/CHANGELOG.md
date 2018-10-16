@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.2.0"></a>
+# [1.2.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@1.1.4...aws-appsync-react@1.2.0) (2018-10-16)
+
+
+### Features
+
+* **offline:** Provide global callback for error handling ([#268](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/268)) ([619997f](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/619997f))
+
+
+
+
 <a name="1.1.4"></a>
 ## [1.1.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@1.1.3...aws-appsync-react@1.1.4) (2018-08-20)
 

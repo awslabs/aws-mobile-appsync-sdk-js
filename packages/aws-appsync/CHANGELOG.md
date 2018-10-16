@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.4.0"></a>
+# [1.4.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.3.4...aws-appsync@1.4.0) (2018-10-16)
+
+
+### Bug Fixes
+
+* **complex-objects:** Mutation error with arrays ([#244](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/244)) ([ad9dc3c](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/ad9dc3c)), closes [#237](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/237)
+* **link:** Remove check for terminating link ([#235](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/235)) ([655efe8](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/655efe8))
+* **subscriptions:** Do not disconnect active mqtt connections when establishing new ones. ([#252](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/252)) ([3184d71](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/3184d71))
+* fixing aws-sdk version to 2.329.0 ([#266](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/266)) ([edf31dd](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/edf31dd))
+
+
+### Features
+
+* **offline:** Provide global callback for error handling ([#268](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/268)) ([619997f](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/619997f))
+
+
+
+
 <a name="1.3.4"></a>
 ## [1.3.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.3.3...aws-appsync@1.3.4) (2018-08-20)
 
