@@ -21,7 +21,7 @@ import { OfflineCache } from "../cache/offline-cache";
 import { isUuid, getOperationFieldName } from "../utils";
 import AWSAppSyncClient from "..";
 import { ApolloCache } from "apollo-cache";
-import { MutationUpdaterFn, MutationQueryReducersMap } from "apollo-client";
+import { MutationUpdaterFn, MutationQueryReducersMap, ApolloError } from "apollo-client";
 import { RefetchQueryDescription } from "apollo-client/core/watchQueryOptions";
 import { OfflineCallback } from "../client";
 
@@ -293,12 +293,22 @@ export const offlineEffect = async <TCache extends NormalizedCacheObject>(
                     }
 
                     tryFunctionOrLogError(() => {
-                        callback(null, {
+                        const errors = data.errors ? {
+                            mutation: mutationName,
+                            variables: newVars,
+                            error: new ApolloError({
+                                graphQLErrors: data.errors,
+                            }),
+                            notified: !!observer.next,
+                        } : null;
+                        const success = errors === null ? {
                             mutation: mutationName,
                             variables: newVars,
                             ...data,
                             notified: !!observer.next,
-                        })
+                        } : null;
+
+                        callback(errors, success);
                     });
                 }
             },
