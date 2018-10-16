@@ -492,7 +492,8 @@ describe("Offline enabled", () => {
         });
 
         const conflictResolver = jest.fn();
-        const client = getClient({ disableOffline: false, conflictResolver });
+        const callback = jest.fn();
+        const client = getClient({ disableOffline: false, conflictResolver, offlineConfig: { callback } });
 
         const resultPromise = client.mutate({
             mutation: gql`mutation($name: String!) {
@@ -523,6 +524,15 @@ describe("Offline enabled", () => {
         }
 
         expect(conflictResolver).not.toBeCalled();
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith({
+            mutation: "addTodo",
+            variables: {
+                name: 'MyTodo1'
+            },
+            error: new ApolloError({ graphQLErrors: [backendError] }),
+            notified: true,
+        }, null);
 
         // The optimistic response is no longer present in the cache
         expect(client.cache.extract(true)).not.toMatchObject({
