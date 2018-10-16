@@ -34,6 +34,9 @@ yarn add aws-appsync
 - [queries](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries)
 - [mutations](https://github.com/awslabs/aws-mobile-appsync-sdk-js#mutations--optimistic-ui-with-graphqlmutation-helper)
 - [subscriptions](https://github.com/awslabs/aws-mobile-appsync-sdk-js#subscriptions-with-buildsubscription-helper)
+- [Offline configuration](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-configuration)
+  - [Error handling](https://github.com/awslabs/aws-mobile-appsync-sdk-js#error-handling)
+  - [Custom storage engine](https://github.com/awslabs/aws-mobile-appsync-sdk-js#custom-storage-engine)
 - [offline helpers](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-helpers)
 - [Tutorial](https://github.com/awslabs/aws-mobile-appsync-sdk-js/tree/master/tutorials/react-offline-realtime-todos)
 
@@ -353,6 +356,62 @@ export default graphql(listPosts, {
 })(App)
 ```
 
+### Offline configuration
+
+When using the AWS AppSync SDK offline capabilities (e.g. `disableOffline: false`), you can provide configurations for the following:
+
+- Error handling
+- Custom storage engine
+
+#### Error handling
+
+If a mutation is done while the app was offline, it gets persisted to the platform storage engine. When coming back online, it is sent to the GraphQL endpoint. When a response is returned by the API, the SDK will notify you of the success or error using the callback provided in the `offlineConfig` param as follows:
+
+```javascript
+const client = new AWSAppSyncClient({
+  url: appSyncConfig.graphqlEndpoint,
+  region: appSyncConfig.region,
+  auth: {
+    type: appSyncConfig.authenticationType,
+    apiKey: appSyncConfig.apiKey,
+  },
+  offlineConfig: {
+    callback: (err, succ) => {
+      if(err) {
+        const { mutation, variables } = err;
+
+        console.warn(`ERROR for ${mutation}`, err);
+      } else {
+        const { mutation, variables } = succ;
+
+        console.info(`SUCCESS for ${mutation}`, succ);
+      }
+    },
+  },
+});
+```
+
+#### Custom storage engine
+
+You can use any custom storage engine from the [redux-persist supported engines](https://github.com/rt2zz/redux-persist#storage-engines) list.
+
+Configuration is done as follows: (localForage shown in the example)
+
+```javascript
+import * as localForage from "localforage";
+
+const client = new AWSAppSyncClient({
+  url: appSyncConfig.graphqlEndpoint,
+  region: appSyncConfig.region,
+  auth: {
+    type: appSyncConfig.authenticationType,
+    apiKey: appSyncConfig.apiKey,
+  },
+  offlineConfig: {
+    storage: localForage,
+  },
+});
+```
 
 #### Offline helpers
 
