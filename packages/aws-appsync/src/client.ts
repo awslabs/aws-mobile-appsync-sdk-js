@@ -31,6 +31,7 @@ import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
+import { createRetryLink } from './link/retry-link';
 
 export { defaultDataIdFromObject };
 
@@ -72,8 +73,10 @@ export const createAppSyncLink = ({
         createLinkWithStore((store) => new OfflineLink(store)),
         new ConflictResolutionLink(conflictResolver),
         new ComplexObjectLink(complexObjectsCredentials),
-        createAuthLink({ url, region, auth }),
-        createSubscriptionHandshakeLink(url, resultsFetcherLink)
+        createRetryLink(ApolloLink.from([
+            createAuthLink({ url, region, auth }),
+            createSubscriptionHandshakeLink(url, resultsFetcherLink)
+        ]))
     ].filter(Boolean));
 
     return link;

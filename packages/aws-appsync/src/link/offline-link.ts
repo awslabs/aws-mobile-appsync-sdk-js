@@ -24,6 +24,7 @@ import { ApolloCache } from "apollo-cache";
 import { MutationUpdaterFn, MutationQueryReducersMap, ApolloError } from "apollo-client";
 import { RefetchQueryDescription } from "apollo-client/core/watchQueryOptions";
 import { OfflineCallback } from "../client";
+import { SKIP_RETRY_KEY } from "./retry-link";
 
 const actions = {
     SAVE_SNAPSHOT: 'SAVE_SNAPSHOT',
@@ -203,7 +204,10 @@ export const offlineEffect = async <TCache extends NormalizedCacheObject>(
     await client.hydrated();
 
     const { [METADATA_KEY]: { idsMap } } = store.getState();
-    const variables = replaceUsingMap({ ...origVars }, idsMap);
+    const variables = {
+        ...replaceUsingMap({ ...origVars }, idsMap),
+        [SKIP_RETRY_KEY]: true, // Enqueued mutations shouldn't be retried by the retryLink, but by redux-offline
+    };
     const optimisticResponse = replaceUsingMap({ ...origOptimistic }, idsMap);
 
     return new Promise((resolve, reject) => {
