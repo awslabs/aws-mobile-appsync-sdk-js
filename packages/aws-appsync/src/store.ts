@@ -108,14 +108,14 @@ const effect = async (effect, action: OfflineAction, store, clientGetter, callba
     const config = offlineEffectsConfigs[action.type];
 
     const observable = new Observable(observer => {
-        offlineStatusChangeCallbackCreator(x => {
-            observer.next(x);
+        offlineStatusChangeCallbackCreator(onlineStatus => {
+            observer.next(onlineStatus);
         });
 
         return () => { };
     });
 
-    if (config) {
+    if (config && config.effect) {
         return config.effect(store, clientGetter, effect, action, callback, observable);
     }
 };
