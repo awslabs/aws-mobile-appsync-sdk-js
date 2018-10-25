@@ -251,7 +251,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         });
     }
 
-    subscribeWithSync<T, TVariables = OperationVariables>(options: SubscribeWithSyncOptions<T, TVariables>): Observable<T> {
+    sync<T, TVariables = OperationVariables>(options: SubscribeWithSyncOptions<T, TVariables>): Observable<T> {
         if (!this.isOfflineEnabled()) {
             throw new Error('Not supported');
         }
@@ -274,12 +274,11 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
 }
 
 export declare type SubscribeWithSyncOptions<T, TVariables = OperationVariables> = {
-    initialQuery: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
+    baseQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
     subscriptionQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
-    deltaQuery: { query: DocumentNode, variables: TVariables },
+    deltaQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
     lastSyncTimestamp?: number,
 };
-
 
 export default AWSAppSyncClient;
 export { AWSAppSyncClient };

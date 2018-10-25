@@ -23,8 +23,11 @@ const actions = {
     UPDATE_LASTSYNC: 'DELTASYNC_UPDATE_LASTSYNC',
 };
 
-declare type DeltaSyncSyncAction<T, TVariables = OperationVariables> = AnyAction & {
-    payload: SubscribeWithSyncOptions<T, TVariables>
+declare type DeltaSyncUpdateLastSyncAction = AnyAction & {
+    payload: {
+        hash: string,
+        lastSyncTimestamp: number,
+    }
 };
 
 export declare type DeltaSyncEffect<T> = {
@@ -33,14 +36,15 @@ export declare type DeltaSyncEffect<T> = {
     callback: (Subscription) => void,
 };
 
+const UPPER_BOUND_TIME_MS = (24 * 60 * 60 * 1000);
 const BUFFER_MILLISECONDS = 2000;
 
 const effect = async <TCache extends NormalizedCacheObject>(
     store: Store<OfflineCache>,
     client: AWSAppSyncClient<TCache>,
     effect: DeltaSyncEffect<any>,
-    action: OfflineAction,
-    offlineCallback: OfflineCallback,
+    _action: OfflineAction,
+    _offlineCallback: OfflineCallback,
     offlineStatusChangeObservable: Observable<any>
 ): Promise<void> => {
     const { options, observer: origObserver, callback = () => { } } = effect;
@@ -52,20 +56,55 @@ const effect = async <TCache extends NormalizedCacheObject>(
     const hash = hashForOptions(options);
     const itemInHash = store.getState()[METADATA_KEY][DELTASYNC_KEY].metadata[hash];
 
-    let {
-        lastSyncTimestamp = (itemInHash && itemInHash[DELTASYNC_LASTSYNC_KEY]) || new Date().getTime() - BUFFER_MILLISECONDS
-    } = options;
+    let { lastSyncTimestamp } = options;
+
+    if (typeof lastSyncTimestamp === 'undefined') {
+        lastSyncTimestamp = (itemInHash && itemInHash.lastSyncTimestamp) || new Date().getTime() - BUFFER_MILLISECONDS
+    }
 
     // Initial query
-    await client.query({
-        fetchPolicy: itemInHash && !itemInHash[DELTASYNC_PENDING_KEY] ? 'cache-first' : 'network-only',
-        query: options.initialQuery.query,
-        variables: options.initialQuery.variables,
-    });
+    let initialQueryTimeoutId: number;
+    if (options.baseQuery.query) {
+
+        let func = async () => {
+            // TODO: use buffer?
+            const XXXX = new Date().getTime() - UPPER_BOUND_TIME_MS - BUFFER_MILLISECONDS;
+            const skipBaseQuery = itemInHash ? ((itemInHash.lastSyncTimestamp - XXXX) >= 0 && !itemInHash.pending) : false;
+
+            const fetchPolicy = skipBaseQuery ? 'cache-first' : 'network-only';
+            console.log(
+                `${skipBaseQuery ? 'Skipping' : 'Running'} baseQuery`,
+                { fetchPolicy },
+                ...(itemInHash && [itemInHash.pending, itemInHash.lastSyncTimestamp, XXXX, itemInHash.lastSyncTimestamp - XXXX])
+            );
+            const result = await client.query({
+                fetchPolicy,
+                query: options.baseQuery.query,
+                variables: options.baseQuery.variables,
+            });
+
+            if (!skipBaseQuery) {
+                lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
+                boundUpdateLastSync(store, hash, lastSyncTimestamp);
+            }
+
+            tryFunctionOrLogError(() => {
+                options.baseQuery.update(client.cache, result);
+
+                client.queryManager.broadcastQueries();
+            });
+
+            initialQueryTimeoutId = (global as any).setTimeout(func, 24 * 60 * 1000);
+        };
+
+        await func();
+
+    }
 
     let subscription: Subscription;
 
     if (options.subscriptionQuery) {
+        console.log('Running subscriptionQuery');
         subscription = client.subscribe({
             query: options.subscriptionQuery.query,
             variables: options.subscriptionQuery.variables,
@@ -76,9 +115,6 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
                     client.queryManager.broadcastQueries();
                 });
-
-                lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
-                boundUpdateLastSync(store, { ...options, lastSyncTimestamp });
             },
             error: () => {
                 boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp }, origObserver, callback);
@@ -90,28 +126,35 @@ const effect = async <TCache extends NormalizedCacheObject>(
         }
     }
 
-    const deltaQuery = await client.query({
-        fetchPolicy: 'network-only',
-        query: options.deltaQuery.query,
-        variables: {
-            ...(options.deltaQuery.variables as any),
-            lastSync: lastSyncTimestamp,
-        },
-    });
+    if (options.deltaQuery) {
+        console.log('Running deltaQuery');
+        const deltaQuery = await client.query({
+            fetchPolicy: 'network-only',
+            query: options.deltaQuery.query,
+            variables: {
+                ...(options.deltaQuery.variables as any),
+                lastSync: lastSyncTimestamp,
+            },
+        });
 
-    tryFunctionOrLogError(() => {
-        options.initialQuery.update(client.cache, deltaQuery);
+        tryFunctionOrLogError(() => {
+            options.deltaQuery.update(client.cache, deltaQuery);
 
-        client.queryManager.broadcastQueries();
-    });
+            client.queryManager.broadcastQueries();
+        });
 
-    lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
-    boundUpdateLastSync(store, { ...options, lastSyncTimestamp });
+        lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
+        boundUpdateLastSync(store, hash, lastSyncTimestamp);
+    }
 
     let handle = offlineStatusChangeObservable.subscribe({
         next: ({ online }) => {
             if (!online) {
                 boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp }, origObserver, callback);
+
+                if (initialQueryTimeoutId) {
+                    clearInterval(initialQueryTimeoutId);
+                }
 
                 if (subscription) {
                     subscription.unsubscribe();
@@ -129,26 +172,32 @@ export const boundEnqueueDeltaSync = <T, TVariables = OperationVariables>(
     observer: ZenObservable.SubscriptionObserver<T>,
     callback: (Subscription) => void,
 ) => {
+    const effect: DeltaSyncEffect<any> = { options: { ...options }, observer, callback };
+
     store.dispatch({
         type: offlineEffectConfig.enqueueAction,
         meta: {
             offline: {
-                effect: { options: { ...options }, observer, callback } as DeltaSyncEffect<any>
+                effect
             },
         }
     });
 }
 
-const boundUpdateLastSync = <T, TVariables = OperationVariables>(
+const boundUpdateLastSync = (
     store: Store<any>,
-    options: SubscribeWithSyncOptions<T, TVariables>,
+    hash: string,
+    lastSyncTimestamp: number,
 ) => {
-    store.dispatch({
+    const action: DeltaSyncUpdateLastSyncAction = {
         type: actions.UPDATE_LASTSYNC,
         payload: {
-            ...options,
+            hash,
+            lastSyncTimestamp
         }
-    } as DeltaSyncSyncAction<T, TVariables>);
+    };
+
+    store.dispatch(action);
 }
 
 const discard = (callback: OfflineCallback, error, action, retries) => {
@@ -157,22 +206,20 @@ const discard = (callback: OfflineCallback, error, action, retries) => {
 
 
 export const DELTASYNC_KEY = 'deltaSync';
-export const DELTASYNC_LASTSYNC_KEY = 'lastSync';
-export const DELTASYNC_PENDING_KEY = 'pending';
 export type DeltaSyncState = {
     metadata: {
         [key: string]: {
-            [DELTASYNC_LASTSYNC_KEY]: number
-            [DELTASYNC_PENDING_KEY]?: boolean
+            lastSyncTimestamp: number
+            pending?: boolean
         }
     }
 };
 
 const hashForOptions = (options: SubscribeWithSyncOptions<any>) => {
     const {
-        initialQuery: {
-            query: initialQueryQuery,
-            variables: initialQueryVariables,
+        baseQuery: {
+            query: baseQueryQuery,
+            variables: baseQueryVariables,
         },
         subscriptionQuery: {
             query: subscriptionQueryQuery = {},
@@ -184,9 +231,9 @@ const hashForOptions = (options: SubscribeWithSyncOptions<any>) => {
         },
     } = options;
 
-    const initialQuery = {
-        query: initialQueryQuery,
-        variables: initialQueryVariables,
+    const baseQuery = {
+        query: baseQueryQuery,
+        variables: baseQueryVariables,
     };
     const subscriptionQuery = {
         query: subscriptionQueryQuery,
@@ -198,7 +245,7 @@ const hashForOptions = (options: SubscribeWithSyncOptions<any>) => {
     };
 
     return hash({
-        initialQuery,
+        baseQuery,
         subscriptionQuery,
         deltaQuery,
     })
@@ -209,30 +256,40 @@ const reducer: DeltaSyncReducer = () => (state: AppSyncMetadataState, action: An
 
     switch (action.type) {
         case actions.UPDATE_LASTSYNC:
-            return lastSyncReducer(state, action as DeltaSyncSyncAction<any, any>);
+            console.log(action.type, action);
+            return lastSyncReducer(state, action as DeltaSyncUpdateLastSyncAction);
         case actions.ENQUEUE:
+            console.log(action.type, (action as OfflineAction).meta.offline.effect);
             return enqueReducer(state, action as OfflineAction);
         default:
-            return state;
+            const newState: AppSyncMetadataState = {
+                ...state,
+                deltaSync: {
+                    metadata: {},
+                    ...state.deltaSync,
+                }
+            };
+
+            return newState;
     }
 };
 
-const lastSyncMetadataReducer = (state: AppSyncMetadataState, action: DeltaSyncSyncAction<any, any>) => {
-    const { payload: { lastSyncTimestamp, ...otherOptions } } = action;
+const lastSyncReducer = (state: AppSyncMetadataState, action: DeltaSyncUpdateLastSyncAction) => {
+    const { payload: { lastSyncTimestamp, hash } } = action;
 
-    const hash = hashForOptions(otherOptions as SubscribeWithSyncOptions<any, any>);
-
-    const { [DELTASYNC_KEY]: { metadata = {} } = {} } = state;
+    const { metadata } = state[DELTASYNC_KEY];
+    const { [hash]: hashMetadata } = metadata;
 
     const newState = {
         ...state,
         [DELTASYNC_KEY]: {
+            ...state[DELTASYNC_KEY],
             metadata: {
                 ...metadata,
                 [hash]: {
-                    ...metadata[hash],
+                    ...hashMetadata,
                     lastSyncTimestamp,
-                    pending: !metadata[hash],
+                    pending: !hashMetadata,
                 }
             }
         }
@@ -240,27 +297,33 @@ const lastSyncMetadataReducer = (state: AppSyncMetadataState, action: DeltaSyncS
 
     return newState as AppSyncMetadataState;
 };
-const lastSyncReducer = (state: AppSyncMetadataState, action: DeltaSyncSyncAction<any, any>) => {
-    const { type, payload } = action;
 
-    return lastSyncMetadataReducer(
-        state,
-        {
-            type,
-            payload
-        } as DeltaSyncSyncAction<any, any>
-    );
-};
 const enqueReducer = (state: AppSyncMetadataState, action: OfflineAction) => {
-    const { type, meta: { offline: { effect } } } = action;
+    const { meta: { offline: { effect } } } = action;
     const { options } = effect as DeltaSyncEffect<any>;
 
-    return lastSyncMetadataReducer(state, {
-        type,
-        payload: {
-            ...options
+    const { metadata } = state[DELTASYNC_KEY];
+
+    const hash = hashForOptions(options);
+    const hashMetadata = metadata[hash];
+
+    const { lastSyncTimestamp = options.lastSyncTimestamp } = hashMetadata || {};
+
+    const newState = {
+        ...state,
+        [DELTASYNC_KEY]: {
+            metadata: {
+                ...metadata,
+                [hash]: {
+                    ...hashMetadata,
+                    lastSyncTimestamp,
+                    pending: !hashMetadata,
+                }
+            }
         }
-    });
+    };
+
+    return newState as AppSyncMetadataState;
 };
 
 export const offlineEffectConfig: OfflineEffectConfig = {
