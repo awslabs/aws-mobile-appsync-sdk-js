@@ -277,7 +277,6 @@ export declare type SubscribeWithSyncOptions<T, TVariables = OperationVariables>
     baseQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
     subscriptionQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
     deltaQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
-    lastSyncTimestamp?: number,
 };
 
 export default AWSAppSyncClient;

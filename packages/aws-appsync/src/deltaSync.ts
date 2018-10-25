@@ -30,8 +30,12 @@ declare type DeltaSyncUpdateLastSyncAction = AnyAction & {
     }
 };
 
+type SubscribeWithSyncEffectOptions<T, TVariables = OperationVariables> = SubscribeWithSyncOptions<T, TVariables> & {
+    lastSyncTimestamp?: number,
+};
+
 export declare type DeltaSyncEffect<T> = {
-    options: SubscribeWithSyncOptions<any>,
+    options: SubscribeWithSyncEffectOptions<any, any>,
     observer: ZenObservable.SubscriptionObserver<T>,
     callback: (Subscription) => void,
 };
@@ -103,7 +107,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
     let subscription: Subscription;
 
-    if (options.subscriptionQuery) {
+    if (options.subscriptionQuery && options.subscriptionQuery.query) {
         console.log('Running subscriptionQuery');
         subscription = client.subscribe({
             query: options.subscriptionQuery.query,
@@ -126,7 +130,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
         }
     }
 
-    if (options.deltaQuery) {
+    if (options.deltaQuery && options.deltaQuery.query) {
         console.log('Running deltaQuery');
         const deltaQuery = await client.query({
             fetchPolicy: 'network-only',
@@ -168,7 +172,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
 export const boundEnqueueDeltaSync = <T, TVariables = OperationVariables>(
     store: Store<any>,
-    options: SubscribeWithSyncOptions<T, TVariables>,
+    options: SubscribeWithSyncEffectOptions<T, TVariables>,
     observer: ZenObservable.SubscriptionObserver<T>,
     callback: (Subscription) => void,
 ) => {
