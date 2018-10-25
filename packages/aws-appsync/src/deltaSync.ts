@@ -67,8 +67,9 @@ const effect = async <TCache extends NormalizedCacheObject>(
     }
 
     // Initial query
+    const { baseQuery } = options;
     let initialQueryTimeoutId: number;
-    if (options.baseQuery.query) {
+    if (baseQuery && baseQuery.query) {
 
         let func = async () => {
             // TODO: use buffer?
@@ -83,26 +84,25 @@ const effect = async <TCache extends NormalizedCacheObject>(
             );
             const result = await client.query({
                 fetchPolicy,
-                query: options.baseQuery.query,
-                variables: options.baseQuery.variables,
+                query: baseQuery.query,
+                variables: baseQuery.variables,
             });
 
             if (!skipBaseQuery) {
                 lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
                 boundUpdateLastSync(store, hash, lastSyncTimestamp);
+
+                tryFunctionOrLogError(() => {
+                    baseQuery.update(client.cache, result);
+
+                    client.queryManager.broadcastQueries();
+                });
             }
-
-            tryFunctionOrLogError(() => {
-                options.baseQuery.update(client.cache, result);
-
-                client.queryManager.broadcastQueries();
-            });
 
             initialQueryTimeoutId = (global as any).setTimeout(func, 24 * 60 * 1000);
         };
 
         await func();
-
     }
 
     let subscription: Subscription;
@@ -154,8 +154,6 @@ const effect = async <TCache extends NormalizedCacheObject>(
     let handle = offlineStatusChangeObservable.subscribe({
         next: ({ online }) => {
             if (!online) {
-                boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp }, origObserver, callback);
-
                 if (initialQueryTimeoutId) {
                     clearInterval(initialQueryTimeoutId);
                 }
@@ -165,6 +163,8 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 }
 
                 handle.unsubscribe();
+
+                boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp }, origObserver, callback);
             }
         }
     });
@@ -222,17 +222,17 @@ export type DeltaSyncState = {
 const hashForOptions = (options: SubscribeWithSyncOptions<any>) => {
     const {
         baseQuery: {
-            query: baseQueryQuery,
-            variables: baseQueryVariables,
-        },
+            query: baseQueryQuery = {},
+            variables: baseQueryVariables = {},
+        } = {},
         subscriptionQuery: {
             query: subscriptionQueryQuery = {},
             variables: subscriptionQueryVariables = {},
         } = {},
         deltaQuery: {
-            query: deltaQueryQuery,
-            variables: deltaQueryVariables,
-        },
+            query: deltaQueryQuery = {},
+            variables: deltaQueryVariables = {},
+        } = {},
     } = options;
 
     const baseQuery = {
