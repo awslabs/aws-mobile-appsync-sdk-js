@@ -9,6 +9,7 @@
 import { ApolloLink } from "apollo-link";
 import { RetryLink } from "apollo-link-retry";
 import { OfflineAction } from "@redux-offline/redux-offline/lib/types";
+import { graphQLResultHasError } from "apollo-utilities";
 
 const BASE_TIME_MS = 100;
 const JITTER_FACTOR = 100;
@@ -28,8 +29,12 @@ export const createRetryLink = (origLink: ApolloLink) => {
     let delay;
 
     const retryLink = new RetryLink({
-        attempts: (count, operation, _error) => {
+        attempts: (count, operation, error) => {
             const { [SKIP_RETRY_KEY]: skipRetry = false } = operation.variables;
+
+            if (graphQLResultHasError({ errors: error ? error.graphQLErrors : [] })) {
+                return false;
+            }
 
             if (skipRetry) {
                 return false;
