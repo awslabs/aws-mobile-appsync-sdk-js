@@ -13,10 +13,11 @@ import { OfflineCache, AppSyncMetadataState, METADATA_KEY } from "./cache/offlin
 import AWSAppSyncClient, { OfflineCallback, SubscribeWithSyncOptions } from "./client";
 import { OfflineEffectConfig } from "./store";
 import { tryFunctionOrLogError } from "apollo-utilities";
-import { OperationVariables } from "apollo-client";
+import { OperationVariables, MutationUpdaterFn } from "apollo-client";
 import { hash } from "./utils";
 import { Observable } from "apollo-link";
 import { Subscription } from "apollo-client/util/Observable";
+import { DataProxy } from "apollo-cache";
 
 const actions = {
     ENQUEUE: 'DELTASYNC_ENQUEUE_RECONNECT',
@@ -107,6 +108,15 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
     let subscription: Subscription;
 
+    const { update: subscriptionQueryUpdateFn } = options.subscriptionQuery;
+    const subscriptionProcessor = subscriptionMessagesProcessorCreator(client.cache, (proxy, record) => {
+        if (typeof subscriptionQueryUpdateFn === 'function') {
+            subscriptionQueryUpdateFn(proxy, record);
+
+            client.queryManager.broadcastQueries();
+        }
+    });
+
     if (options.subscriptionQuery && options.subscriptionQuery.query) {
         console.log('Running subscriptionQuery');
         subscription = client.subscribe({
@@ -114,11 +124,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
             variables: options.subscriptionQuery.variables,
         }).subscribe({
             next: data => {
-                tryFunctionOrLogError(() => {
-                    options.subscriptionQuery.update(client.cache, data);
-
-                    client.queryManager.broadcastQueries();
-                });
+                subscriptionProcessor.enqueue(data);
             },
             error: () => {
                 boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp }, origObserver, callback);
@@ -129,6 +135,8 @@ const effect = async <TCache extends NormalizedCacheObject>(
             callback(subscription);
         }
     }
+
+    await new Promise(resolve => setTimeout(resolve, 10000));
 
     if (options.deltaQuery && options.deltaQuery.query) {
         console.log('Running deltaQuery');
@@ -149,6 +157,8 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
         lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
         boundUpdateLastSync(store, hash, lastSyncTimestamp);
+
+        subscriptionProcessor.ready();
     }
 
     let handle = offlineStatusChangeObservable.subscribe({
@@ -168,6 +178,43 @@ const effect = async <TCache extends NormalizedCacheObject>(
             }
         }
     });
+};
+
+type SubscriptionMessagesProcessorCreator = (proxy: DataProxy, updateFunction: MutationUpdaterFn) => SubscriptionMessagesProcessor;
+type SubscriptionMessagesProcessor = {
+    enqueue: (x: any) => void,
+    ready: () => void,
+}
+
+const subscriptionMessagesProcessorCreator: SubscriptionMessagesProcessorCreator = (proxy, updateFunction) => {
+    let buffer = [];
+    let ready = false;
+
+    const wrappedUpdateFunction: MutationUpdaterFn = (proxy, record) => tryFunctionOrLogError(() => updateFunction(proxy, record))
+
+    const processor: SubscriptionMessagesProcessor = {
+        enqueue: record => {
+            if (ready) {
+                wrappedUpdateFunction(proxy, record);
+
+                return;
+            }
+
+            buffer.push(record);
+        },
+        ready: () => {
+            if (ready) {
+                return;
+            }
+
+            buffer.forEach(record => wrappedUpdateFunction(proxy, record));
+            buffer = [];
+
+            ready = true;
+        },
+    };
+
+    return processor;
 };
 
 export const boundEnqueueDeltaSync = <T, TVariables = OperationVariables>(
