@@ -8,6 +8,7 @@ import { AWSAppSyncClient, OfflineCallback } from './client';
 import { reducer as cacheReducer, NORMALIZED_CACHE_KEY, METADATA_KEY } from './cache/index';
 import { reducer as offlineMetadataReducer, offlineEffect, discard } from './link/offline-link';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
+import { getEffectDelay } from './link/retry-link';
 
 const newStore = <TCacheShape extends NormalizedCacheObject>(
     clientGetter: () => AWSAppSyncClient<TCacheShape> = () => null,
@@ -35,6 +36,7 @@ const newStore = <TCacheShape extends NormalizedCacheObject>(
             applyMiddleware(thunk),
             offline({
                 ...offlineConfig,
+                retry: getEffectDelay,
                 persistCallback,
                 persistOptions: {
                     ...(storage && { storage }),
