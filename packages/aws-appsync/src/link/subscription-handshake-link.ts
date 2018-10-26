@@ -9,6 +9,7 @@
 import { ApolloLink, Observable } from "apollo-link";
 
 import * as Paho from '../vendor/paho-mqtt';
+import { ApolloError } from "apollo-client";
 
 type SubscriptionExtension = {
     mqttConnections: MqttConnectionInfo[],
@@ -51,8 +52,26 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         const {
             extensions: {
                 subscription: { newSubscriptions, mqttConnections }
-            }
-        }: { extensions: { subscription: SubscriptionExtension } } = subsInfo;
+            } = { subscription: { newSubscriptions: {}, mqttConnections: [] } },
+            errors = [],
+        }: {
+                extensions?: {
+                    subscription: SubscriptionExtension
+                },
+                errors: any[]
+            } = subsInfo;
+
+        if (errors.length) {
+            return new Observable(observer => {
+                observer.error(new ApolloError({
+                    errorMessage: 'Error during subscription handshake',
+                    extraInfo: { errors },
+                    graphQLErrors: errors
+                }));
+
+                return () => { };
+            });
+        }
 
         const newSubscriptionTopics = Object.keys(newSubscriptions).map(subKey => newSubscriptions[subKey].topic);
         const existingTopicsWithObserver = new Set(newSubscriptionTopics.filter(t => this.topicObservers.has(t)));
