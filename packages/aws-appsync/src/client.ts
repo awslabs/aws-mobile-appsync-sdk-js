@@ -261,7 +261,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             const callback = (subscription: Subscription) => {
                 handle = subscription;
             };
-            boundEnqueueDeltaSync(this._store, { ...options }, observer, callback);
+            boundEnqueueDeltaSync(this._store, { ...options, baseLastSyncTimestamp: null }, observer, callback);
 
             return () => {
                 if (handle) {

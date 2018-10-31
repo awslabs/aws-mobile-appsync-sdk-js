@@ -121,10 +121,10 @@ const effect = async (effect, action: OfflineAction, store, clientGetter, callba
 };
 
 const discard = (callback, error, action, retries) => {
-    const config = offlineEffectsConfigs[action.type];
+    const { discard } = offlineEffectsConfigs[action.type];
 
-    if (config) {
-        return config.discard(callback, error, action, retries);
+    if (discard) {
+        return discard(callback, error, action, retries);
     }
 
     return true;
