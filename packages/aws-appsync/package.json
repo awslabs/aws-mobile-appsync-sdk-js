@@ -19,7 +19,7 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "@redux-offline/redux-offline": "^2.2.1",
+    "@redux-offline/redux-offline": "2.2.1",
     "apollo-cache-inmemory": "^1.0.0",
     "apollo-client": "2.4.2",
     "apollo-link": "^1.0.0",

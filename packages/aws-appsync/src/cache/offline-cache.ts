@@ -9,7 +9,6 @@
 import { Cache } from 'apollo-cache';
 import { InMemoryCache, ApolloReducerConfig, defaultDataIdFromObject, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { Store } from 'redux';
-import { AppState } from '@redux-offline/redux-offline/lib/types';
 import { DeltaSyncState, DELTASYNC_KEY } from '../deltaSync';
 
 // Offline schema keys: Do not change in a non-backwards-compatible way
@@ -31,6 +30,14 @@ export type AppSyncMetadataState = {
     },
     [DELTASYNC_KEY]: DeltaSyncState,
 }
+
+type AppState = {
+    offline: {
+        online: boolean,
+        outbox: any[]
+    },
+}
+
 export interface OfflineCache extends AppState {
     rehydrated: boolean,
     [NORMALIZED_CACHE_KEY]: NormalizedCacheObject,
