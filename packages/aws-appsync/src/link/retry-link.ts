@@ -17,7 +17,7 @@ const MAX_DELAY_MS = 5 * 60 * 1000;
 
 const getDelay = count => ((2 ** count) * BASE_TIME_MS) + (JITTER_FACTOR * Math.random());
 
-export const SKIP_RETRY_KEY = typeof Symbol !== 'undefined' ? Symbol('skipRetry') : '@@skipRetry';
+export const SKIP_RETRY_KEY = '@@skipRetry';
 
 export const getEffectDelay = (_action: OfflineAction, retries: number) => {
     const delay = getDelay(retries);
@@ -53,6 +53,12 @@ export const createRetryLink = (origLink: ApolloLink) => {
     ]);
 
     return new ApolloLink((operation, forward) => {
+        const { [SKIP_RETRY_KEY]: skipRetry = false, ...otherVars } = operation.variables;
+
+        if (skipRetry) {
+            operation.variables = otherVars;
+        }
+
         return link.request(operation, forward);
     });
 };
