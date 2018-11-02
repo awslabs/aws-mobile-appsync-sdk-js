@@ -18,6 +18,10 @@ import { hash } from "./utils";
 import { Observable } from "apollo-link";
 import { Subscription } from "apollo-client/util/Observable";
 import { DataProxy } from "apollo-cache";
+import debug from 'debug';
+import { SKIP_RETRY_KEY } from "./link/retry-link";
+
+const logger = debug('appsync:deltasync');
 
 //#region Types
 type DeltaSyncUpdateLastSyncAction = AnyAction & {
@@ -65,8 +69,8 @@ const actions = {
     ENQUEUE: 'DELTASYNC_ENQUEUE_RECONNECT',
     UPDATE_LASTSYNC: 'DELTASYNC_UPDATE_LASTSYNC',
 };
-// const UPPER_BOUND_TIME_MS = (24 * 60 * 60 * 1000);
-const UPPER_BOUND_TIME_MS = 2 * 60 * 1000;
+const DEFAULT_UPPER_BOUND_TIME_MS = 24 * 60 * 60 * 1000;
+const MIN_UPPER_BOUND_TIME_MS = 2 * 1000;
 const BUFFER_MILLISECONDS = 2000;
 //#endregion
 
@@ -161,6 +165,8 @@ const effect = async <TCache extends NormalizedCacheObject>(
         return;
     }
 
+    let upperBoundTimeMS = DEFAULT_UPPER_BOUND_TIME_MS;
+
     let { lastSyncTimestamp, baseLastSyncTimestamp } = options;
     const hash = hashForOptions(options);
     const itemInHash = store.getState()[METADATA_KEY][DELTASYNC_KEY].metadata[hash];
@@ -170,6 +176,8 @@ const effect = async <TCache extends NormalizedCacheObject>(
     let baseQueryTimeoutId: number;
     let subscriptionProcessor: SubscriptionMessagesProcessor;
     const unsubscribeAll = () => {
+        logger('Unsubscribing');
+
         if (networkStatusSubscription) networkStatusSubscription.unsubscribe();
 
         if (subscription) subscription.unsubscribe();
@@ -182,9 +190,14 @@ const effect = async <TCache extends NormalizedCacheObject>(
     const enqueueAgain = () => {
         unsubscribeAll();
 
-        // console.log('Enqueuing', { baseLastSyncTimestamp, lastSyncTimestamp });
+        logger('Enqueuing', { baseLastSyncTimestamp, lastSyncTimestamp });
         boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp, baseLastSyncTimestamp }, observer, callback);
     };
+
+    if (typeof callback === 'function') {
+        let handle = new Observable(() => () => unsubscribeAll()).subscribe({ next: () => { } });
+        callback(handle);
+    }
 
     networkStatusSubscription = new Observable(obs => {
         const handle = offlineStatusChangeObservable.subscribe({
@@ -215,15 +228,22 @@ const effect = async <TCache extends NormalizedCacheObject>(
     });
 
     try {
+        let error;
+
+        logger('AQUI!!!!');
+        // await new Promise(r => setTimeout(r, 10000));
 
         //#region Base query
         if (baseQuery && baseQuery.query) {
-            const { query, update, variables } = baseQuery;
-            const skipBaseQuery = baseLastSyncTimestamp
-                ? Date.now() - baseLastSyncTimestamp < UPPER_BOUND_TIME_MS
-                : itemInHash.baseLastSyncTimestamp && Date.now() - itemInHash.baseLastSyncTimestamp < UPPER_BOUND_TIME_MS;
+            const { query, update, variables, refreshIntervalInSeconds } = baseQuery;
 
-            console.log(`${skipBaseQuery ? 'Skipping' : 'Running'} base query`, { baseLastSyncTimestamp, itemInHash });
+            upperBoundTimeMS = refreshIntervalInSeconds ? refreshIntervalInSeconds * 1000 : DEFAULT_UPPER_BOUND_TIME_MS;
+
+            const skipBaseQuery = baseLastSyncTimestamp
+                ? Date.now() - baseLastSyncTimestamp < upperBoundTimeMS
+                : itemInHash.baseLastSyncTimestamp && Date.now() - itemInHash.baseLastSyncTimestamp < upperBoundTimeMS;
+
+            logger(`${skipBaseQuery ? 'Skipping' : 'Running'} base query`, { baseLastSyncTimestamp, itemInHash });
             if (!skipBaseQuery) {
                 const result = await client.query({
                     fetchPolicy: 'network-only',
@@ -249,34 +269,40 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
             subscription = client.subscribe({
                 query: query,
-                variables: variables,
+                variables: {
+                    ...variables,
+                    [SKIP_RETRY_KEY]: true,
+                },
             }).subscribe({
                 next: data => {
                     subscriptionProcessor.enqueue(data);
                 },
                 error: (err) => {
+                    logger(err);
+                    error = err;
+                    unsubscribeAll();
+
                     if (graphQLResultHasError(err) || err.graphQLErrors) {
                         // send error to observable, unsubscribe all, do not enqueue
                         observer.error(err);
-                        unsubscribeAll();
                         return;
                     }
 
+                    console.warn({ err });
+                    // network disconnect only
                     enqueueAgain();
                 }
             });
-
-            if (typeof callback === 'function') {
-                callback(subscription);
-            }
         }
         //#endregion
+
+        await new Promise(r => setTimeout(r, 2000));
 
         //#region Delta query
         if (deltaQuery && deltaQuery.query) {
             const { query, update, variables } = deltaQuery;
 
-            console.log('Running deltaQuery');
+            logger('Running deltaQuery');
             const result = await client.query({
                 fetchPolicy: 'network-only',
                 query: query,
@@ -297,17 +323,23 @@ const effect = async <TCache extends NormalizedCacheObject>(
         }
         //#endregion
 
+        if (error) {
+            throw error;
+        }
+
         // process subscription messages
         subscriptionProcessor.ready();
 
-        const XXX = UPPER_BOUND_TIME_MS - (Date.now() - baseLastSyncTimestamp);
-        console.log(`Re-running in ${XXX / 1000 / 60} minutes`);
-        baseQueryTimeoutId = (global as any).setTimeout(() => enqueueAgain(), XXX);
+        const baseQueryTimeout = Math.max(
+            upperBoundTimeMS - (Date.now() - baseLastSyncTimestamp),
+            MIN_UPPER_BOUND_TIME_MS
+        );
+        logger(`Re-running in ${baseQueryTimeout / 1000 / 60} minutes`);
+        baseQueryTimeoutId = (global as any).setTimeout(() => enqueueAgain(), baseQueryTimeout);
     } catch (error) {
-        observer.error(error);
-        // Redux-offline will discard and send error to observer, see: discard()
-
         unsubscribeAll();
+
+        throw error
     }
 };
 
@@ -315,8 +347,7 @@ const discard = (_callback: OfflineCallback, error: Error, action: OfflineAction
     const { meta: { offline: { effect } } } = action;
     const { observer } = effect as DeltaSyncEffect<any>;
 
-    if (observer && observer.error) {
-        console.warn('Discarding');
+    if (observer && observer.error && !observer.closed) {
         observer.error(error);
     }
 
@@ -328,10 +359,10 @@ const reducer: DeltaSyncReducer = () => (state: AppSyncMetadataState, action: An
 
     switch (action.type) {
         case actions.UPDATE_LASTSYNC:
-            console.debug(action.type, (action as DeltaSyncUpdateLastSyncAction).payload);
+            logger(action.type, (action as DeltaSyncUpdateLastSyncAction).payload);
             return lastSyncReducer(state, action as DeltaSyncUpdateLastSyncAction);
         case actions.ENQUEUE:
-            console.debug(action.type, ((action as OfflineAction).meta.offline.effect as any).options);
+            logger(action.type, ((action as OfflineAction).meta.offline.effect as any).options);
             return enqueReducer(state, action as OfflineAction);
         default:
             const newState: AppSyncMetadataState = {
@@ -389,7 +420,6 @@ const enqueReducer = (state: AppSyncMetadataState, action: OfflineAction) => {
         lastSyncTimestamp,
         baseLastSyncTimestamp: options.baseLastSyncTimestamp === null ? null : baseLastSyncTimestamp,
     };
-    console.warn(newMetadata);
 
     const newState = {
         ...state,
