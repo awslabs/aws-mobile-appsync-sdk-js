@@ -251,7 +251,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         });
     }
 
-    sync<T, TVariables = OperationVariables>(options: SubscribeWithSyncOptions<T, TVariables>): Observable<T> {
+    sync<T, TVariables = OperationVariables>(options: SubscribeWithSyncOptions<T, TVariables>): Subscription {
         if (!this.isOfflineEnabled()) {
             throw new Error('Not supported');
         }
@@ -268,7 +268,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
                     handle.unsubscribe();
                 }
             }
-        });
+        }).subscribe(() => { });
     }
 }
 
