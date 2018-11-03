@@ -20,7 +20,7 @@ import { Subscription } from "apollo-client/util/Observable";
 import { DataProxy } from "apollo-cache";
 import debug from 'debug';
 import { SKIP_RETRY_KEY } from "./link/retry-link";
-import { DocumentNode } from "graphql";
+import { DocumentNode, print } from "graphql";
 
 const logger = debug('appsync:deltasync');
 
@@ -128,15 +128,15 @@ const hashForOptions = (options: SubscribeWithSyncOptions<any>) => {
     } = options;
 
     const baseQuery = {
-        query: baseQueryQuery,
+        query: print(baseQueryQuery),
         variables: baseQueryVariables,
     };
     const subscriptionQuery = {
-        query: subscriptionQueryQuery,
+        query: print(subscriptionQueryQuery),
         variables: subscriptionQueryVariables,
     };
     const deltaQuery = {
-        query: deltaQueryQuery,
+        query: print(deltaQueryQuery),
         variables: deltaQueryVariables,
     };
 
