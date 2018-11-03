@@ -140,11 +140,11 @@ const hashForOptions = (options: SubscribeWithSyncOptions<any>) => {
         variables: deltaQueryVariables,
     };
 
-    return hash({
+    return hash(JSON.stringify({
         baseQuery,
         subscriptionQuery,
         deltaQuery,
-    })
+    }));
 }
 //#endregion
 
