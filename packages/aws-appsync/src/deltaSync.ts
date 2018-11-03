@@ -474,11 +474,15 @@ const boundUpdateLastSync = (
 
 export const buildSync = <T, TVariables = OperationVariables>(
     typename: string,
-    baseQuery: BuildBaseQuerySyncOptions<T, TVariables>,
-    subscriptionQuery?: BuildQuerySyncOptions<T, TVariables>,
-    deltaQuery?: BuildQuerySyncOptions<T, TVariables>,
+    options: {
+        baseQuery: BuildBaseQuerySyncOptions<T, TVariables>,
+        subscriptionQuery?: BuildQuerySyncOptions<T, TVariables>,
+        deltaQuery?: BuildQuerySyncOptions<T, TVariables>,
+    },
     idField?: string,
 ) => {
+    const { baseQuery, subscriptionQuery, deltaQuery } = options;
+
     const result = {
         baseQuery,
         subscriptionQuery: {
