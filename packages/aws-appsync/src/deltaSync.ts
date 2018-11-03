@@ -10,16 +10,17 @@ import { OfflineAction } from "@redux-offline/redux-offline/lib/types";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { Store, AnyAction } from "redux";
 import { OfflineCache, AppSyncMetadataState, METADATA_KEY } from "./cache/offline-cache";
-import AWSAppSyncClient, { OfflineCallback, SubscribeWithSyncOptions } from "./client";
+import AWSAppSyncClient, { OfflineCallback, SubscribeWithSyncOptions, QuerySyncOptions } from "./client";
 import { OfflineEffectConfig } from "./store";
 import { tryFunctionOrLogError, graphQLResultHasError } from "apollo-utilities";
 import { OperationVariables, MutationUpdaterFn } from "apollo-client";
-import { hash } from "./utils";
+import { hash, getOperationFieldName } from "./utils";
 import { Observable } from "apollo-link";
 import { Subscription } from "apollo-client/util/Observable";
 import { DataProxy } from "apollo-cache";
 import debug from 'debug';
 import { SKIP_RETRY_KEY } from "./link/retry-link";
+import { DocumentNode } from "graphql";
 
 const logger = debug('appsync:deltasync');
 
@@ -147,6 +148,7 @@ const hashForOptions = (options: SubscribeWithSyncOptions<any>) => {
 }
 //#endregion
 
+//#region Redux
 const effect = async <TCache extends NormalizedCacheObject>(
     store: Store<OfflineCache>,
     client: AWSAppSyncClient<TCache>,
@@ -190,7 +192,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
     const enqueueAgain = () => {
         unsubscribeAll();
 
-        logger('Enqueuing', { baseLastSyncTimestamp, lastSyncTimestamp });
+        logger('Re-queuing', { baseLastSyncTimestamp, lastSyncTimestamp });
         boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp, baseLastSyncTimestamp }, observer, callback);
     };
 
@@ -230,9 +232,6 @@ const effect = async <TCache extends NormalizedCacheObject>(
     try {
         let error;
 
-        logger('AQUI!!!!');
-        // await new Promise(r => setTimeout(r, 10000));
-
         //#region Base query
         if (baseQuery && baseQuery.query) {
             const { query, update, variables, refreshIntervalInSeconds } = baseQuery;
@@ -251,11 +250,13 @@ const effect = async <TCache extends NormalizedCacheObject>(
                     variables,
                 });
 
-                tryFunctionOrLogError(() => {
-                    update(client.cache, result);
+                if (typeof update === 'function') {
+                    tryFunctionOrLogError(() => {
+                        update(client.cache, result);
 
-                    client.queryManager.broadcastQueries();
-                });
+                        client.queryManager.broadcastQueries();
+                    });
+                }
 
                 baseLastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
                 boundUpdateLastSync(store, { hash, baseLastSyncTimestamp });
@@ -278,7 +279,6 @@ const effect = async <TCache extends NormalizedCacheObject>(
                     subscriptionProcessor.enqueue(data);
                 },
                 error: (err) => {
-                    logger(err);
                     error = err;
                     unsubscribeAll();
 
@@ -288,21 +288,17 @@ const effect = async <TCache extends NormalizedCacheObject>(
                         return;
                     }
 
-                    console.warn({ err });
-                    // network disconnect only
                     enqueueAgain();
                 }
             });
         }
         //#endregion
 
-        await new Promise(r => setTimeout(r, 2000));
-
         //#region Delta query
         if (deltaQuery && deltaQuery.query) {
             const { query, update, variables } = deltaQuery;
 
-            logger('Running deltaQuery');
+            logger('Running deltaQuery', { lastSyncTimestamp, baseLastSyncTimestamp });
             const result = await client.query({
                 fetchPolicy: 'network-only',
                 query: query,
@@ -312,11 +308,13 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 },
             });
 
-            tryFunctionOrLogError(() => {
-                update(client.cache, result);
+            if (typeof update === 'function') {
+                tryFunctionOrLogError(() => {
+                    update(client.cache, result);
 
-                client.queryManager.broadcastQueries();
-            });
+                    client.queryManager.broadcastQueries();
+                });
+            }
 
             lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
             boundUpdateLastSync(store, { hash, lastSyncTimestamp });
@@ -354,7 +352,6 @@ const discard = (_callback: OfflineCallback, error: Error, action: OfflineAction
     return true;
 };
 
-//#region redux
 const reducer: DeltaSyncReducer = () => (state: AppSyncMetadataState, action: AnyAction) => {
 
     switch (action.type) {
@@ -471,6 +468,100 @@ const boundUpdateLastSync = (
 
     store.dispatch(action);
 }
+//#endregion
+
+//#region Builder
+
+export const buildSync = <T, TVariables = OperationVariables>(
+    typename: string,
+    baseQuery: BuildBaseQuerySyncOptions<T, TVariables>,
+    subscriptionQuery?: BuildQuerySyncOptions<T, TVariables>,
+    deltaQuery?: BuildQuerySyncOptions<T, TVariables>,
+    idField?: string,
+) => {
+    const result = {
+        baseQuery,
+        subscriptionQuery: {
+            ...subscriptionQuery,
+            ...(subscriptionQuery && {
+                update: (cache, { data }) => {
+                    deltaRecordProcessor(baseQuery, subscriptionQuery, cache, data, typename, idField);
+                }
+            })
+        },
+        deltaQuery: {
+            ...deltaQuery,
+            ...(deltaQuery && {
+                update: (cache, { data }) => {
+                    deltaRecordProcessor(baseQuery, deltaQuery, cache, data, typename, idField);
+                }
+            })
+        },
+    } as SubscribeWithSyncOptions<T, TVariables>;
+
+    return result;
+};
+
+const deltaRecordProcessor = <T, TVariables = OperationVariables>(
+    baseQuery: BuildBaseQuerySyncOptions<T, TVariables>,
+    otherQuery: BuildQuerySyncOptions<T, TVariables>,
+    cache: DataProxy,
+    data: T,
+    typename: string,
+    idField: string = 'id',
+) => {
+    const updateLogger = logger.extend('update');
+
+    if (!baseQuery || !baseQuery.query) {
+        return;
+    }
+
+    const deltaOperationName = getOperationFieldName(otherQuery.query);
+
+    updateLogger(deltaOperationName, data);
+
+    const { query, variables } = baseQuery;
+
+    const operationName = getOperationFieldName(query);
+
+    const { [operationName]: baseResult } = cache.readQuery({ query, variables });
+
+    if (!Array.isArray(baseResult)) {
+        throw new Error('Not an array');
+    }
+
+    const { [deltaOperationName]: x }: { [key: string]: any } = data;
+
+    const deltaRecords = [].concat(x);
+
+    let result = baseResult;
+    const dataIdFromObject = ({ [idField]: id }) => id;
+    deltaRecords.forEach(deltaRecord => {
+        const incomingRecord = { ...deltaRecord, __typename: typename };
+
+        if (incomingRecord.aws_ds === 'DELETE') {
+            result = [
+                ...result.filter(record => dataIdFromObject(record) !== dataIdFromObject(incomingRecord)),
+            ]
+        } else {
+            result = [
+                ...result.filter(record => dataIdFromObject(record) !== dataIdFromObject(incomingRecord)),
+                incomingRecord,
+            ]
+        }
+    });
+
+    cache.writeQuery({ query, data: { [operationName]: result } });
+};
+
+export type BuildQuerySyncOptions<T, TVariables = OperationVariables> = {
+    query: DocumentNode, variables: TVariables
+};
+
+export type BuildBaseQuerySyncOptions<T, TVariables = OperationVariables> = QuerySyncOptions<T, TVariables> & {
+    refreshIntervalInSeconds?: number
+};
+
 //#endregion
 
 export const offlineEffectConfig: OfflineEffectConfig = {

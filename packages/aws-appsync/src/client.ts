@@ -32,7 +32,7 @@ import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
 import { createRetryLink } from './link/retry-link';
-import { boundEnqueueDeltaSync } from "./deltaSync";
+import { boundEnqueueDeltaSync, buildSync } from "./deltaSync";
 import { Subscription } from 'apollo-client/util/Observable';
 
 export { defaultDataIdFromObject };
@@ -270,15 +270,22 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             }
         });
     }
-
 }
 
-export declare type SubscribeWithSyncOptions<T, TVariables = OperationVariables> = {
-    baseQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T>, refreshIntervalInSeconds?: number },
-    subscriptionQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
-    deltaQuery?: { query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T> },
+export type QuerySyncOptions<T, TVariables = OperationVariables> = {
+    query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T>
+};
+
+export type BaseQuerySyncOptions<T, TVariables = OperationVariables> = QuerySyncOptions<T, TVariables> & {
+    refreshIntervalInSeconds?: number
+};
+
+export type SubscribeWithSyncOptions<T, TVariables = OperationVariables> = {
+    baseQuery?: BaseQuerySyncOptions<T, TVariables>,
+    subscriptionQuery?: QuerySyncOptions<T, TVariables>,
+    deltaQuery?: QuerySyncOptions<T, TVariables>,
 };
 
 export default AWSAppSyncClient;
 export { AWSAppSyncClient };
-export { AUTH_TYPE };
+export { AUTH_TYPE, buildSync };
