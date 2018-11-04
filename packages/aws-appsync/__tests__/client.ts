@@ -2,7 +2,7 @@ import gql from "graphql-tag";
 import { v4 as uuid } from "uuid";
 import { Observable } from "apollo-link";
 import { createHttpLink } from "apollo-link-http";
-import { AWSAppSyncClientOptions, AWSAppSyncClient, AUTH_TYPE, ConflictResolutionInfo, ConflictResolver } from "../src/client";
+import { AWSAppSyncClientOptions, AWSAppSyncClient, ConflictResolutionInfo, ConflictResolver } from "../src/client";
 import { Store } from "redux";
 import { OfflineCache } from "../src/cache/offline-cache";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
@@ -10,6 +10,10 @@ import { isOptimistic } from "../src/link/offline-link";
 import { GraphQLError } from "graphql";
 import { ApolloError } from "apollo-client";
 import { AWSAppsyncGraphQLError } from "../src/types";
+import { AuthApiKey } from "../src/link/auth/auth-header-based";
+import { SKIP_RETRY_KEY } from "../src/link/retry-link";
+//import { AuthApiKey } from "../src/client/link/auth/auth-header-based";
+
 
 jest.mock('apollo-link-http-common', () => ({
     checkFetcher: () => { },
@@ -113,10 +117,7 @@ const getClient = (options?: Partial<AWSAppSyncClientOptions>) => {
     const defaultOptions = {
         url: 'some url',
         region: 'some region',
-        auth: {
-            type: AUTH_TYPE.API_KEY,
-            apiKey: 'some key'
-        },
+        authType: new AuthApiKey("some key"),
         disableOffline: false,
         offlineConfig: {
             storage: new MemoryStorage(),
@@ -528,7 +529,8 @@ describe("Offline enabled", () => {
         expect(callback).toHaveBeenCalledWith({
             mutation: "addTodo",
             variables: {
-                name: 'MyTodo1'
+                name: 'MyTodo1',
+                [SKIP_RETRY_KEY]: true
             },
             error: new ApolloError({ graphQLErrors: [backendError] }),
             notified: true,
@@ -613,7 +615,8 @@ describe("Offline enabled", () => {
             expect(callback).toHaveBeenCalledTimes(1);
             expect(callback).toHaveBeenCalledWith(null, {
                 data: serverResponse,
-                variables: { ...variables, expectedVersion: variables.expectedVersion + 1 },
+                variables: { ...variables, expectedVersion: variables.expectedVersion + 1,
+                    [SKIP_RETRY_KEY]: true },
                 mutation: 'addTodo',
                 notified: true,
             });
