@@ -6,10 +6,12 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import { ApolloLink, Observable } from "apollo-link";
+import { ApolloLink, Observable, Operation } from "apollo-link";
 
 import * as Paho from '../vendor/paho-mqtt';
 import { ApolloError } from "apollo-client";
+import { DocumentNode, FieldNode } from "graphql";
+import { getMainDefinition } from "apollo-utilities";
 
 type SubscriptionExtension = {
     mqttConnections: MqttConnectionInfo[],
@@ -47,7 +49,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         this.subsInfoContextKey = subsInfoContextKey;
     }
 
-    request(operation) {
+    request(operation: Operation) {
         const { [this.subsInfoContextKey]: subsInfo } = operation.getContext();
         const {
             extensions: {
@@ -93,7 +95,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                     topics: topics.filter(t => newTopics.has(t))
                 } as MqttConnectionInfo));
 
-            this.connectNewClients(newTopicsConnectionInfo, observer);
+            this.connectNewClients(newTopicsConnectionInfo, observer, operation);
 
             return () => {
                 const clientsForCurrentObserver = Array.from(this.clientObservers).filter(([, { observers }]) => observers.has(observer));
@@ -121,11 +123,11 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         });
     }
 
-    connectNewClients<T>(connectionInfo: MqttConnectionInfo[], observer: ZenObservable.Observer<T>) {
-        return Promise.all(connectionInfo.map(c => this.connectNewClient(c, observer)));
+    connectNewClients<T>(connectionInfo: MqttConnectionInfo[], observer: ZenObservable.Observer<T>, operation: Operation) {
+        return Promise.all(connectionInfo.map(c => this.connectNewClient(c, observer, operation)));
     };
 
-    async connectNewClient<T>(connectionInfo: MqttConnectionInfo, observer: ZenObservable.Observer<T>) {
+    async connectNewClient<T>(connectionInfo: MqttConnectionInfo, observer: ZenObservable.Observer<T>, operation: Operation) {
         const { client: clientId, url, topics } = connectionInfo;
         const client: any = new Paho.Client(url, clientId);
 
@@ -140,7 +142,10 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             topics.forEach(t => this.topicObservers.delete(t));
         };
 
-        (client as any).onMessageArrived = ({ destinationName, payloadString }) => this.onMessage(destinationName, payloadString);
+        const { query } = operation;
+        const selectionNames = (getMainDefinition(query).selectionSet.selections as FieldNode[]).map(({ name: { value } }) => value);
+
+        (client as any).onMessageArrived = ({ destinationName, payloadString }) => this.onMessage(destinationName, payloadString, selectionNames);
 
         await new Promise((resolve, reject) => {
             client.connect({
@@ -181,13 +186,21 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         });
     }
 
-    onMessage = (topic, message) => {
+    onMessage = (topic: string, message: string, selectionNames: string[]) => {
         const parsedMessage = JSON.parse(message);
         const observers = this.topicObservers.get(topic);
 
+        const data = selectionNames.reduce(
+            (acc, name) => (acc[name] = acc[name] || null, acc),
+            parsedMessage.data || {}
+        );
+
         observers.forEach(observer => {
             try {
-                observer.next(parsedMessage)
+                observer.next({
+                    ...parsedMessage,
+                    ...{ data },
+                })
             } catch (err) {
                 // console.error(err);
             }
