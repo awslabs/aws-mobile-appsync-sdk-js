@@ -55,7 +55,7 @@ const prefixesForAdd = [
     'inserted',
 ];
 
-const getOpTypeFromOperationName = (opName = '') => {
+export const getOpTypeFromOperationName = (opName = ''): CacheOperationTypes => {
     // Note: we do a toLowerCase() and startsWith() to avoid ambiguity with operations like "RemoveAddendum"
     const comparator = prefix => opName.toLowerCase().startsWith(prefix) || opName.toLowerCase().startsWith(`on${prefix}`);
 
@@ -145,7 +145,7 @@ const buildSubscription = (
     }
 }
 
-const getUpdater = <T>(opType: CacheOperationTypes, idField = 'id'): (arr: T[], newItem?: T) => T[] => {
+export const getUpdater = <T>(opType: CacheOperationTypes, idField = 'id'): (arr: T[], newItem?: T) => T[] => {
     let updater;
 
     switch (opType) {
