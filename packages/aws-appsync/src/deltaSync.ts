@@ -301,7 +301,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
             logger('Running deltaQuery', { lastSyncTimestamp, baseLastSyncTimestamp });
             const result = await client.query({
-                fetchPolicy: 'network-only',
+                fetchPolicy: 'no-cache',
                 query: query,
                 variables: {
                     ...variables,
