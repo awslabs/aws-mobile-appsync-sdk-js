@@ -23,7 +23,7 @@ import { SKIP_RETRY_KEY } from "./link/retry-link";
 import { DocumentNode, print, OperationDefinitionNode, FieldNode } from "graphql";
 import { getOpTypeFromOperationName, CacheOperationTypes, getUpdater } from "./helpers/offline";
 
-const logger = debug('appsync:deltasync');
+const logger = debug('aws-appsync:deltasync');
 
 //#region Types
 type DeltaSyncUpdateLastSyncAction = AnyAction & {
