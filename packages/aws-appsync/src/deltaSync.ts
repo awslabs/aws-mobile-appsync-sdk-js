@@ -20,8 +20,8 @@ import { Subscription } from "apollo-client/util/Observable";
 import { DataProxy } from "apollo-cache";
 import debug from 'debug';
 import { SKIP_RETRY_KEY } from "./link/retry-link";
-import { DocumentNode, print, OperationDefinitionNode, FieldNode } from "graphql";
-import { getOpTypeFromOperationName, CacheOperationTypes, getUpdater } from "./helpers/offline";
+import { DocumentNode, print, OperationDefinitionNode, FieldNode, ExecutionResult } from "graphql";
+import { getOpTypeFromOperationName, CacheOperationTypes, getUpdater, QueryWithVariables } from "./helpers/offline";
 import { boundSaveSnapshot, replaceUsingMap, EnqueuedMutationEffect, offlineEffectConfig as mutationsConfig } from "./link/offline-link";
 
 const logger = debug('aws-appsync:deltasync');
@@ -546,33 +546,49 @@ const boundUpdateLastSync = (
 
 //#region Builder
 
-export const buildSync = <T, TVariables = OperationVariables>(
+export const buildSync = <T = { [key: string]: any }, TVariables = OperationVariables>(
     typename: string,
     options: {
-        baseQuery: BuildBaseQuerySyncOptions<T, TVariables>,
-        subscriptionQuery?: BuildQuerySyncOptions<T, TVariables>,
-        deltaQuery?: BuildQuerySyncOptions<T, TVariables>,
+        baseQuery?: BuildBaseQuerySyncOptions<T, TVariables>,
+        subscriptionQuery?: BuildQuerySyncOptions<TVariables>,
+        deltaQuery?: BuildQuerySyncOptions<TVariables>,
+        cacheUpdates?: (item: T) => QueryWithVariables[],
     },
-    idField?: string,
+    idField: string = 'id',
 ) => {
-    const { baseQuery, subscriptionQuery, deltaQuery } = options;
+    const {
+        baseQuery,
+        subscriptionQuery,
+        deltaQuery,
+        cacheUpdates = () => [] as QueryWithVariables[]
+    } = options;
     const loggerHelper = logger.extend('helper');
 
     const result = {
-        baseQuery,
+        baseQuery: {
+            ...baseQuery,
+            ...(baseQuery && {
+                update: (cache, { data }: ExecutionResult) => {
+                    const opFieldName = getOperationFieldName(baseQuery.query);
+                    const { [opFieldName]: result }: { [opFieldName: string]: T[] } = data;
+
+                    writeCacheUpdates(loggerHelper, cache, result, cacheUpdates);
+                }
+            })
+        },
         subscriptionQuery: {
             ...subscriptionQuery,
             ...(subscriptionQuery && {
-                update: (cache, { data }) => {
-                    updateBaseWithDelta(loggerHelper, baseQuery, subscriptionQuery, cache, data, typename, idField);
+                update: (cache, { data }: ExecutionResult) => {
+                    updateBaseWithDelta<T, TVariables>(loggerHelper, baseQuery, subscriptionQuery, cache, data as T, cacheUpdates, typename, idField);
                 }
             })
         },
         deltaQuery: {
             ...deltaQuery,
             ...(deltaQuery && {
-                update: (cache, { data }) => {
-                    updateBaseWithDelta(loggerHelper, baseQuery, deltaQuery, cache, data, typename, idField);
+                update: (cache, { data }: ExecutionResult) => {
+                    updateBaseWithDelta<T, TVariables>(loggerHelper, baseQuery, deltaQuery, cache, data as T, cacheUpdates, typename, idField);
                 }
             })
         },
@@ -583,21 +599,35 @@ export const buildSync = <T, TVariables = OperationVariables>(
     return result;
 };
 
-const deltaRecordsProcessor = (logger, otherQuery, data, baseResult, typename, idField) => {
+const writeCacheUpdates = <T = { [key: string]: any }>(
+    logger,
+    cache: DataProxy,
+    result: T[],
+    cacheUpdates: (item: T) => QueryWithVariables[] = () => [] as QueryWithVariables[]
+) => {
+    const cacheUpdatesLogger = logger.extend('cacheUpdates');
 
-    const opDefinition = getMainDefinition(otherQuery);
-    const { name: { value: opName }, alias: { value: opAlias } = { value: undefined } } = opDefinition.selectionSet.selections[0] as FieldNode;
+    cacheUpdatesLogger('writeCacheUpdates');
 
-    const { kind, operation: graphqlOperation } = opDefinition as OperationDefinitionNode;
-    const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
+    result.forEach(item => cacheUpdates(item).forEach(({ query, variables }) => {
+        const opFieldName = getOperationFieldName(query);
+        const data = { [opFieldName]: item };
 
-    const [deltaOperationName] = isSubscription ? Object.keys(data) : [opAlias || opName];
+        cacheUpdatesLogger(`Writing ${opFieldName}`, { variables, data });
+
+        cache.writeQuery({ query, variables, data });
+    }));
+};
+
+const deltaRecordsProcessor = <T = { [key: string]: any }>(
+    logger,
+    deltaOperationName: string,
+    deltaRecords: T[],
+    baseResult: T[],
+    typename: string,
+    idField
+) => {
     const opType = getOpTypeFromOperationName(deltaOperationName);
-
-    const { [deltaOperationName]: records }: { [key: string]: any } = data;
-
-    // Support list or single records (query vs subscription)
-    const deltaRecords = [].concat(records);
 
     logger({ deltaOperationName, opType, deltaRecords });
 
@@ -608,10 +638,10 @@ const deltaRecordsProcessor = (logger, otherQuery, data, baseResult, typename, i
     let result = [...baseResult];
 
     deltaRecords.forEach(deltaRecord => {
-        const incomingRecord = { ...deltaRecord, __typename: typename };
+        const incomingRecord = { ...(deltaRecord as any), __typename: typename };
 
         const isRemove = opType === CacheOperationTypes.REMOVE || incomingRecord.aws_ds === 'DELETE';
-        const updater = getUpdater(
+        const updater = getUpdater<T>(
             opType === CacheOperationTypes.AUTO && !isRemove
                 ? CacheOperationTypes.ADD
                 : (isRemove ? CacheOperationTypes.REMOVE : opType),
@@ -626,12 +656,13 @@ const deltaRecordsProcessor = (logger, otherQuery, data, baseResult, typename, i
     return result;
 };
 
-const updateBaseWithDelta = <T, TVariables = OperationVariables>(
+const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationVariables>(
     logger,
-    baseQuery: BuildBaseQuerySyncOptions<T, TVariables>,
-    otherQuery: BuildQuerySyncOptions<T, TVariables>,
+    baseQuery: BuildBaseQuerySyncOptions<TVariables>,
+    otherQuery: BuildQuerySyncOptions<TVariables>,
     cache: DataProxy,
     data: T,
+    cacheUpdates: (item: T) => QueryWithVariables[] = () => [] as QueryWithVariables[],
     typename: string,
     idField: string = 'id',
 ) => {
@@ -652,16 +683,29 @@ const updateBaseWithDelta = <T, TVariables = OperationVariables>(
         throw new Error('Not an array');
     }
 
-    const result = deltaRecordsProcessor(updateLogger, otherQuery.query, data, baseResult, typename, idField);
+    const opDefinition = getMainDefinition(otherQuery.query);
+    const { name: { value: opName }, alias: { value: opAlias } = { value: undefined } } = opDefinition.selectionSet.selections[0] as FieldNode;
+
+    const { kind, operation: graphqlOperation } = opDefinition as OperationDefinitionNode;
+    const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
+
+    const [deltaOperationName] = isSubscription ? Object.keys(data) : [opAlias || opName];
+    const { [deltaOperationName]: records }: { [key: string]: any } = data;
+    const deltaRecords = [].concat(records) as T[];
+
+    const result = deltaRecordsProcessor<T>(updateLogger, deltaOperationName, deltaRecords, baseResult, typename, idField);
 
     if (result === baseResult) {
         return;
     }
 
     cache.writeQuery({ query, data: { [operationName]: result } });
+
+    writeCacheUpdates(updateLogger, cache, deltaRecords, cacheUpdates);
 };
 
-export type BuildQuerySyncOptions<T, TVariables = OperationVariables> = {
+export type COSA<TVariables = OperationVariables> = BuildQuerySyncOptions<TVariables>;
+export type BuildQuerySyncOptions<TVariables = OperationVariables> = {
     query: DocumentNode, variables: TVariables
 };
 
