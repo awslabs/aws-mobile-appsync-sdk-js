@@ -98,7 +98,7 @@ export class OfflineLink extends ApolloLink {
     }
 }
 
-const boundSaveSnapshot = (store, cache) => store.dispatch(saveSnapshot(cache));
+export const boundSaveSnapshot = (store, cache) => store.dispatch(saveSnapshot(cache));
 const saveSnapshot = (cache) => ({
     type: actions.SAVE_SNAPSHOT,
     payload: { cache },
@@ -119,7 +119,7 @@ const processOfflineQuery = (operation: Operation, theStore: Store<OfflineCache>
     return data;
 }
 
-type EnqueuedMutationEffect<T> = {
+export type EnqueuedMutationEffect<T> = {
     optimisticResponse: object,
     operation: GraphQLRequest,
     update: MutationUpdaterFn<T>,

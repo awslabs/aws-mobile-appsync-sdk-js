@@ -7,12 +7,12 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { OfflineAction } from "@redux-offline/redux-offline/lib/types";
-import { NormalizedCacheObject } from "apollo-cache-inmemory";
+import { NormalizedCacheObject, readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
 import { Store, AnyAction } from "redux";
 import { OfflineCache, AppSyncMetadataState, METADATA_KEY } from "./cache/offline-cache";
 import AWSAppSyncClient, { OfflineCallback, SubscribeWithSyncOptions, QuerySyncOptions } from "./client";
 import { OfflineEffectConfig } from "./store";
-import { tryFunctionOrLogError, graphQLResultHasError, resultKeyNameFromField, getMainDefinition } from "apollo-utilities";
+import { tryFunctionOrLogError, graphQLResultHasError, getMainDefinition, addTypenameToDocument } from "apollo-utilities";
 import { OperationVariables, MutationUpdaterFn } from "apollo-client";
 import { hash, getOperationFieldName } from "./utils";
 import { Observable } from "apollo-link";
@@ -22,6 +22,7 @@ import debug from 'debug';
 import { SKIP_RETRY_KEY } from "./link/retry-link";
 import { DocumentNode, print, OperationDefinitionNode, FieldNode } from "graphql";
 import { getOpTypeFromOperationName, CacheOperationTypes, getUpdater } from "./helpers/offline";
+import { boundSaveSnapshot, replaceUsingMap, EnqueuedMutationEffect, offlineEffectConfig as mutationsConfig } from "./link/offline-link";
 
 const logger = debug('aws-appsync:deltasync');
 
@@ -220,7 +221,27 @@ const effect = async <TCache extends NormalizedCacheObject>(
         }
     });
 
-    subscriptionProcessor = subscriptionMessagesProcessorCreator(client.cache, (proxy, record) => {
+    const STOP_CACHE_RECORDING = Symbol('lawea');
+    let recorderCacheWrites = [];
+
+    const cacheProxy = new Proxy(client.cache, {
+        get: (target, name, receiver) => {
+            switch (name) {
+                case 'write':
+                    return (options) => {
+                        if (!receiver[STOP_CACHE_RECORDING]) {
+                            recorderCacheWrites.push(options);
+                        }
+
+                        return target[name](options);
+                    }
+            }
+
+            return target[name];
+        }
+    });
+
+    subscriptionProcessor = subscriptionMessagesProcessorCreator(cacheProxy, (proxy, record) => {
         const { update } = options.subscriptionQuery;
 
         if (typeof update === 'function') {
@@ -232,6 +253,12 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
     try {
         let error;
+
+
+        const {
+            [METADATA_KEY]: { idsMap, snapshot: { cache: cacheSnapshot } },
+            offline: { outbox: enquededMutations }
+        } = store.getState();
 
         //#region Base query
         if (baseQuery && baseQuery.query) {
@@ -250,17 +277,24 @@ const effect = async <TCache extends NormalizedCacheObject>(
                     query,
                     variables,
                 });
+                cacheProxy.writeQuery({ query, data: result.data });
 
                 if (typeof update === 'function') {
                     tryFunctionOrLogError(() => {
-                        update(client.cache, result);
-
-                        client.queryManager.broadcastQueries();
+                        update(cacheProxy, result);
                     });
                 }
 
                 baseLastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
                 boundUpdateLastSync(store, { hash, baseLastSyncTimestamp });
+            } else {
+                const data = readQueryFromStore({
+                    store: defaultNormalizedCacheFactory(cacheSnapshot),
+                    query: addTypenameToDocument(query),
+                    variables,
+                });
+
+                cacheProxy.writeQuery({ query, variables, data });
             }
         }
         //#endregion
@@ -311,9 +345,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
             if (typeof update === 'function') {
                 tryFunctionOrLogError(() => {
-                    update(client.cache, result);
-
-                    client.queryManager.broadcastQueries();
+                    update(cacheProxy, result);
                 });
             }
 
@@ -328,6 +360,45 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
         // process subscription messages
         subscriptionProcessor.ready();
+        cacheProxy[STOP_CACHE_RECORDING] = true;
+
+
+        // Restore from cache snapshot
+        client.cache.restore(cacheSnapshot as TCache);
+
+        recorderCacheWrites.forEach(client.cache.write.bind(client.cache));
+
+        boundSaveSnapshot(store, client.cache);
+
+        const dataStore = client.queryManager.dataStore;
+        const enqueuedActionsFilter = [mutationsConfig.enqueueAction];
+        enquededMutations
+            .filter(({ type }) => enqueuedActionsFilter.indexOf(type) > -1)
+            .forEach(({ meta: { offline: { effect } } }) => {
+                const {
+                    operation: { variables = {}, query: document = null } = {},
+                    update,
+                    optimisticResponse: origOptimisticResponse,
+                } = effect as EnqueuedMutationEffect<any>;
+
+                if (typeof update !== 'function') {
+                    return;
+                }
+
+                const optimisticResponse = replaceUsingMap({ ...origOptimisticResponse }, idsMap);
+                const result = { data: optimisticResponse };
+
+                dataStore.markMutationResult({
+                    mutationId: null,
+                    result,
+                    document,
+                    variables,
+                    updateQueries: {}, // TODO: populate this?
+                    update
+                });
+            });
+
+        client.queryManager.broadcastQueries();
 
         if (baseQuery && baseQuery.query) {
             const baseQueryTimeout = Math.max(
@@ -528,9 +599,13 @@ const deltaRecordsProcessor = (logger, otherQuery, data, baseResult, typename, i
     // Support list or single records (query vs subscription)
     const deltaRecords = [].concat(records);
 
-    let result = [...baseResult];
-
     logger({ deltaOperationName, opType, deltaRecords });
+
+    if (!deltaRecords.length) {
+        return baseResult;
+    }
+
+    let result = [...baseResult];
 
     deltaRecords.forEach(deltaRecord => {
         const incomingRecord = { ...deltaRecord, __typename: typename };
@@ -578,6 +653,10 @@ const updateBaseWithDelta = <T, TVariables = OperationVariables>(
     }
 
     const result = deltaRecordsProcessor(updateLogger, otherQuery.query, data, baseResult, typename, idField);
+
+    if (result === baseResult) {
+        return;
+    }
 
     cache.writeQuery({ query, data: { [operationName]: result } });
 };
