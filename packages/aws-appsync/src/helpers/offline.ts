@@ -76,9 +76,9 @@ export const getOpTypeFromOperationName = (opName = ''): CacheOperationTypes => 
     return result;
 };
 
-export type QueryWithVariables = {
+export type QueryWithVariables<TVariables = OperationVariables> = {
     query: DocumentNode,
-    variables?: object,
+    variables?: TVariables,
 };
 
 export type CacheUpdateQuery = QueryWithVariables | DocumentNode;
@@ -105,7 +105,7 @@ const buildSubscription = (
     operationType?: CacheOperationTypes
 ): SubscribeToMoreOptions => {
     const document = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).query) || (subscriptionQuery as DocumentNode);
-    const variables = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).variables) || {};
+    const variables = (subscriptionQuery && (subscriptionQuery as QueryWithVariables).variables) || {} as OperationVariables;
 
     const query = (cacheUpdateQuery && (cacheUpdateQuery as QueryWithVariables).query) || (cacheUpdateQuery as DocumentNode);
     const queryField = getOperationFieldName(query);
