@@ -1,9 +1,8 @@
-import { Observable, Operation, NextLink } from 'apollo-link';
-import { ApolloLink } from 'apollo-link';
-const packageInfo = require("../../package.json");
+import { ApolloLink, Observable } from 'apollo-link';
+const packageInfo = require("../../../package.json");
 
-import { userAgent } from "../platform";
-import { AuthType } from './auth/auth-type';
+import { userAgent } from "../../platform";
+import { AuthType } from './auth-type';
 const USER_AGENT_HEADER = 'x-amz-user-agent';
 const USER_AGENT = `aws-amplify/${packageInfo.version}${userAgent && ' '}${userAgent}`;
 

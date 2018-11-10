@@ -21,13 +21,11 @@ import {
     AuthLink,
     AuthType,
     NonTerminatingLink,
-    SubscriptionHandshakeLink,
-    ComplexObjectLink
+    SubscriptionHandshakeLink
 } from './link';
 import { createStore } from './store';
 import { ApolloCache } from 'apollo-cache';
-import { AuthOptions } from './link/auth-link';
-import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
+import { AuthOptions } from './link';
 import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
@@ -58,21 +56,21 @@ export const createAppSyncLink = ({
     url,
     region,
     authType,
-    complexObjectsCredentials,
+    complexObjects,
     resultsFetcherLink = createHttpLink({ uri: url }),
     conflictResolver,
 }: {
         url: string,
         region: string,
         authType: AuthType,
-        complexObjectsCredentials: CredentialsGetter,
+        complexObjects: ApolloLink,
         resultsFetcherLink?: ApolloLink,
         conflictResolver?: ConflictResolver,
     }) => {
     const link = ApolloLink.from([
         createLinkWithStore((store) => new OfflineLink(store)),
         new ConflictResolutionLink(conflictResolver),
-        new ComplexObjectLink(complexObjectsCredentials),
+        complexObjects,//new ComplexObjectLink(complexObjectsCredentials),
         createRetryLink(ApolloLink.from([
             createAuthLink({ authType, url, region  }),
             createSubscriptionHandshakeLink(url, resultsFetcherLink)
@@ -108,14 +106,13 @@ const createLinkWithStore = (createLinkFunc = (store: Store<OfflineCacheType>) =
     });
 }
 
-type CredentialsGetter = () => (Credentials | CredentialsOptions | null) | Credentials | CredentialsOptions | null;
 
 export interface AWSAppSyncClientOptions {
     url: string,
     region: string,
     authType: AuthType,
     conflictResolver?: ConflictResolver,
-    complexObjectsCredentials?: CredentialsGetter,
+    complexObjects?: ApolloLink,
     cacheOptions?: ApolloReducerConfig,
     disableOffline?: boolean,
     offlineConfig?: OfflineConfig,
@@ -156,7 +153,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         region,
         authType,
         conflictResolver,
-        complexObjectsCredentials,
+        complexObjects,
         cacheOptions = {},
         disableOffline = false,
         offlineConfig: {
@@ -198,7 +195,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
                 };
             });
         });
-        const link = waitForRehydrationLink.concat(customLink || createAppSyncLink({ url, region, authType, complexObjectsCredentials, conflictResolver }));
+        const link = waitForRehydrationLink.concat(customLink || createAppSyncLink({ url, region, authType, complexObjects, conflictResolver }));
 
         const newOptions = {
             ...options,

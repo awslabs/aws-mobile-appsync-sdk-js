@@ -20,24 +20,19 @@ export class AuthHeaderBased extends AuthType {
     }
 }
 
-export const AUTH_NONE = new AuthHeaderBased({ header: '', value: '' });
 
-
-class AuthJWT extends AuthHeaderBased {
-    
-    constructor(jwtToken: string | (() => (string | Promise<string>))) {
-        super( { header: 'Authorization', value: jwtToken });
-    }
+export function authNone() {
+    return new AuthHeaderBased({ header: '', value: '' });
 }
 
-export class AuthCognito extends AuthJWT {};
+export function authCognito(jwtToken: string | (() => (string | Promise<string>))) {
+    return new AuthHeaderBased({ header: 'Authorization', value: jwtToken });
+}
 
-export class AuthOpenID extends AuthJWT {};
+export function authOpenID(jwtToken: string | (() => (string | Promise<string>))) {
+    return new AuthHeaderBased({ header: 'Authorization', value: jwtToken });
+}
 
-
-export class AuthApiKey extends AuthHeaderBased {
-    
-    constructor(apiKey: string | (() => (string | Promise<string>))) {
-        super( { header: 'X-Api-Key', value: apiKey });
-    }
+export function authApiKey(apiKey: string | (() => (string | Promise<string>))) {
+    return new AuthHeaderBased({ header: 'X-Api-Key', value: apiKey });
 }

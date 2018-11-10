@@ -1,9 +1,9 @@
 const SERVICE = 'appsync';
-import { Signer } from '../signer';
+import { Signer } from './signer';
 import * as Url from 'url';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 import { print } from 'graphql/language/printer';
-import { AuthType } from "./auth-type";
+import { AuthType } from "../auth-type";
 
 interface HeadersIam {
     credentials?: (() => Credentials | CredentialsOptions | null | Promise<Credentials | CredentialsOptions | null>) | Credentials | CredentialsOptions | null,
@@ -57,3 +57,5 @@ export class AuthAwsIAM extends AuthType {
         };
     }
 }
+
+export function authIAM(header: HeadersIam) { return new AuthAwsIAM(header);}
