@@ -7,13 +7,16 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { ApolloError } from 'apollo-client';
-import { Observable, Operation } from 'apollo-link';
-import { ApolloLink } from 'apollo-link';
+import { Observable, ApolloLink } from 'apollo-link';
 import { getOperationDefinition } from "apollo-utilities";
-import { ExecutionResult, GraphQLError } from 'graphql';
+import { GraphQLError } from 'graphql';
+import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 
 import upload from "./complex-object-link-uploader";
-import { AWSAppsyncGraphQLError } from '../types';
+import { AWSAppsyncGraphQLError } from '../../types';
+
+type CredentialsGetter = () => (Credentials | CredentialsOptions | null) | Credentials | CredentialsOptions | null;
+
 
 export class ComplexObjectLink extends ApolloLink {
 
@@ -30,7 +33,7 @@ export class ComplexObjectLink extends ApolloLink {
     }
 }
 
-export const complexObjectLink = (credentials) => {
+export const complexObjectLink = (credentials: CredentialsGetter) => {
     return new ApolloLink((operation, forward) => {
         return new Observable(observer => {
             let handle;
@@ -42,7 +45,7 @@ export const complexObjectLink = (credentials) => {
             let uploadPromise = Promise.resolve(operation);
 
             if (Object.keys(objectsToUpload).length) {
-                const uploadCredentials = typeof credentials === 'function' ? credentials.call() : credentials;
+                const uploadCredentials = typeof credentials === 'function' ? (credentials as any).call() : credentials;
 
                 uploadPromise = Promise.resolve(uploadCredentials)
                     .then(credentials => {

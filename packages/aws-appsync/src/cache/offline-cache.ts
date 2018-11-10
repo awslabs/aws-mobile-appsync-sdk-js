@@ -9,13 +9,20 @@
 import { Cache } from 'apollo-cache';
 import { InMemoryCache, ApolloReducerConfig, defaultDataIdFromObject, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { Store } from 'redux';
-import { AppState } from '@redux-offline/redux-offline/lib/types';
+
 
 export const NORMALIZED_CACHE_KEY = 'appsync';
 export const METADATA_KEY = 'appsync-metadata';
 export { defaultDataIdFromObject };
 
 const WRITE_CACHE_ACTION = 'AAS_WRITE_CACHE';
+
+type AppState = {
+    offline: {
+        online: boolean,
+        outbox: any[]
+    },
+}
 
 export interface OfflineCache extends AppState {
     rehydrated: boolean,

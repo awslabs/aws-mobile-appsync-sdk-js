@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync",
-  "version": "1.4.0",
+  "version": "1.5.0-beta",
   "main": "lib/index.js",
   "license": "SEE LICENSE IN LICENSE",
   "description": "AWS Mobile AppSync SDK for JavaScript",
@@ -14,12 +14,12 @@
     "url": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git"
   },
   "scripts": {
-    "prepare": "tsc && cp -r src/vendor lib/vendor",
+    "prepare": "tsc && xcopy .\\src\\vendor .\\lib\\vendor /y /s /e",
     "test": "jest --coverage --coverageReporters=text",
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "@redux-offline/redux-offline": "^2.2.1",
+    "@redux-offline/redux-offline": "2.2.1",
     "apollo-cache-inmemory": "^1.0.0",
     "apollo-client": "2.4.2",
     "apollo-link": "^1.0.0",
@@ -27,7 +27,7 @@
     "apollo-link-http": "^1.0.0",
     "apollo-link-retry": "^2.2.4",
     "aws-sdk": "2.329.0",
-    "graphql": "^0.11.7",
+    "graphql": "0.13.2",
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0",
     "setimmediate": "^1.0.5",

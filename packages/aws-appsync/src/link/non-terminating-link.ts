@@ -6,9 +6,8 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY 
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import { ApolloLink, Observable } from 'apollo-link';
+import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
-import { ExecutionResult } from 'graphql';
 
 export class NonTerminatingLink extends ApolloLink {
 
