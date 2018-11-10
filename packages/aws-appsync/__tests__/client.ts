@@ -10,9 +10,8 @@ import { isOptimistic } from "../src/link/offline-link";
 import { GraphQLError } from "graphql";
 import { ApolloError } from "apollo-client";
 import { AWSAppsyncGraphQLError } from "../src/types";
-import { AuthApiKey } from "../src/link/auth/auth-header-based";
+import { authApiKey } from "../src/link/auth";
 import { SKIP_RETRY_KEY } from "../src/link/retry-link";
-//import { AuthApiKey } from "../src/client/link/auth/auth-header-based";
 
 
 jest.mock('apollo-link-http-common', () => ({
@@ -117,7 +116,7 @@ const getClient = (options?: Partial<AWSAppSyncClientOptions>) => {
     const defaultOptions = {
         url: 'some url',
         region: 'some region',
-        authType: new AuthApiKey("some key"),
+        authType: authApiKey("some key"),
         disableOffline: false,
         offlineConfig: {
             storage: new MemoryStorage(),

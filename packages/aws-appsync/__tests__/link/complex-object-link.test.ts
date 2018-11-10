@@ -1,6 +1,6 @@
 import { ApolloLink, execute, Observable } from "apollo-link";
 import gql from 'graphql-tag';
-import { complexObjectLink, ComplexObjectLink } from "../../src/link/complex-object-link";
+import { complexObjectLink, ComplexObjectLink } from "../../src/link/complex";
 import * as S3 from 'aws-sdk/clients/s3';
 
 const uploadMock = jest.fn(() => ({ promise: () => Promise.resolve() }));
@@ -36,7 +36,7 @@ test('Can instantiate link using function', () => {
 });
 
 test('Is ignored for queries', done => {
-    const link = complexObjectLink(fail);
+    const link = complexObjectLink(undefined);
 
     const query = gql`query { someQuery { aField } }`;
 
@@ -50,7 +50,7 @@ test('Is ignored for queries', done => {
 });
 
 test('Is ignored for subscriptions', done => {
-    const link = complexObjectLink(fail);
+    const link = complexObjectLink(undefined);
 
     const query = gql`subscription { someSubscription { aField } }`;
 
@@ -64,7 +64,7 @@ test('Is ignored for subscriptions', done => {
 });
 
 test('Is ignored for mutations with no S3Object', done => {
-    const link = complexObjectLink(fail);
+    const link = complexObjectLink(undefined);
 
     const operation = {
         query: gql`mutation { someMutation { aField } }`,
