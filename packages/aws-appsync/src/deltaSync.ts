@@ -684,7 +684,8 @@ const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationV
     }
 
     const opDefinition = getMainDefinition(otherQuery.query);
-    const { name: { value: opName }, alias: { value: opAlias } = { value: undefined } } = opDefinition.selectionSet.selections[0] as FieldNode;
+    const { name: { value: opName }, alias: opAliasNode } = opDefinition.selectionSet.selections[0] as FieldNode;
+    const { value: opAlias = null } = opAliasNode || {};
 
     const { kind, operation: graphqlOperation } = opDefinition as OperationDefinitionNode;
     const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
