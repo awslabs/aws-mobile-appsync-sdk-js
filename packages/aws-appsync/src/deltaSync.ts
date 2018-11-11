@@ -254,21 +254,52 @@ const effect = async <TCache extends NormalizedCacheObject>(
     try {
         let error;
 
-
         const {
             [METADATA_KEY]: { idsMap, snapshot: { cache: cacheSnapshot } },
             offline: { outbox: enquededMutations }
         } = store.getState();
 
+        //#region Subscription
+        if (subscriptionQuery && subscriptionQuery.query) {
+            const { query, variables } = subscriptionQuery;
+
+            // TODO: Do we need to wait for the subscription to be stablished before doing baseQuery?
+            subscription = client.subscribe({
+                query: query,
+                variables: {
+                    ...variables,
+                    [SKIP_RETRY_KEY]: true,
+                },
+            }).subscribe({
+                next: data => {
+                    subscriptionProcessor.enqueue(data);
+                },
+                error: (err) => {
+                    error = err;
+                    unsubscribeAll();
+
+                    if (graphQLResultHasError(err) || err.graphQLErrors) {
+                        // send error to observable, unsubscribe all, do not enqueue
+                        observer.error(err);
+                        return;
+                    }
+
+                    enqueueAgain();
+                }
+            });
+        }
+        //#endregion
+
+        const { refreshIntervalInSeconds } = baseQuery;
+        upperBoundTimeMS = refreshIntervalInSeconds ? refreshIntervalInSeconds * 1000 : DEFAULT_UPPER_BOUND_TIME_MS;
+
+        const skipBaseQuery = !(baseQuery && baseQuery.query) || (baseLastSyncTimestamp
+            ? Date.now() - baseLastSyncTimestamp < upperBoundTimeMS
+            : itemInHash.baseLastSyncTimestamp && Date.now() - itemInHash.baseLastSyncTimestamp < upperBoundTimeMS);
+
         //#region Base query
         if (baseQuery && baseQuery.query) {
-            const { query, update, variables, refreshIntervalInSeconds } = baseQuery;
-
-            upperBoundTimeMS = refreshIntervalInSeconds ? refreshIntervalInSeconds * 1000 : DEFAULT_UPPER_BOUND_TIME_MS;
-
-            const skipBaseQuery = baseLastSyncTimestamp
-                ? Date.now() - baseLastSyncTimestamp < upperBoundTimeMS
-                : itemInHash.baseLastSyncTimestamp && Date.now() - itemInHash.baseLastSyncTimestamp < upperBoundTimeMS;
+            const { query, update, variables } = baseQuery;
 
             logger(`${skipBaseQuery ? 'Skipping' : 'Running'} base query`, { baseLastSyncTimestamp, itemInHash });
             if (!skipBaseQuery) {
@@ -299,38 +330,12 @@ const effect = async <TCache extends NormalizedCacheObject>(
         }
         //#endregion
 
-        //#region Subscription
-        if (subscriptionQuery && subscriptionQuery.query) {
-            const { query, variables } = subscriptionQuery;
-
-            subscription = client.subscribe({
-                query: query,
-                variables: {
-                    ...variables,
-                    [SKIP_RETRY_KEY]: true,
-                },
-            }).subscribe({
-                next: data => {
-                    subscriptionProcessor.enqueue(data);
-                },
-                error: (err) => {
-                    error = err;
-                    unsubscribeAll();
-
-                    if (graphQLResultHasError(err) || err.graphQLErrors) {
-                        // send error to observable, unsubscribe all, do not enqueue
-                        observer.error(err);
-                        return;
-                    }
-
-                    enqueueAgain();
-                }
-            });
-        }
-        //#endregion
-
         //#region Delta query
-        if (deltaQuery && deltaQuery.query) {
+        if (deltaQuery && deltaQuery.query && !skipBaseQuery) {
+            logger('Skipping deltaQuery');
+        }
+
+        if (deltaQuery && deltaQuery.query && skipBaseQuery) {
             const { query, update, variables } = deltaQuery;
 
             logger('Running deltaQuery', { lastSyncTimestamp, baseLastSyncTimestamp });
@@ -339,7 +344,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 query: query,
                 variables: {
                     ...variables,
-                    lastSync: lastSyncTimestamp || baseLastSyncTimestamp,
+                    lastSync: lastSyncTimestamp || baseLastSyncTimestamp || 0,
                 },
             });
 
@@ -361,7 +366,6 @@ const effect = async <TCache extends NormalizedCacheObject>(
         // process subscription messages
         subscriptionProcessor.ready();
         cacheProxy[STOP_CACHE_RECORDING] = true;
-
 
         // Restore from cache snapshot
         client.cache.restore(cacheSnapshot as TCache);
@@ -668,21 +672,6 @@ const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationV
 ) => {
     const updateLogger = logger.extend('update');
 
-    if (!baseQuery || !baseQuery.query) {
-        updateLogger('No baseQuery provided');
-        return;
-    }
-
-    const { query, variables } = baseQuery;
-
-    const operationName = getOperationFieldName(query);
-
-    const { [operationName]: baseResult } = cache.readQuery({ query, variables });
-
-    if (!Array.isArray(baseResult)) {
-        throw new Error('Not an array');
-    }
-
     const opDefinition = getMainDefinition(otherQuery.query);
     const { name: { value: opName }, alias: opAliasNode } = opDefinition.selectionSet.selections[0] as FieldNode;
     const { value: opAlias = null } = opAliasNode || {};
@@ -694,13 +683,25 @@ const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationV
     const { [deltaOperationName]: records }: { [key: string]: any } = data;
     const deltaRecords = [].concat(records) as T[];
 
-    const result = deltaRecordsProcessor<T>(updateLogger, deltaOperationName, deltaRecords, baseResult, typename, idField);
+    if (!baseQuery || !baseQuery.query) {
+        updateLogger('No baseQuery provided');
+    } else {
+        const { query, variables } = baseQuery;
 
-    if (result === baseResult) {
-        return;
+        const operationName = getOperationFieldName(query);
+
+        const { [operationName]: baseResult } = cache.readQuery({ query, variables });
+
+        if (!Array.isArray(baseResult)) {
+            throw new Error('Not an array');
+        }
+
+        const result = deltaRecordsProcessor<T>(updateLogger, deltaOperationName, deltaRecords, baseResult, typename, idField);
+
+        if (result !== baseResult) {
+            cache.writeQuery({ query, data: { [operationName]: result } });
+        }
     }
-
-    cache.writeQuery({ query, data: { [operationName]: result } });
 
     writeCacheUpdates(updateLogger, cache, deltaRecords, cacheUpdates);
 };
