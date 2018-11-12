@@ -34,6 +34,7 @@ import ConflictResolutionLink from './link/conflict-resolution-link';
 import { createRetryLink } from './link/retry-link';
 import { boundEnqueueDeltaSync, buildSync } from "./deltaSync";
 import { Subscription } from 'apollo-client/util/Observable';
+import { CONTROL_EVENTS_KEY } from './link/subscription-handshake-link';
 
 export { defaultDataIdFromObject };
 
@@ -47,6 +48,19 @@ export const createSubscriptionHandshakeLink = (url: string, resultsFetcherLink:
             return isSubscription;
         },
         ApolloLink.from([
+            new NonTerminatingLink('controlMessages', {
+                link: new ApolloLink((operation, _forward) => new Observable<any>(observer => {
+                    const { variables: { [CONTROL_EVENTS_KEY]: controlEvents, ...variables } } = operation;
+
+                    if (typeof controlEvents !== 'undefined') {
+                        operation.variables = variables;
+                    }
+
+                    observer.next({ [CONTROL_EVENTS_KEY]: controlEvents });
+
+                    return () => { };
+                }))
+            }),
             new NonTerminatingLink('subsInfo', { link: resultsFetcherLink }),
             new SubscriptionHandshakeLink('subsInfo'),
         ]),

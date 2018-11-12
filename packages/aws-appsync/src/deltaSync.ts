@@ -15,7 +15,7 @@ import { OfflineEffectConfig } from "./store";
 import { tryFunctionOrLogError, graphQLResultHasError, getMainDefinition, addTypenameToDocument } from "apollo-utilities";
 import { OperationVariables, MutationUpdaterFn } from "apollo-client";
 import { hash, getOperationFieldName } from "./utils";
-import { Observable } from "apollo-link";
+import { Observable, FetchResult } from "apollo-link";
 import { Subscription } from "apollo-client/util/Observable";
 import { DataProxy } from "apollo-cache";
 import debug from 'debug';
@@ -23,6 +23,7 @@ import { SKIP_RETRY_KEY } from "./link/retry-link";
 import { DocumentNode, print, OperationDefinitionNode, FieldNode, ExecutionResult } from "graphql";
 import { getOpTypeFromOperationName, CacheOperationTypes, getUpdater, QueryWithVariables } from "./helpers/offline";
 import { boundSaveSnapshot, replaceUsingMap, EnqueuedMutationEffect, offlineEffectConfig as mutationsConfig } from "./link/offline-link";
+import { CONTROL_EVENTS_KEY } from "./link/subscription-handshake-link";
 
 const logger = debug('aws-appsync:deltasync');
 
@@ -260,34 +261,62 @@ const effect = async <TCache extends NormalizedCacheObject>(
         } = store.getState();
 
         //#region Subscription
-        if (subscriptionQuery && subscriptionQuery.query) {
-            const { query, variables } = subscriptionQuery;
+        const subsControlLogger = logger.extend('subsc-control');
 
-            // TODO: Do we need to wait for the subscription to be stablished before doing baseQuery?
-            subscription = client.subscribe({
-                query: query,
-                variables: {
-                    ...variables,
-                    [SKIP_RETRY_KEY]: true,
-                },
-            }).subscribe({
-                next: data => {
-                    subscriptionProcessor.enqueue(data);
-                },
-                error: (err) => {
-                    error = err;
-                    unsubscribeAll();
+        await new Promise(resolve => {
+            if (subscriptionQuery && subscriptionQuery.query) {
+                const { query, variables } = subscriptionQuery;
+                const waitForConnect = true;
 
-                    if (graphQLResultHasError(err) || err.graphQLErrors) {
-                        // send error to observable, unsubscribe all, do not enqueue
-                        observer.error(err);
-                        return;
+                subscription = client.subscribe<FetchResult, any>({
+                    query: query,
+                    variables: {
+                        ...variables,
+                        [SKIP_RETRY_KEY]: true,
+                        ...(waitForConnect ? { [CONTROL_EVENTS_KEY]: true } : null),
+                    },
+                }).filter(data => {
+                    const { extensions: { msgType = undefined, info = undefined } = {} } = data;
+                    const isControlMsg = typeof msgType !== 'undefined';
+
+                    if (msgType) {
+                        subsControlLogger(msgType, info);
+
+                        if (msgType === 'CONNECTED') {
+                            resolve();
+                        }
                     }
 
-                    enqueueAgain();
+                    return !isControlMsg;
+                }).subscribe({
+                    next: data => {
+                        resolve();
+
+                        subscriptionProcessor.enqueue(data);
+                    },
+                    error: (err) => {
+                        resolve();
+
+                        error = err;
+                        unsubscribeAll();
+
+                        if (graphQLResultHasError(err) || err.graphQLErrors) {
+                            // send error to observable, unsubscribe all, do not enqueue
+                            observer.error(err);
+                            return;
+                        }
+
+                        enqueueAgain();
+                    }
+                });
+
+                if (!waitForConnect) {
+                    resolve();
                 }
-            });
-        }
+            } else {
+                resolve();
+            }
+        });
         //#endregion
 
         const { refreshIntervalInSeconds } = baseQuery;

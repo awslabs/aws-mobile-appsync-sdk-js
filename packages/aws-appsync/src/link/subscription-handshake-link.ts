@@ -6,11 +6,11 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import { ApolloLink, Observable, Operation } from "apollo-link";
+import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
 
 import * as Paho from '../vendor/paho-mqtt';
 import { ApolloError } from "apollo-client";
-import { DocumentNode, FieldNode } from "graphql";
+import { FieldNode } from "graphql";
 import { getMainDefinition } from "apollo-utilities";
 
 type SubscriptionExtension = {
@@ -36,6 +36,8 @@ type ClientObservers = {
     observers: Set<ZenObservable.Observer<any>>,
 }
 
+export const CONTROL_EVENTS_KEY = '@@controlEvents';
+
 export class SubscriptionHandshakeLink extends ApolloLink {
 
     private subsInfoContextKey: string;
@@ -50,7 +52,10 @@ export class SubscriptionHandshakeLink extends ApolloLink {
     }
 
     request(operation: Operation) {
-        const { [this.subsInfoContextKey]: subsInfo } = operation.getContext();
+        const {
+            [this.subsInfoContextKey]: subsInfo,
+            controlMessages: { [CONTROL_EVENTS_KEY]: controlEvents } = {}
+        } = operation.getContext();
         const {
             extensions: {
                 subscription: { newSubscriptions, mqttConnections }
@@ -79,7 +84,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         const existingTopicsWithObserver = new Set(newSubscriptionTopics.filter(t => this.topicObservers.has(t)));
         const newTopics = new Set(newSubscriptionTopics.filter(t => !existingTopicsWithObserver.has(t)));
 
-        return new Observable(observer => {
+        return new Observable<FetchResult>(observer => {
             existingTopicsWithObserver.forEach(t => {
                 this.topicObservers.get(t).add(observer);
                 const anObserver = Array.from(this.topicObservers.get(t)).find(() => true);
@@ -120,14 +125,39 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                         .filter(([, observers]) => observers.size > 0)
                 );
             };
+        }).filter(data => {
+            const { extensions: { msgType = undefined } = {} } = data;
+            const isControlMsg = typeof msgType !== 'undefined';
+
+            return controlEvents === true || !isControlMsg;
         });
     }
 
-    connectNewClients<T>(connectionInfo: MqttConnectionInfo[], observer: ZenObservable.Observer<T>, operation: Operation) {
-        return Promise.all(connectionInfo.map(c => this.connectNewClient(c, observer, operation)));
+    async connectNewClients(connectionInfo: MqttConnectionInfo[], observer: ZenObservable.Observer<FetchResult>, operation: Operation) {
+        const { query } = operation;
+        const selectionNames = (getMainDefinition(query).selectionSet.selections as FieldNode[]).map(({ name: { value } }) => value);
+
+        const result = Promise.all(connectionInfo.map(c => this.connectNewClient(c, observer, selectionNames)));
+
+        const data = selectionNames.reduce(
+            (acc, name) => (acc[name] = acc[name] || null, acc),
+            {}
+        );
+
+        observer.next({
+            data,
+            extensions: {
+                msgType: 'CONNECTED',
+                info: {
+                    connectionInfo,
+                },
+            }
+        });
+
+        return result
     };
 
-    async connectNewClient<T>(connectionInfo: MqttConnectionInfo, observer: ZenObservable.Observer<T>, operation: Operation) {
+    async connectNewClient(connectionInfo: MqttConnectionInfo, observer: ZenObservable.Observer<FetchResult>, selectionNames: string[]) {
         const { client: clientId, url, topics } = connectionInfo;
         const client: any = new Paho.Client(url, clientId);
 
@@ -143,9 +173,6 @@ export class SubscriptionHandshakeLink extends ApolloLink {
 
             topics.forEach(t => this.topicObservers.delete(t));
         };
-
-        const { query } = operation;
-        const selectionNames = (getMainDefinition(query).selectionSet.selections as FieldNode[]).map(({ name: { value } }) => value);
 
         (client as any).onMessageArrived = ({ destinationName, payloadString }) => this.onMessage(destinationName, payloadString, selectionNames);
 
