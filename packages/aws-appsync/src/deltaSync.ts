@@ -396,8 +396,12 @@ const effect = async <TCache extends NormalizedCacheObject>(
         subscriptionProcessor.ready();
         cacheProxy[STOP_CACHE_RECORDING] = true;
 
-        // Restore from cache snapshot
-        client.cache.restore(cacheSnapshot as TCache);
+        if (enquededMutations.length === 1) {
+            boundSaveSnapshot(store, client.cache);
+        } else {
+            // Restore from cache snapshot
+            client.cache.restore(cacheSnapshot as TCache);
+        }
 
         recorderCacheWrites.forEach(client.cache.write.bind(client.cache));
 
