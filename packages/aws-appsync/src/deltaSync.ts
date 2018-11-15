@@ -114,7 +114,7 @@ const subscriptionMessagesProcessorCreator: SubscriptionMessagesProcessorCreator
     return processor;
 };
 
-const hashForOptions = (options: SubscribeWithSyncOptions<any>) => {
+export const hashForOptions = (options: SubscribeWithSyncOptions<any>) => {
     const {
         baseQuery: {
             query: baseQueryQuery = null,

@@ -15,7 +15,7 @@ import { getMainDefinition } from 'apollo-utilities';
 import { Store } from 'redux';
 
 import { OfflineCache, defaultDataIdFromObject } from './cache/index';
-import { OfflineCache as OfflineCacheType } from './cache/offline-cache';
+import { OfflineCache as OfflineCacheType, METADATA_KEY } from './cache/offline-cache';
 import {
     OfflineLink,
     AuthLink,
@@ -32,7 +32,7 @@ import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
 import { createRetryLink } from './link/retry-link';
-import { boundEnqueueDeltaSync, buildSync } from "./deltaSync";
+import { boundEnqueueDeltaSync, buildSync, DELTASYNC_KEY, hashForOptions } from "./deltaSync";
 import { Subscription } from 'apollo-client/util/Observable';
 import { CONTROL_EVENTS_KEY } from './link/subscription-handshake-link';
 
@@ -275,7 +275,12 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             const callback = (subscription: Subscription) => {
                 handle = subscription;
             };
-            boundEnqueueDeltaSync(this._store, { ...options, baseLastSyncTimestamp: null }, observer, callback);
+
+            const hash = hashForOptions(options);
+            const itemInHash = this._store.getState()[METADATA_KEY][DELTASYNC_KEY].metadata[hash];
+            const { baseLastSyncTimestamp = null } = itemInHash || {};
+
+            boundEnqueueDeltaSync(this._store, { ...options, baseLastSyncTimestamp }, observer, callback);
 
             return () => {
                 if (handle) {
