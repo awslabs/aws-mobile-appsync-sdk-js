@@ -373,7 +373,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 query: query,
                 variables: {
                     ...variables,
-                    lastSync: lastSyncTimestamp || baseLastSyncTimestamp || 0,
+                    lastSync: Math.floor((lastSyncTimestamp || baseLastSyncTimestamp) / 1000) || 0,
                 },
             });
 
