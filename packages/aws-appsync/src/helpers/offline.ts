@@ -8,8 +8,8 @@
  */
 import { v4 as uuid } from 'uuid';
 import { cloneDeep } from 'apollo-utilities';
-import { ApolloClient, MutationOptions, SubscribeToMoreOptions } from 'apollo-client';
-import { DocumentNode } from 'graphql';
+import { ApolloClient, MutationOptions, SubscribeToMoreOptions, OperationVariables } from 'apollo-client';
+import { DocumentNode, InputObjectTypeDefinitionNode, NamedTypeNode } from 'graphql';
 import AWSAppSyncClient from '../client';
 import { replaceUsingMap } from '../link';
 import { getOperationFieldName } from '../utils';
@@ -238,6 +238,11 @@ const isDocument = (doc) => !!doc && doc.kind === 'Document';
 // make sure that the object is of type object and is not null.
 const isObject = (object) => object != null && (typeof object === 'object')
 
+export type VariablesInfo<T = OperationVariables> = {
+    inputType: DocumentNode,
+    variables: T
+};
+
 /**
  * Builds a MutationOptions object ready to be used by the ApolloClient to automatically update the cache according to the cacheUpdateQuery 
  * parameter
@@ -252,18 +257,28 @@ const isObject = (object) => object != null && (typeof object === 'object')
  * 
  * @returns Mutation options to be used by the ApolloClient
  */
-const buildMutation = (
+const buildMutation = <T = OperationVariables>(
     client: ApolloClient<any>,
     mutation: DocumentNode,
-    variables: object = {},
+    variablesInfo: VariablesInfo<T> | T,
     cacheUpdateQuery: CacheUpdatesOptions,
     typename: string,
     idField: string = 'id',
     operationType?: CacheOperationTypes
 ): MutationOptions => {
+    const isVariablesInfo = typeof (variablesInfo as VariablesInfo).variables === 'object';
+    const variables = isVariablesInfo ? (variablesInfo as VariablesInfo).variables : variablesInfo as T;
+
+    const hasInputType = Object.keys(variables).length === 1 && typeof variables.input === 'object';
+
+    const inputTypeVersionField = isVariablesInfo && ((variablesInfo as VariablesInfo).inputType.definitions[0] as InputObjectTypeDefinitionNode).fields.find(f =>
+        ['version', 'expectedVersion'].find(n => n === f.name.value) && (f.type as NamedTypeNode).name.value === 'Int'
+    );
+    const useVersioning: boolean = hasInputType ? !!inputTypeVersionField : true;
+
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
 
-    const { [idField || 'id']: idCustomField } = variables;
+    const { [idField || 'id']: idCustomField } = hasInputType ? variables.input : variables;
 
     const comparator = elem => elem[idField] === idCustomField;
 
@@ -306,15 +321,19 @@ const buildMutation = (
         (client as AWSAppSyncClient<any>).isOfflineEnabled() &&
         (client.cache as any);
 
+    const versionFieldName: string = inputTypeVersionField ? inputTypeVersionField.name.value : '';
+
     return {
         mutation,
-        variables: { ...variables, version },
+        variables: hasInputType
+            ? { input: { ...(useVersioning && { [versionFieldName]: version }), ...variables.input } }
+            : { version, expectedVersion: version, ...variables },
         optimisticResponse: typename ? {
             __typename: "Mutation",
             [mutationField]: {
                 __typename: typename,
-                [idField]: variables[idField] || uuid(),
-                ...variables,
+                [idField]: (hasInputType ? variables.input : variables)[idField] || uuid(),
+                ...(hasInputType ? variables.input : variables),
                 version: version + 1
             }
         } : null,
