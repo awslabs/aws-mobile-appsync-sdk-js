@@ -251,7 +251,6 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 boundSaveSnapshot(store, client.cache);
 
                 // Apply enqueued update functions to new cache
-                // TODO: Adjust filter
                 const enqueuedActionsFilter = [
                     offlineEffectConfig.enqueueAction
                 ];

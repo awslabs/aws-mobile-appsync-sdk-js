@@ -167,6 +167,8 @@ const effect = async <TCache extends NormalizedCacheObject>(
     }, observer, callback = () => { } } = effect;
 
     if (!observer || typeof observer.next !== 'function' || observer.closed) {
+        // If we don't have an observer, we complete this effect (this means the app was closed/opened and a completely 
+        // new deltaSync will happen)
         return;
     }
 
@@ -222,7 +224,8 @@ const effect = async <TCache extends NormalizedCacheObject>(
         }
     });
 
-    const STOP_CACHE_RECORDING = Symbol('lawea');
+    const STOP_CACHE_RECORDING = typeof Symbol !== 'undefined' ? Symbol('stopCacheRecording') : '@@stopCacheRecording';
+
     let recorderCacheWrites = [];
 
     const cacheProxy = new Proxy(client.cache, {
@@ -266,23 +269,22 @@ const effect = async <TCache extends NormalizedCacheObject>(
         await new Promise(resolve => {
             if (subscriptionQuery && subscriptionQuery.query) {
                 const { query, variables } = subscriptionQuery;
-                const waitForConnect = true;
 
                 subscription = client.subscribe<FetchResult, any>({
                     query: query,
                     variables: {
                         ...variables,
                         [SKIP_RETRY_KEY]: true,
-                        ...(waitForConnect ? { [CONTROL_EVENTS_KEY]: true } : null),
+                        [CONTROL_EVENTS_KEY]: true,
                     },
                 }).filter(data => {
-                    const { extensions: { msgType = undefined, info = undefined } = {} } = data;
-                    const isControlMsg = typeof msgType !== 'undefined';
+                    const { extensions: { controlMsgType = undefined, controlMsgInfo = undefined } = {} } = data;
+                    const isControlMsg = typeof controlMsgType !== 'undefined';
 
-                    if (msgType) {
-                        subsControlLogger(msgType, info);
+                    if (controlMsgType) {
+                        subsControlLogger(controlMsgType, controlMsgInfo);
 
-                        if (msgType === 'CONNECTED') {
+                        if (controlMsgType === 'CONNECTED') {
                             resolve();
                         }
                     }
@@ -290,8 +292,6 @@ const effect = async <TCache extends NormalizedCacheObject>(
                     return !isControlMsg;
                 }).subscribe({
                     next: data => {
-                        resolve();
-
                         subscriptionProcessor.enqueue(data);
                     },
                     error: (err) => {
@@ -309,14 +309,14 @@ const effect = async <TCache extends NormalizedCacheObject>(
                         enqueueAgain();
                     }
                 });
-
-                if (!waitForConnect) {
-                    resolve();
-                }
             } else {
                 resolve();
             }
         });
+
+        if (error) {
+            throw error;
+        }
         //#endregion
 
         const { refreshIntervalInSeconds } = baseQuery;
@@ -345,16 +345,20 @@ const effect = async <TCache extends NormalizedCacheObject>(
                     });
                 }
 
-                baseLastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
+                baseLastSyncTimestamp = Date.now() - BUFFER_MILLISECONDS;
                 boundUpdateLastSync(store, { hash, baseLastSyncTimestamp });
             } else {
-                const data = readQueryFromStore({
-                    store: defaultNormalizedCacheFactory(cacheSnapshot),
-                    query: addTypenameToDocument(query),
-                    variables,
-                });
+                try {
+                    const data = readQueryFromStore({
+                        store: defaultNormalizedCacheFactory(cacheSnapshot),
+                        query: addTypenameToDocument(query),
+                        variables,
+                    });
 
-                cacheProxy.writeQuery({ query, variables, data });
+                    cacheProxy.writeQuery({ query, variables, data });
+                } catch (error) {
+                    logger('Error reading/writting baseQuery from store', error);
+                }
             }
         }
         //#endregion
@@ -383,7 +387,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 });
             }
 
-            lastSyncTimestamp = new Date().getTime() - BUFFER_MILLISECONDS;
+            lastSyncTimestamp = Date.now() - BUFFER_MILLISECONDS;
             boundUpdateLastSync(store, { hash, lastSyncTimestamp });
         }
         //#endregion
@@ -448,7 +452,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
     } catch (error) {
         unsubscribeAll();
 
-        throw error
+        throw error;
     }
 };
 
@@ -471,11 +475,11 @@ const reducer: DeltaSyncReducer = () => (state: AppSyncMetadataState, action: An
             return lastSyncReducer(state, action as DeltaSyncUpdateLastSyncAction);
         case actions.ENQUEUE:
             logger(action.type, ((action as OfflineAction).meta.offline.effect as any).options);
-            return enqueReducer(state, action as OfflineAction);
+            return metadataReducer(state, action as OfflineAction);
         default:
             const newState: AppSyncMetadataState = {
                 ...state,
-                deltaSync: {
+                [DELTASYNC_KEY]: {
                     metadata: {},
                     ...state.deltaSync,
                 }
@@ -496,7 +500,7 @@ const lastSyncReducer = (state: AppSyncMetadataState, action: DeltaSyncUpdateLas
         lastSyncTimestamp,
     };
 
-    const newState = {
+    const newState: AppSyncMetadataState = {
         ...state,
         [DELTASYNC_KEY]: {
             ...deltaSync,
@@ -507,10 +511,10 @@ const lastSyncReducer = (state: AppSyncMetadataState, action: DeltaSyncUpdateLas
         }
     };
 
-    return newState as AppSyncMetadataState;
+    return newState;
 };
 
-const enqueReducer = (state: AppSyncMetadataState, action: OfflineAction) => {
+const metadataReducer = (state: AppSyncMetadataState, action: OfflineAction) => {
     const { meta: { offline: { effect } } } = action;
     const { options } = effect as DeltaSyncEffect<any>;
 
@@ -529,17 +533,17 @@ const enqueReducer = (state: AppSyncMetadataState, action: OfflineAction) => {
         baseLastSyncTimestamp: options.baseLastSyncTimestamp === null ? null : baseLastSyncTimestamp,
     };
 
-    const newState = {
+    const newState: AppSyncMetadataState = {
         ...state,
         [DELTASYNC_KEY]: {
             metadata: {
                 ...metadata,
                 [hash]: newMetadata,
             }
-        } as DeltaSyncState
+        }
     };
 
-    return newState as AppSyncMetadataState;
+    return newState;
 };
 
 export const boundEnqueueDeltaSync = <T, TVariables = OperationVariables>(
@@ -601,7 +605,7 @@ export const buildSync = <T = { [key: string]: any }, TVariables = OperationVari
     } = options;
     const loggerHelper = logger.extend('helper');
 
-    const result = {
+    const result: SubscribeWithSyncOptions<T, TVariables> = {
         baseQuery: {
             ...baseQuery,
             ...(baseQuery && {
@@ -629,7 +633,7 @@ export const buildSync = <T = { [key: string]: any }, TVariables = OperationVari
                 }
             })
         },
-    } as SubscribeWithSyncOptions<T, TVariables>;
+    };
 
     loggerHelper('buildSync options', result);
 
@@ -726,7 +730,7 @@ const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationV
         const { [operationName]: baseResult } = cache.readQuery({ query, variables });
 
         if (!Array.isArray(baseResult)) {
-            throw new Error('Not an array');
+            throw new Error('Result of baseQuery is not an array');
         }
 
         const result = deltaRecordsProcessor<T>(updateLogger, deltaOperationName, deltaRecords, baseResult, typename, idField);
@@ -739,7 +743,6 @@ const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationV
     writeCacheUpdates(updateLogger, cache, deltaRecords, cacheUpdates);
 };
 
-export type COSA<TVariables = OperationVariables> = BuildQuerySyncOptions<TVariables>;
 export type BuildQuerySyncOptions<TVariables = OperationVariables> = {
     query: DocumentNode, variables: TVariables
 };

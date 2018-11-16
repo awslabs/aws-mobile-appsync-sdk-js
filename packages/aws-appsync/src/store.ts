@@ -75,7 +75,6 @@ const newStore = <TCacheShape extends NormalizedCacheObject>(
     return store;
 };
 
-// TODO: Use Typescript's Pick to type this with Config from redux-offline
 export declare type OfflineEffectConfig = {
     enqueueAction: string,
     effect?: Function,

@@ -126,8 +126,8 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 );
             };
         }).filter(data => {
-            const { extensions: { msgType = undefined } = {} } = data;
-            const isControlMsg = typeof msgType !== 'undefined';
+            const { extensions: { controlMsgType = undefined } = {} } = data;
+            const isControlMsg = typeof controlMsgType !== 'undefined';
 
             return controlEvents === true || !isControlMsg;
         });
@@ -147,8 +147,8 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         observer.next({
             data,
             extensions: {
-                msgType: 'CONNECTED',
-                info: {
+                controlMsgType: 'CONNECTED',
+                controlMsgInfo: {
                     connectionInfo,
                 },
             }
