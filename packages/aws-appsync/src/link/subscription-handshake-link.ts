@@ -114,7 +114,9 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         client.onConnectionLost = ({ errorCode, ...args }) => {
             if (errorCode !== 0) {
                 topics.forEach(t => {
-                    this.topicObservers.get(t).forEach(observer => observer.error(args));
+                    if (this.topicObservers.has(t)) {
+                        this.topicObservers.get(t).forEach(observer => observer.error(args));
+                    }
                 });
             }
 
