@@ -7,7 +7,7 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import 'setimmediate';
-import ApolloClient, { ApolloClientOptions, MutationOptions, OperationVariables } from 'apollo-client';
+import ApolloClient, { ApolloClientOptions, MutationOptions, OperationVariables, MutationUpdaterFn } from 'apollo-client';
 import { InMemoryCache, ApolloReducerConfig, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloLink, Observable, FetchResult } from 'apollo-link';
 import { createHttpLink } from 'apollo-link-http';
@@ -15,7 +15,7 @@ import { getMainDefinition } from 'apollo-utilities';
 import { Store } from 'redux';
 
 import { OfflineCache, defaultDataIdFromObject } from './cache/index';
-import { OfflineCache as OfflineCacheType } from './cache/offline-cache';
+import { OfflineCache as OfflineCacheType, METADATA_KEY } from './cache/offline-cache';
 import {
     OfflineLink,
     AuthLink,
@@ -32,6 +32,9 @@ import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
 import { createRetryLink } from './link/retry-link';
+import { boundEnqueueDeltaSync, buildSync, DELTASYNC_KEY, hashForOptions } from "./deltaSync";
+import { Subscription } from 'apollo-client/util/Observable';
+import { CONTROL_EVENTS_KEY } from './link/subscription-handshake-link';
 
 export { defaultDataIdFromObject };
 
@@ -45,6 +48,19 @@ export const createSubscriptionHandshakeLink = (url: string, resultsFetcherLink:
             return isSubscription;
         },
         ApolloLink.from([
+            new NonTerminatingLink('controlMessages', {
+                link: new ApolloLink((operation, _forward) => new Observable<any>(observer => {
+                    const { variables: { [CONTROL_EVENTS_KEY]: controlEvents, ...variables } } = operation;
+
+                    if (typeof controlEvents !== 'undefined') {
+                        operation.variables = variables;
+                    }
+
+                    observer.next({ [CONTROL_EVENTS_KEY]: controlEvents });
+
+                    return () => { };
+                }))
+            }),
             new NonTerminatingLink('subsInfo', { link: resultsFetcherLink }),
             new SubscriptionHandshakeLink('subsInfo'),
         ]),
@@ -248,8 +264,47 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             ...otherOptions,
         });
     }
+
+    sync<T, TVariables = OperationVariables>(options: SubscribeWithSyncOptions<T, TVariables>): Subscription {
+        if (!this.isOfflineEnabled()) {
+            throw new Error('Not supported');
+        }
+
+        return new Observable<T>(observer => {
+            let handle: Subscription;
+            const callback = (subscription: Subscription) => {
+                handle = subscription;
+            };
+
+            const hash = hashForOptions(options);
+            const itemInHash = this._store.getState()[METADATA_KEY][DELTASYNC_KEY].metadata[hash];
+            const { baseLastSyncTimestamp = null } = itemInHash || {};
+
+            boundEnqueueDeltaSync(this._store, { ...options, baseLastSyncTimestamp }, observer, callback);
+
+            return () => {
+                if (handle) {
+                    handle.unsubscribe();
+                }
+            }
+        }).subscribe(() => { });
+    }
 }
+
+export type QuerySyncOptions<T, TVariables = OperationVariables> = {
+    query: DocumentNode, variables: TVariables, update: MutationUpdaterFn<T>
+};
+
+export type BaseQuerySyncOptions<T, TVariables = OperationVariables> = QuerySyncOptions<T, TVariables> & {
+    refreshIntervalInSeconds?: number
+};
+
+export type SubscribeWithSyncOptions<T, TVariables = OperationVariables> = {
+    baseQuery?: BaseQuerySyncOptions<T, TVariables>,
+    subscriptionQuery?: QuerySyncOptions<T, TVariables>,
+    deltaQuery?: QuerySyncOptions<T, TVariables>,
+};
 
 export default AWSAppSyncClient;
 export { AWSAppSyncClient };
-export { AUTH_TYPE };
+export { AUTH_TYPE, buildSync };
