@@ -6,9 +6,12 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import { ApolloLink, Observable } from "apollo-link";
+import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
 
 import * as Paho from '../vendor/paho-mqtt';
+import { ApolloError } from "apollo-client";
+import { FieldNode } from "graphql";
+import { getMainDefinition } from "apollo-utilities";
 
 type SubscriptionExtension = {
     mqttConnections: MqttConnectionInfo[],
@@ -33,6 +36,8 @@ type ClientObservers = {
     observers: Set<ZenObservable.Observer<any>>,
 }
 
+export const CONTROL_EVENTS_KEY = '@@controlEvents';
+
 export class SubscriptionHandshakeLink extends ApolloLink {
 
     private subsInfoContextKey: string;
@@ -46,19 +51,40 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         this.subsInfoContextKey = subsInfoContextKey;
     }
 
-    request(operation) {
-        const { [this.subsInfoContextKey]: subsInfo } = operation.getContext();
+    request(operation: Operation) {
+        const {
+            [this.subsInfoContextKey]: subsInfo,
+            controlMessages: { [CONTROL_EVENTS_KEY]: controlEvents } = {}
+        } = operation.getContext();
         const {
             extensions: {
                 subscription: { newSubscriptions, mqttConnections }
-            }
-        }: { extensions: { subscription: SubscriptionExtension } } = subsInfo;
+            } = { subscription: { newSubscriptions: {}, mqttConnections: [] } },
+            errors = [],
+        }: {
+                extensions?: {
+                    subscription: SubscriptionExtension
+                },
+                errors: any[]
+            } = subsInfo;
+
+        if (errors.length) {
+            return new Observable(observer => {
+                observer.error(new ApolloError({
+                    errorMessage: 'Error during subscription handshake',
+                    extraInfo: { errors },
+                    graphQLErrors: errors
+                }));
+
+                return () => { };
+            });
+        }
 
         const newSubscriptionTopics = Object.keys(newSubscriptions).map(subKey => newSubscriptions[subKey].topic);
         const existingTopicsWithObserver = new Set(newSubscriptionTopics.filter(t => this.topicObservers.has(t)));
         const newTopics = new Set(newSubscriptionTopics.filter(t => !existingTopicsWithObserver.has(t)));
 
-        return new Observable(observer => {
+        return new Observable<FetchResult>(observer => {
             existingTopicsWithObserver.forEach(t => {
                 this.topicObservers.get(t).add(observer);
                 const anObserver = Array.from(this.topicObservers.get(t)).find(() => true);
@@ -74,7 +100,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                     topics: topics.filter(t => newTopics.has(t))
                 } as MqttConnectionInfo));
 
-            this.connectNewClients(newTopicsConnectionInfo, observer);
+            this.connectNewClients(newTopicsConnectionInfo, observer, operation);
 
             return () => {
                 const clientsForCurrentObserver = Array.from(this.clientObservers).filter(([, { observers }]) => observers.has(observer));
@@ -99,14 +125,39 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                         .filter(([, observers]) => observers.size > 0)
                 );
             };
+        }).filter(data => {
+            const { extensions: { controlMsgType = undefined } = {} } = data;
+            const isControlMsg = typeof controlMsgType !== 'undefined';
+
+            return controlEvents === true || !isControlMsg;
         });
     }
 
-    connectNewClients<T>(connectionInfo: MqttConnectionInfo[], observer: ZenObservable.Observer<T>) {
-        return Promise.all(connectionInfo.map(c => this.connectNewClient(c, observer)));
+    async connectNewClients(connectionInfo: MqttConnectionInfo[], observer: ZenObservable.Observer<FetchResult>, operation: Operation) {
+        const { query } = operation;
+        const selectionNames = (getMainDefinition(query).selectionSet.selections as FieldNode[]).map(({ name: { value } }) => value);
+
+        const result = Promise.all(connectionInfo.map(c => this.connectNewClient(c, observer, selectionNames)));
+
+        const data = selectionNames.reduce(
+            (acc, name) => (acc[name] = acc[name] || null, acc),
+            {}
+        );
+
+        observer.next({
+            data,
+            extensions: {
+                controlMsgType: 'CONNECTED',
+                controlMsgInfo: {
+                    connectionInfo,
+                },
+            }
+        });
+
+        return result
     };
 
-    async connectNewClient<T>(connectionInfo: MqttConnectionInfo, observer: ZenObservable.Observer<T>) {
+    async connectNewClient(connectionInfo: MqttConnectionInfo, observer: ZenObservable.Observer<FetchResult>, selectionNames: string[]) {
         const { client: clientId, url, topics } = connectionInfo;
         const client: any = new Paho.Client(url, clientId);
 
@@ -123,7 +174,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             topics.forEach(t => this.topicObservers.delete(t));
         };
 
-        (client as any).onMessageArrived = ({ destinationName, payloadString }) => this.onMessage(destinationName, payloadString);
+        (client as any).onMessageArrived = ({ destinationName, payloadString }) => this.onMessage(destinationName, payloadString, selectionNames);
 
         await new Promise((resolve, reject) => {
             client.connect({
@@ -164,13 +215,21 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         });
     }
 
-    onMessage = (topic, message) => {
+    onMessage = (topic: string, message: string, selectionNames: string[]) => {
         const parsedMessage = JSON.parse(message);
         const observers = this.topicObservers.get(topic);
 
+        const data = selectionNames.reduce(
+            (acc, name) => (acc[name] = acc[name] || null, acc),
+            parsedMessage.data || {}
+        );
+
         observers.forEach(observer => {
             try {
-                observer.next(parsedMessage)
+                observer.next({
+                    ...parsedMessage,
+                    ...{ data },
+                })
             } catch (err) {
                 // console.error(err);
             }
