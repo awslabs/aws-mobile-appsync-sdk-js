@@ -419,7 +419,7 @@ For detailed documentation about the offline helpers, look at the [API Definitio
 
 ### Vue    
 
-For more documentation on Vue Apollo click [here](https://github.com/Akryum/vue-apolloql).
+For more documentation on Vue Apollo click [here](https://github.com/Akryum/vue-apollo).
 
 **main.js**
 ```js
