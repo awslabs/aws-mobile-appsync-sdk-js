@@ -296,7 +296,7 @@ export type QuerySyncOptions<T, TVariables = OperationVariables> = {
 };
 
 export type BaseQuerySyncOptions<T, TVariables = OperationVariables> = QuerySyncOptions<T, TVariables> & {
-    refreshIntervalInSeconds?: number
+    baseRefreshIntervalInSeconds?: number
 };
 
 export type SubscribeWithSyncOptions<T, TVariables = OperationVariables> = {
