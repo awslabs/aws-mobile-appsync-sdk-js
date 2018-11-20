@@ -333,7 +333,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
             logger(`${skipBaseQuery ? 'Skipping' : 'Running'} base query`, { baseLastSyncTimestamp, itemInHash });
             if (!skipBaseQuery) {
                 const result = await client.query({
-                    fetchPolicy: 'network-only',
+                    fetchPolicy: 'no-cache',
                     query,
                     variables,
                 });
@@ -349,6 +349,13 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 boundUpdateLastSync(store, { hash, baseLastSyncTimestamp });
             } else {
                 try {
+                    if (enquededMutations.length === 1) {
+                        boundSaveSnapshot(store, client.cache);
+                    }
+                    const {
+                        [METADATA_KEY]: { snapshot: { cache: cacheSnapshot } },
+                    } = store.getState();
+
                     const data = (cacheProxy as any).storeReader.readQueryFromStore({
                         store: defaultNormalizedCacheFactory(cacheSnapshot),
                         query: addTypenameToDocument(query),
