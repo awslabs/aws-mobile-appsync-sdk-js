@@ -6,7 +6,7 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import { readQueryFromStore, defaultNormalizedCacheFactory, NormalizedCacheObject } from "apollo-cache-inmemory";
+import { defaultNormalizedCacheFactory, NormalizedCacheObject } from "apollo-cache-inmemory";
 import { ApolloLink, Observable, Operation, execute, GraphQLRequest, NextLink, FetchResult } from "apollo-link";
 import { getOperationDefinition, getMutationDefinition, resultKeyNameFromField, tryFunctionOrLogError } from "apollo-utilities";
 import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
@@ -107,10 +107,11 @@ const saveSnapshot = (cache) => ({
 const processOfflineQuery = (operation: Operation, theStore: Store<OfflineCache>) => {
     const { [NORMALIZED_CACHE_KEY]: normalizedCache = {} } = theStore.getState();
     const { query, variables } = operation;
+    const { cache } = operation.getContext();
 
     const store = defaultNormalizedCacheFactory(normalizedCache);
 
-    const data = readQueryFromStore({
+    const data = cache.storeReader.readQueryFromStore({
         store,
         query,
         variables,
