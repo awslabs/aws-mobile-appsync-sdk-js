@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.5.0"></a>
+# [1.5.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.4.0...aws-appsync@1.5.0) (2018-11-20)
+
+
+### Bug Fixes
+
+* **delta-sync:** Change baseQuery fetch policy ([#303](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/303)) ([cef6dce](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/cef6dce))
+* **delta-sync:** Rename refreshIntervalInSeconds to  baseRefreshIntervalInSeconds ([#301](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/301)) ([73870bd](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/73870bd))
+* **delta-sync:** Wait for client hydration ([#302](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/302)) ([8c519f8](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/8c519f8))
+* **offline-helpers:** Support input types for mutations ([#292](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/292)) ([c4cfe8f](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/c4cfe8f))
+* **subscriptions:** Fix NPE when unsubscribing ([#289](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/289)) ([dbdf603](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/dbdf603))
+
+
+### Features
+
+* **delta-sync:** Add DeltaSync support ([#293](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/293)) ([3b1af06](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/3b1af06))
+* **link:** Retry logic for query, mutation and subscription (incl. mqtt disconnects) ([#274](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/274)) ([7a3f5ce](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/7a3f5ce))
+
+
+
+
 <a name="1.4.0"></a>
 # [1.4.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.3.4...aws-appsync@1.4.0) (2018-10-16)
 
