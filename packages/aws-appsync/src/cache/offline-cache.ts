@@ -64,7 +64,7 @@ export default class MyCache extends InMemoryCache {
     }
 
     restore(data: NormalizedCacheObject) {
-        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data));
+        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data) as any);
 
         super.restore(data);
         super.broadcastWatches();
@@ -77,14 +77,14 @@ export default class MyCache extends InMemoryCache {
         if (this.data && typeof (this.data as any).record === 'undefined') {
             // do not persist contents of a RecordingCache
             const data = super.extract(true);
-            this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data));
+            this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data) as any);
         } else {
             // console.log('NO DISPATCH FOR RECORDINGCACHE')
         }
     }
 
     reset() {
-        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, {}));
+        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, {}) as any);
 
         return super.reset();
     }
