@@ -319,8 +319,8 @@ const effect = async <TCache extends NormalizedCacheObject>(
         }
         //#endregion
 
-        const { refreshIntervalInSeconds } = baseQuery;
-        upperBoundTimeMS = refreshIntervalInSeconds ? refreshIntervalInSeconds * 1000 : DEFAULT_UPPER_BOUND_TIME_MS;
+        const { baseRefreshIntervalInSeconds } = baseQuery;
+        upperBoundTimeMS = baseRefreshIntervalInSeconds ? baseRefreshIntervalInSeconds * 1000 : DEFAULT_UPPER_BOUND_TIME_MS;
 
         const skipBaseQuery = !(baseQuery && baseQuery.query) || (baseLastSyncTimestamp
             ? Date.now() - baseLastSyncTimestamp < upperBoundTimeMS
@@ -748,7 +748,7 @@ export type BuildQuerySyncOptions<TVariables = OperationVariables> = {
 };
 
 export type BuildBaseQuerySyncOptions<T, TVariables = OperationVariables> = QuerySyncOptions<T, TVariables> & {
-    refreshIntervalInSeconds?: number
+    baseRefreshIntervalInSeconds?: number
 };
 
 //#endregion
