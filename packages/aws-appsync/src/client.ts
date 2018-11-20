@@ -276,11 +276,15 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
                 handle = subscription;
             };
 
-            const hash = hashForOptions(options);
-            const itemInHash = this._store.getState()[METADATA_KEY][DELTASYNC_KEY].metadata[hash];
-            const { baseLastSyncTimestamp = null } = itemInHash || {};
+            (async () => {
+                await this.hydrated();
 
-            boundEnqueueDeltaSync(this._store, { ...options, baseLastSyncTimestamp }, observer, callback);
+                const hash = hashForOptions(options);
+                const itemInHash = this._store.getState()[METADATA_KEY][DELTASYNC_KEY].metadata[hash];
+                const { baseLastSyncTimestamp = null } = itemInHash || {};
+
+                boundEnqueueDeltaSync(this._store, { ...options, baseLastSyncTimestamp }, observer, callback);
+            })();
 
             return () => {
                 if (handle) {
