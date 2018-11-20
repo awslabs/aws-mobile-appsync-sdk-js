@@ -12,7 +12,8 @@
             "es6",
             "esnext.asynciterable",
             "es2017.object"
-        ]
+        ],
+        "skipLibCheck": true
     },
     "exclude": [
         "lib",

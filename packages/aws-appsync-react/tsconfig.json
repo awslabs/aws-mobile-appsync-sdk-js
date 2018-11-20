@@ -12,7 +12,8 @@
             "es6",
             "esnext.asynciterable"
         ],
-        "jsx": "react"
+        "jsx": "react",
+        "skipLibCheck": true
     },
     "exclude": [
         "lib"

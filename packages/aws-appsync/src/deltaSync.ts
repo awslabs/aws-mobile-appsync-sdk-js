@@ -7,7 +7,7 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 import { OfflineAction } from "@redux-offline/redux-offline/lib/types";
-import { NormalizedCacheObject, readQueryFromStore, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
+import { NormalizedCacheObject, defaultNormalizedCacheFactory } from "apollo-cache-inmemory";
 import { Store, AnyAction } from "redux";
 import { OfflineCache, AppSyncMetadataState, METADATA_KEY } from "./cache/offline-cache";
 import AWSAppSyncClient, { OfflineCallback, SubscribeWithSyncOptions, QuerySyncOptions } from "./client";
@@ -349,7 +349,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 boundUpdateLastSync(store, { hash, baseLastSyncTimestamp });
             } else {
                 try {
-                    const data = readQueryFromStore({
+                    const data = (cacheProxy as any).storeReader.readQueryFromStore({
                         store: defaultNormalizedCacheFactory(cacheSnapshot),
                         query: addTypenameToDocument(query),
                         variables,
