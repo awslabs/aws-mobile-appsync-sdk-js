@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.5.1"></a>
+## [1.5.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.5.0...aws-appsync@1.5.1) (2018-11-21)
+
+
+### Bug Fixes
+
+* **delta-sync:** Helper. Preserve deltaRecords changes when applying update functions ([#304](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/304)) ([7f39810](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/7f39810))
+
+
+
+
 <a name="1.5.0"></a>
 # [1.5.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.4.0...aws-appsync@1.5.0) (2018-11-20)
 
