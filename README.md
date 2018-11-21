@@ -29,6 +29,8 @@ yarn add aws-appsync
 
 ## Usage
 
+Please visit the [documentation with the Amplify Framework](https://aws-amplify.github.io/docs/js/api) for detailed instructions.
+
 [React / React Native](https://github.com/awslabs/aws-mobile-appsync-sdk-js#react--react-native)   
 - [Creating an AppSync client](https://github.com/awslabs/aws-mobile-appsync-sdk-js#creating-a-client)
 - [queries](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries)
