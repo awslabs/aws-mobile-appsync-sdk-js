@@ -698,7 +698,7 @@ const deltaRecordsProcessor = <T = { [key: string]: any }>(
 
         logger({ incomingRecord, isRemove });
 
-        result = updater([...baseResult], incomingRecord);
+        result = updater([...result], incomingRecord);
     });
 
     return result;
