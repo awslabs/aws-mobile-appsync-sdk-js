@@ -6,7 +6,7 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY 
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import { ApolloLink } from 'apollo-link';
+import { ApolloLink, NextLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 
 export class NonTerminatingLink extends ApolloLink {
@@ -21,8 +21,8 @@ export class NonTerminatingLink extends ApolloLink {
         this.link = link;
     }
 
-    request(operation, forward) {
-        return setContext(async (request, prevContext) => {
+    request(operation, forward?: NextLink) {
+        return setContext(async (_request, prevContext) => {
             const result = await new Promise((resolve, reject) => {
                 this.link.request(operation).subscribe({
                     next: resolve,

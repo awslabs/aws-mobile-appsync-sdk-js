@@ -10,12 +10,28 @@ import { Cache } from 'apollo-cache';
 import { InMemoryCache, ApolloReducerConfig, defaultDataIdFromObject, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { Store } from 'redux';
 
+import { DeltaSyncState, DELTASYNC_KEY } from '../deltaSync';
 
+// Offline schema keys: Do not change in a non-backwards-compatible way
 export const NORMALIZED_CACHE_KEY = 'appsync';
 export const METADATA_KEY = 'appsync-metadata';
+
 export { defaultDataIdFromObject };
 
 const WRITE_CACHE_ACTION = 'AAS_WRITE_CACHE';
+
+
+// Offline schema: Do not change in a non-backwards-compatible way
+export type AppSyncMetadataState = {
+    idsMap: {
+        [key: string]: string
+    },
+    snapshot: {
+        cache: NormalizedCacheObject,
+        enqueuedMutations: number,
+    },
+    [DELTASYNC_KEY]: DeltaSyncState,
+}
 
 type AppState = {
     offline: {
@@ -27,15 +43,7 @@ type AppState = {
 export interface OfflineCache extends AppState {
     rehydrated: boolean,
     [NORMALIZED_CACHE_KEY]: NormalizedCacheObject,
-    [METADATA_KEY]: {
-        idsMap: {
-            [key: string]: string
-        },
-        snapshot: {
-            cache: NormalizedCacheObject,
-            enqueuedMutations: number,
-        }
-    },
+    [METADATA_KEY]: AppSyncMetadataState,
 }
 
 export default class MyCache extends InMemoryCache {
@@ -58,7 +66,7 @@ export default class MyCache extends InMemoryCache {
     }
 
     restore(data: NormalizedCacheObject) {
-        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data));
+        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data) as any);
 
         super.restore(data);
         super.broadcastWatches();
@@ -71,14 +79,14 @@ export default class MyCache extends InMemoryCache {
         if (this.data && typeof (this.data as any).record === 'undefined') {
             // do not persist contents of a RecordingCache
             const data = super.extract(true);
-            this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data));
+            this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data) as any);
         } else {
             // console.log('NO DISPATCH FOR RECORDINGCACHE')
         }
     }
 
     reset() {
-        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, {}));
+        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, {}) as any);
 
         return super.reset();
     }
