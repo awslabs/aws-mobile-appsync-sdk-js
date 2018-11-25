@@ -10,7 +10,7 @@ import { DocumentNode, OperationDefinitionNode, FieldNode } from "graphql";
 import { resultKeyNameFromField } from "apollo-utilities";
 import { Observable } from "apollo-link";
 
-const crypto = require('aws-sdk/global').util.crypto;
+const crypto = require('aws-sdk/lib/browserCryptoLib');
 
 export const passthroughLink = (op, forward) => (forward ? forward(op) : Observable.of());
 
