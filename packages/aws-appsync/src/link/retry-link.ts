@@ -32,6 +32,10 @@ export const createRetryLink = (origLink: ApolloLink) => {
         attempts: (count, operation, error) => {
             const { [SKIP_RETRY_KEY]: skipRetry = false } = operation.variables;
 
+            if (error.statusCode >= 400 && error.statusCode < 500) {
+                return false;
+            }
+
             if (graphQLResultHasError({ errors: error ? error.graphQLErrors : [] })) {
                 return false;
             }
