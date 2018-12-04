@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.5.2"></a>
+## [1.5.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.5.1...aws-appsync@1.5.2) (2018-12-04)
+
+
+### Bug Fixes
+
+* **retry-link:** RetryLink keeps retrying even if 401 is thrown ([#311](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/311)) ([1d0b904](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/1d0b904)), closes [#308](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/308)
+
+
+
+
 <a name="1.5.1"></a>
 ## [1.5.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.5.0...aws-appsync@1.5.1) (2018-11-21)
 
