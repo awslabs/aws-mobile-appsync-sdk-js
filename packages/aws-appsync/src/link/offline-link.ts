@@ -21,7 +21,7 @@ import { isUuid, getOperationFieldName } from "../utils";
 import AWSAppSyncClient from "..";
 import { ApolloCache } from "apollo-cache";
 import { MutationUpdaterFn, MutationQueryReducersMap, ApolloError } from "apollo-client";
-import { RefetchQueryDescription } from "apollo-client/core/watchQueryOptions";
+import { RefetchQueryDescription, FetchPolicy } from "apollo-client/core/watchQueryOptions";
 import { OfflineCallback } from "../client";
 import { SKIP_RETRY_KEY } from "./retry-link";
 import { OfflineEffectConfig } from "../store";
@@ -127,6 +127,7 @@ export type EnqueuedMutationEffect<T> = {
     updateQueries: MutationQueryReducersMap<T>,
     refetchQueries: ((result: ExecutionResult) => RefetchQueryDescription) | RefetchQueryDescription,
     observer: ZenObservable.SubscriptionObserver<T>,
+    fetchPolicy?: FetchPolicy
 };
 
 const enqueueMutation = <T>(operation: Operation, theStore: Store<OfflineCache>, observer: ZenObservable.SubscriptionObserver<T>): object => {
@@ -137,25 +138,29 @@ const enqueueMutation = <T>(operation: Operation, theStore: Store<OfflineCache>,
             update,
             updateQueries,
             refetchQueries,
+            fetchPolicy,
         },
     } = operation.getContext();
 
     const optimisticResponse = typeof origOptimistic === 'function' ? origOptimistic(variables) : origOptimistic;
 
     setImmediate(() => {
+        const effect: EnqueuedMutationEffect<any> = {
+            optimisticResponse,
+            operation,
+            update,
+            updateQueries,
+            refetchQueries,
+            fetchPolicy,
+            observer,
+        };
+
         theStore.dispatch({
             type: actions.ENQUEUE,
             payload: { optimisticResponse },
             meta: {
                 offline: {
-                    effect: {
-                        optimisticResponse,
-                        operation,
-                        update,
-                        updateQueries,
-                        refetchQueries,
-                        observer,
-                    } as EnqueuedMutationEffect<any>,
+                    effect,
                     commit: { type: actions.COMMIT },
                     rollback: { type: actions.ROLLBACK },
                 }
@@ -199,6 +204,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
         update,
         updateQueries,
         refetchQueries,
+        fetchPolicy,
         observer,
     } = effect;
 
@@ -240,14 +246,16 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
                 const dataStore = client.queryManager.dataStore;
 
-                dataStore.markMutationResult({
-                    mutationId: null,
-                    result: data,
-                    document: mutation,
-                    variables,
-                    updateQueries: {}, // TODO: populate this?
-                    update
-                });
+                if (fetchPolicy !== 'no-cache') {
+                    dataStore.markMutationResult({
+                        mutationId: null,
+                        result: data,
+                        document: mutation,
+                        variables,
+                        updateQueries: {}, // TODO: populate this?
+                        update
+                    });
+                }
 
                 boundSaveSnapshot(store, client.cache);
 
@@ -262,6 +270,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                             operation: { variables = {}, query: document = null } = {},
                             update,
                             optimisticResponse: origOptimisticResponse,
+                            fetchPolicy,
                         } = effect as EnqueuedMutationEffect<any>;
 
                         if (typeof update !== 'function') {
@@ -271,21 +280,23 @@ const effect = async <TCache extends NormalizedCacheObject>(
                         const optimisticResponse = replaceUsingMap({ ...origOptimisticResponse }, idsMap);
                         const result = { data: optimisticResponse };
 
-                        dataStore.markMutationResult({
-                            mutationId: null,
-                            result,
-                            document,
-                            variables,
-                            updateQueries: {}, // TODO: populate this?
-                            update
-                        });
+                        if (fetchPolicy !== 'no-cache') {
+                            dataStore.markMutationResult({
+                                mutationId: null,
+                                result,
+                                document,
+                                variables,
+                                updateQueries: {}, // TODO: populate this?
+                                update
+                            });
+                        }
                     });
 
                 client.queryManager.broadcastQueries();
 
                 resolve({ data });
 
-                if (observer.next) {
+                if (observer.next && !observer.closed) {
                     observer.next({ ...data, [IS_OPTIMISTIC_KEY]: false });
                     observer.complete();
                 } else {
