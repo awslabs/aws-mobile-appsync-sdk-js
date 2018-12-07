@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.6.0"></a>
+# [1.6.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.5.2...aws-appsync@1.6.0) (2018-12-07)
+
+
+### Bug Fixes
+
+* **offline:** Do not write mutations to cache if fetchPolicy = no-cache ([#312](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/312)) ([e5f66a9](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/e5f66a9))
+
+
+### Features
+
+* **offline-cache:** Add option to prevent storing the ROOT_MUTATION ([#313](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/313)) ([20e387a](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/20e387a))
+
+
+
+
 <a name="1.5.2"></a>
 ## [1.5.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.5.1...aws-appsync@1.5.2) (2018-12-04)
 
