@@ -243,6 +243,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             context: origContext,
             optimisticResponse,
             update,
+            fetchPolicy,
             ...otherOptions
         } = options;
 
@@ -252,6 +253,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
                 doIt,
                 optimisticResponse,
                 update,
+                fetchPolicy,
                 // updateQueries,
                 // refetchQueries,
             }
@@ -261,6 +263,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             optimisticResponse,
             context,
             update,
+            fetchPolicy,
             ...otherOptions,
         });
     }
