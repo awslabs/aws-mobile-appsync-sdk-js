@@ -44,16 +44,33 @@ export interface OfflineCache extends AppState {
     [METADATA_KEY]: AppSyncMetadataState,
 }
 
+export type OfflineCacheOptions = {
+    store: Store<OfflineCache>,
+    storeCacheRootMutation?: boolean,
+}
+
+function isOfflineCacheOptions(obj: any): obj is OfflineCacheOptions {
+    return !!(obj as OfflineCacheOptions).store;
+};
+
 export default class MyCache extends InMemoryCache {
 
     private store: Store<OfflineCache>;
+    private storeCacheRootMutation: boolean = false;
 
-    constructor(store: Store<OfflineCache>, config: ApolloReducerConfig = {}) {
+    constructor(optionsOrStore: Store<OfflineCache> | OfflineCacheOptions, config: ApolloReducerConfig = {}) {
         super(config);
 
-        this.store = store;
+        if (isOfflineCacheOptions(optionsOrStore)) {
+            const { store, storeCacheRootMutation = false } = optionsOrStore;
 
-        const cancelSubscription = store.subscribe(() => {
+            this.store = store;
+            this.storeCacheRootMutation = storeCacheRootMutation;
+        } else {
+            this.store = optionsOrStore;
+        }
+
+        const cancelSubscription = this.store.subscribe(() => {
             const { [NORMALIZED_CACHE_KEY]: normCache = {}, rehydrated = false } = this.store.getState();
             super.restore({ ...normCache });
             if (rehydrated) {
@@ -74,6 +91,11 @@ export default class MyCache extends InMemoryCache {
 
     write(write: Cache.WriteOptions) {
         super.write(write);
+
+        if (!this.storeCacheRootMutation && write.dataId === 'ROOT_MUTATION') {
+            this.data.delete('ROOT_MUTATION');
+        }
+
         if (this.data && typeof (this.data as any).record === 'undefined') {
             // do not persist contents of a RecordingCache
             const data = super.extract(true);
