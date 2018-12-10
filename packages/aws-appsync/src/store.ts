@@ -6,7 +6,7 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import debug from 'debug';
+import { rootLogger } from "./utils";
 import { applyMiddleware, createStore, compose, combineReducers, Store, Reducer, AnyAction, ReducersMapObject } from 'redux';
 import { offline } from '@redux-offline/redux-offline';
 import defaultOfflineConfig from '@redux-offline/redux-offline/lib/defaults';
@@ -24,7 +24,7 @@ import { Observable } from 'apollo-link';
 
 const { detectNetwork } = defaultOfflineConfig;
 
-const logger = debug('aws-appsync:store');
+const logger = rootLogger.extend('store');
 
 const newStore = <TCacheShape extends NormalizedCacheObject>(
     clientGetter: () => AWSAppSyncClient<TCacheShape> = () => null,

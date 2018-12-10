@@ -6,7 +6,6 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import debug from 'debug';
 import { defaultNormalizedCacheFactory, NormalizedCacheObject } from "apollo-cache-inmemory";
 import { ApolloLink, Observable, Operation, execute, GraphQLRequest, NextLink, FetchResult } from "apollo-link";
 import { getOperationDefinition, getMutationDefinition, resultKeyNameFromField, tryFunctionOrLogError } from "apollo-utilities";
@@ -18,7 +17,7 @@ import { NORMALIZED_CACHE_KEY, METADATA_KEY } from "../cache";
 import { AWSAppsyncGraphQLError } from "../types";
 import { Store } from "redux";
 import { OfflineCache, AppSyncMetadataState } from "../cache/offline-cache";
-import { isUuid, getOperationFieldName } from "../utils";
+import { isUuid, getOperationFieldName, rootLogger } from "../utils";
 import AWSAppSyncClient from "..";
 import { ApolloCache } from "apollo-cache";
 import { MutationUpdaterFn, MutationQueryReducersMap, ApolloError } from "apollo-client";
@@ -27,7 +26,7 @@ import { OfflineCallback } from "../client";
 import { SKIP_RETRY_KEY } from "./retry-link";
 import { OfflineEffectConfig } from "../store";
 
-const logger = debug('aws-appsync:offline-link');
+const logger = rootLogger.extend('offline-link');
 
 const actions = {
     SAVE_SNAPSHOT: 'SAVE_SNAPSHOT',

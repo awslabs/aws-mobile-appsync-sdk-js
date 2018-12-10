@@ -6,15 +6,15 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import debug from 'debug';
 import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
 
+import { rootLogger } from "../utils";
 import * as Paho from '../vendor/paho-mqtt';
 import { ApolloError } from "apollo-client";
 import { FieldNode } from "graphql";
 import { getMainDefinition } from "apollo-utilities";
 
-const logger = debug('aws-appsync:subscriptions');
+const logger = rootLogger.extend('subscriptions');
 const mqttLogger = logger.extend('mqtt');
 
 type SubscriptionExtension = {

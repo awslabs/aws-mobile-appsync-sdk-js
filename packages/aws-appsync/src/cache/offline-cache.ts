@@ -6,14 +6,14 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-import debug from 'debug';
+import { rootLogger } from "../utils";
 import { Cache } from 'apollo-cache';
 import { InMemoryCache, ApolloReducerConfig, defaultDataIdFromObject, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { Store, AnyAction, Action } from 'redux';
 import { DeltaSyncState, DELTASYNC_KEY } from '../deltaSync';
 import { ThunkAction } from 'redux-thunk';
 
-const logger = debug('aws-appsync:offline-cache');
+const logger = rootLogger.extend('offline-cache');
 
 // Offline schema keys: Do not change in a non-backwards-compatible way
 export const NORMALIZED_CACHE_KEY = 'appsync';
