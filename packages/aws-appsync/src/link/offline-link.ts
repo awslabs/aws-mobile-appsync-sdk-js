@@ -6,6 +6,7 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
+import debug from 'debug';
 import { defaultNormalizedCacheFactory, NormalizedCacheObject } from "apollo-cache-inmemory";
 import { ApolloLink, Observable, Operation, execute, GraphQLRequest, NextLink, FetchResult } from "apollo-link";
 import { getOperationDefinition, getMutationDefinition, resultKeyNameFromField, tryFunctionOrLogError } from "apollo-utilities";
@@ -25,6 +26,8 @@ import { RefetchQueryDescription, FetchPolicy } from "apollo-client/core/watchQu
 import { OfflineCallback } from "../client";
 import { SKIP_RETRY_KEY } from "./retry-link";
 import { OfflineEffectConfig } from "../store";
+
+const logger = debug('aws-appsync:offline-link');
 
 const actions = {
     SAVE_SNAPSHOT: 'SAVE_SNAPSHOT',
@@ -185,10 +188,6 @@ const enqueueMutation = <T>(operation: Operation, theStore: Store<OfflineCache>,
     return result;
 }
 
-interface CanBeSilenced<TCache> extends ApolloCache<TCache> {
-    silenceBroadcast?: boolean
-};
-
 const effect = async <TCache extends NormalizedCacheObject>(
     store: Store<OfflineCache>,
     client: AWSAppSyncClient<TCache>,
@@ -197,7 +196,6 @@ const effect = async <TCache extends NormalizedCacheObject>(
     callback: OfflineCallback,
 ): Promise<FetchResult<Record<string, any>, Record<string, any>>> => {
     const doIt = true;
-    const { cache }: { cache: CanBeSilenced<TCache> } = client;
     const {
         optimisticResponse: origOptimistic,
         operation: { variables: origVars, query: mutation, context },
@@ -232,6 +230,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
         };
         const operation = buildOperationForLink.call(client.queryManager, mutation, variables, extraContext);
 
+        logger('Executing link', operation);
         execute(client.link, operation).subscribe({
             next: data => {
                 boundSaveServerId(store, optimisticResponse, data.data);
@@ -274,6 +273,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                         } = effect as EnqueuedMutationEffect<any>;
 
                         if (typeof update !== 'function') {
+                            logger('No update function for mutation', { document, variables });
                             return;
                         }
 
@@ -281,6 +281,8 @@ const effect = async <TCache extends NormalizedCacheObject>(
                         const result = { data: optimisticResponse };
 
                         if (fetchPolicy !== 'no-cache') {
+                            logger('Running update function for mutation', { document, variables });
+
                             dataStore.markMutationResult({
                                 mutationId: null,
                                 result,
@@ -334,7 +336,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 }
             },
             error: err => {
-                // TODO: Undo cache updates?
+                logger('Error when executing link', err);
 
                 reject(err);
             }
@@ -450,14 +452,10 @@ const discard = (callback: OfflineCallback, error, action, retries) => {
 
     if (discardResult) {
         // Call global error callback or observer
-        try {
-            if (typeof callback === 'function') {
-                tryFunctionOrLogError(() => {
-                    callback({ error }, null);
-                });
-            }
-        } catch (error) {
-            // TODO: warn
+        if (typeof callback === 'function') {
+            tryFunctionOrLogError(() => {
+                callback({ error }, null);
+            });
         }
     }
 
@@ -468,7 +466,7 @@ const _discard = (error, action: OfflineAction, retries) => {
     const { graphQLErrors = [] }: { graphQLErrors: AWSAppsyncGraphQLError[] } = error;
 
     if (graphQLErrors.length) {
-        // console.error('Discarding action.', action, graphQLErrors);
+        logger('Discarding action.', action, graphQLErrors);
 
         return true;
     } else {
@@ -476,7 +474,7 @@ const _discard = (error, action: OfflineAction, retries) => {
         const appSyncClientError = graphQLErrors.find(err => err.errorType && err.errorType.startsWith('AWSAppSyncClient:'));
 
         if (appSyncClientError) {
-            // console.error('Discarding action.', action, appSyncClientError);
+            logger('Discarding action.', action, appSyncClientError);
 
             return true;
         }

@@ -6,6 +6,7 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
+import debug from 'debug';
 import { v4 as uuid } from 'uuid';
 import { cloneDeep } from 'apollo-utilities';
 import { ApolloClient, MutationOptions, SubscribeToMoreOptions, OperationVariables } from 'apollo-client';
@@ -13,6 +14,8 @@ import { DocumentNode, InputObjectTypeDefinitionNode, NamedTypeNode } from 'grap
 import AWSAppSyncClient from '../client';
 import { replaceUsingMap } from '../link';
 import { getOperationFieldName } from '../utils';
+
+const logger = debug('aws-appsync:offline-helper');
 
 export enum CacheOperationTypes {
     AUTO = 'auto',
@@ -298,7 +301,7 @@ const buildMutation = <T = OperationVariables>(
 
                 result = queryRead;
             } catch (err) {
-                console.warn('Skipping query', query, err.message);
+                logger('Skipping query', query, err.message);
 
                 return;
             }
@@ -358,7 +361,7 @@ const buildMutation = <T = OperationVariables>(
                     try {
                         data = proxy.readQuery({ query, variables: queryVars });
                     } catch (err) {
-                        console.warn('Skipping query', query, err.message);
+                        logger('Skipping query', query, err.message);
 
                         return;
                     }

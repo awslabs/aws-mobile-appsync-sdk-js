@@ -6,12 +6,16 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
+import debug from 'debug';
 import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
 
 import * as Paho from '../vendor/paho-mqtt';
 import { ApolloError } from "apollo-client";
 import { FieldNode } from "graphql";
 import { getMainDefinition } from "apollo-utilities";
+
+const logger = debug('aws-appsync:subscriptions');
+const mqttLogger = logger.extend('mqtt');
 
 type SubscriptionExtension = {
     mqttConnections: MqttConnectionInfo[],
@@ -161,7 +165,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         const { client: clientId, url, topics } = connectionInfo;
         const client: any = new Paho.Client(url, clientId);
 
-        // client.trace = console.log.bind(null, clientId);
+        client.trace = mqttLogger.bind(null, clientId);
         client.onConnectionLost = ({ errorCode, ...args }) => {
             if (errorCode !== 0) {
                 topics.forEach(t => {
@@ -224,6 +228,8 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             parsedMessage.data || {}
         );
 
+        logger('Message received', { data, topic, observers });
+
         observers.forEach(observer => {
             try {
                 observer.next({
@@ -231,7 +237,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                     ...{ data },
                 })
             } catch (err) {
-                // console.error(err);
+                logger(err);
             }
         });
     }
