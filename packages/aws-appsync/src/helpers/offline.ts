@@ -12,7 +12,9 @@ import { ApolloClient, MutationOptions, SubscribeToMoreOptions, OperationVariabl
 import { DocumentNode, InputObjectTypeDefinitionNode, NamedTypeNode } from 'graphql';
 import AWSAppSyncClient from '../client';
 import { replaceUsingMap } from '../link';
-import { getOperationFieldName } from '../utils';
+import { getOperationFieldName, rootLogger } from '../utils';
+
+const logger = rootLogger.extend('offline-helper');
 
 export enum CacheOperationTypes {
     AUTO = 'auto',
@@ -298,7 +300,7 @@ const buildMutation = <T = OperationVariables>(
 
                 result = queryRead;
             } catch (err) {
-                console.warn('Skipping query', query, err.message);
+                logger('Skipping query', query, err.message);
 
                 return;
             }
@@ -358,7 +360,7 @@ const buildMutation = <T = OperationVariables>(
                     try {
                         data = proxy.readQuery({ query, variables: queryVars });
                     } catch (err) {
-                        console.warn('Skipping query', query, err.message);
+                        logger('Skipping query', query, err.message);
 
                         return;
                     }
