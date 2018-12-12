@@ -21,3 +21,5 @@ export const getOperationFieldName = (operation: DocumentNode): string => result
 );
 
 export const hash = (src: any) => crypto.createHash('sha256').update(src || {}, 'utf8').digest('hex') as string;
+
+export { default as rootLogger } from './logger';

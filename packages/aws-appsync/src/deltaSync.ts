@@ -14,18 +14,17 @@ import AWSAppSyncClient, { OfflineCallback, SubscribeWithSyncOptions, QuerySyncO
 import { OfflineEffectConfig } from "./store";
 import { tryFunctionOrLogError, graphQLResultHasError, getMainDefinition, addTypenameToDocument } from "apollo-utilities";
 import { OperationVariables, MutationUpdaterFn } from "apollo-client";
-import { hash, getOperationFieldName } from "./utils";
+import { hash, getOperationFieldName, rootLogger } from "./utils";
 import { Observable, FetchResult } from "apollo-link";
 import { Subscription } from "apollo-client/util/Observable";
 import { DataProxy } from "apollo-cache";
-import debug from 'debug';
 import { SKIP_RETRY_KEY } from "./link/retry-link";
 import { DocumentNode, print, OperationDefinitionNode, FieldNode, ExecutionResult } from "graphql";
 import { getOpTypeFromOperationName, CacheOperationTypes, getUpdater, QueryWithVariables } from "./helpers/offline";
 import { boundSaveSnapshot, replaceUsingMap, EnqueuedMutationEffect, offlineEffectConfig as mutationsConfig } from "./link/offline-link";
 import { CONTROL_EVENTS_KEY } from "./link/subscription-handshake-link";
 
-const logger = debug('aws-appsync:deltasync');
+const logger = rootLogger.extend('deltasync');
 
 //#region Types
 type DeltaSyncUpdateLastSyncAction = AnyAction & {

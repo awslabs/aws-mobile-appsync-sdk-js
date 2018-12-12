@@ -8,10 +8,14 @@
  */
 import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
 
+import { rootLogger } from "../utils";
 import * as Paho from '../vendor/paho-mqtt';
 import { ApolloError } from "apollo-client";
 import { FieldNode } from "graphql";
 import { getMainDefinition } from "apollo-utilities";
+
+const logger = rootLogger.extend('subscriptions');
+const mqttLogger = logger.extend('mqtt');
 
 type SubscriptionExtension = {
     mqttConnections: MqttConnectionInfo[],
@@ -161,7 +165,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         const { client: clientId, url, topics } = connectionInfo;
         const client: any = new Paho.Client(url, clientId);
 
-        // client.trace = console.log.bind(null, clientId);
+        client.trace = mqttLogger.bind(null, clientId);
         client.onConnectionLost = ({ errorCode, ...args }) => {
             if (errorCode !== 0) {
                 topics.forEach(t => {
@@ -224,6 +228,8 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             parsedMessage.data || {}
         );
 
+        logger('Message received', { data, topic, observers });
+
         observers.forEach(observer => {
             try {
                 observer.next({
@@ -231,7 +237,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                     ...{ data },
                 })
             } catch (err) {
-                // console.error(err);
+                logger(err);
             }
         });
     }
