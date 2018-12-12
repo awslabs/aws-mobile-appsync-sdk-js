@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.7.0"></a>
+# [1.7.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.6.0...aws-appsync@1.7.0) (2018-12-12)
+
+
+### Features
+
+* **logging:** Add logging ([#316](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/316)) ([04015ee](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/04015ee))
+
+
+
+
 <a name="1.6.0"></a>
 # [1.6.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.5.2...aws-appsync@1.6.0) (2018-12-07)
 
