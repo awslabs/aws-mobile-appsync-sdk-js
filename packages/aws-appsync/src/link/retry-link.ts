@@ -18,6 +18,7 @@ const MAX_DELAY_MS = 5 * 60 * 1000;
 const getDelay = count => ((2 ** count) * BASE_TIME_MS) + (JITTER_FACTOR * Math.random());
 
 export const SKIP_RETRY_KEY = '@@skipRetry';
+export const PERMANENT_ERROR_KEY = typeof Symbol !== 'undefined' ? Symbol('permanentError') : '@@permanentError';
 
 export const getEffectDelay = (_action: OfflineAction, retries: number) => {
     const delay = getDelay(retries);
@@ -30,7 +31,12 @@ export const createRetryLink = (origLink: ApolloLink) => {
 
     const retryLink = new RetryLink({
         attempts: (count, operation, error) => {
+            const { [PERMANENT_ERROR_KEY]: permanent = false } = error;
             const { [SKIP_RETRY_KEY]: skipRetry = false } = operation.variables;
+
+            if (permanent) {
+                return false;
+            }
 
             if (error.statusCode >= 400 && error.statusCode < 500) {
                 return false;
