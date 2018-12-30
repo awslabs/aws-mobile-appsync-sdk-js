@@ -152,8 +152,10 @@ export const getUpdater = <T>(opType: CacheOperationTypes, idField = 'id'): (arr
 
     switch (opType) {
         case CacheOperationTypes.ADD:
-        case CacheOperationTypes.UPDATE:
             updater = (arr, newItem) => !newItem ? [...arr] : [...arr.filter(item => item[idField] !== newItem[idField]), newItem];
+            break;
+        case CacheOperationTypes.UPDATE:
+            updater = (arr, newItem) => !newItem ? [...arr] : arr.map(item => item[idField] === newItem[idField] ? newItem : item);
             break;
         case CacheOperationTypes.REMOVE:
             updater = (arr, newItem) => !newItem ? [] : arr.filter(item => item[idField] !== newItem[idField]);
