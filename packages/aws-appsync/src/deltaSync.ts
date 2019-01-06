@@ -18,14 +18,14 @@ import { hash, getOperationFieldName } from "./utils";
 import { Observable, FetchResult } from "apollo-link";
 import { Subscription } from "apollo-client/util/Observable";
 import { DataProxy } from "apollo-cache";
-import debug from 'debug';
+//import debug from 'debug';
 import { SKIP_RETRY_KEY } from "./link/retry-link";
 import { DocumentNode, print, OperationDefinitionNode, FieldNode, ExecutionResult } from "graphql";
 import { getOpTypeFromOperationName, CacheOperationTypes, getUpdater, QueryWithVariables } from "./helpers/offline";
 import { boundSaveSnapshot, replaceUsingMap, EnqueuedMutationEffect, offlineEffectConfig as mutationsConfig } from "./link/offline-link";
 import { CONTROL_EVENTS_KEY } from "./link/subscription-handshake-link";
 
-const logger = debug('aws-appsync:deltasync');
+//const logger = debug('aws-appsync:deltasync');
 
 //#region Types
 type DeltaSyncUpdateLastSyncAction = AnyAction & {
@@ -183,7 +183,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
     let baseQueryTimeoutId: number;
     let subscriptionProcessor: SubscriptionMessagesProcessor;
     const unsubscribeAll = () => {
-        logger('Unsubscribing');
+        //logger('Unsubscribing');
 
         if (networkStatusSubscription) networkStatusSubscription.unsubscribe();
 
@@ -197,7 +197,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
     const enqueueAgain = () => {
         unsubscribeAll();
 
-        logger('Re-queuing', { baseLastSyncTimestamp, lastSyncTimestamp });
+        //logger('Re-queuing', { baseLastSyncTimestamp, lastSyncTimestamp });
         boundEnqueueDeltaSync(store, { ...options, lastSyncTimestamp, baseLastSyncTimestamp }, observer, callback);
     };
 
@@ -264,7 +264,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
         } = store.getState();
 
         //#region Subscription
-        const subsControlLogger = logger.extend('subsc-control');
+        //const subsControlLogger = logger.extend('subsc-control');
 
         await new Promise(resolve => {
             if (subscriptionQuery && subscriptionQuery.query) {
@@ -282,7 +282,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                     const isControlMsg = typeof controlMsgType !== 'undefined';
 
                     if (controlMsgType) {
-                        subsControlLogger(controlMsgType, controlMsgInfo);
+                        //subsControllogger(controlMsgType, controlMsgInfo);
 
                         if (controlMsgType === 'CONNECTED') {
                             resolve();
@@ -330,7 +330,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
         if (baseQuery && baseQuery.query) {
             const { query, update, variables } = baseQuery;
 
-            logger(`${skipBaseQuery ? 'Skipping' : 'Running'} base query`, { baseLastSyncTimestamp, itemInHash });
+            //logger(`${skipBaseQuery ? 'Skipping' : 'Running'} base query`, { baseLastSyncTimestamp, itemInHash });
             if (!skipBaseQuery) {
                 const result = await client.query({
                     fetchPolicy: 'no-cache',
@@ -364,7 +364,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
                     cacheProxy.writeQuery({ query, variables, data });
                 } catch (error) {
-                    logger('Error reading/writting baseQuery from store', error);
+                    //logger('Error reading/writting baseQuery from store', error);
                 }
             }
         }
@@ -372,13 +372,13 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
         //#region Delta query
         if (deltaQuery && deltaQuery.query && !skipBaseQuery) {
-            logger('Skipping deltaQuery');
+            //logger('Skipping deltaQuery');
         }
 
         if (deltaQuery && deltaQuery.query && skipBaseQuery) {
             const { query, update, variables } = deltaQuery;
 
-            logger('Running deltaQuery', { lastSyncTimestamp, baseLastSyncTimestamp });
+            //logger('Running deltaQuery', { lastSyncTimestamp, baseLastSyncTimestamp });
             const result = await client.query({
                 fetchPolicy: 'no-cache',
                 query: query,
@@ -453,7 +453,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 upperBoundTimeMS - (Date.now() - baseLastSyncTimestamp),
                 MIN_UPPER_BOUND_TIME_MS
             );
-            logger(`Re-running in ${baseQueryTimeout / 1000 / 60} minutes`);
+            //logger(`Re-running in ${baseQueryTimeout / 1000 / 60} minutes`);
             baseQueryTimeoutId = (global as any).setTimeout(() => enqueueAgain(), baseQueryTimeout);
         }
     } catch (error) {
@@ -478,10 +478,10 @@ const reducer: DeltaSyncReducer = () => (state: AppSyncMetadataState, action: An
 
     switch (action.type) {
         case actions.UPDATE_LASTSYNC:
-            logger(action.type, (action as DeltaSyncUpdateLastSyncAction).payload);
+            //logger(action.type, (action as DeltaSyncUpdateLastSyncAction).payload);
             return lastSyncReducer(state, action as DeltaSyncUpdateLastSyncAction);
         case actions.ENQUEUE:
-            logger(action.type, ((action as OfflineAction).meta.offline.effect as any).options);
+            //logger(action.type, ((action as OfflineAction).meta.offline.effect as any).options);
             return metadataReducer(state, action as OfflineAction);
         default:
             const newState: AppSyncMetadataState = {
@@ -610,7 +610,7 @@ export const buildSync = <T = { [key: string]: any }, TVariables = OperationVari
         deltaQuery,
         cacheUpdates = () => [] as QueryWithVariables[]
     } = options;
-    const loggerHelper = logger.extend('helper');
+    const loggerHelper = undefined;//logger.extend('helper');
 
     const result: SubscribeWithSyncOptions<TVariables, OperationVariables> = {
         baseQuery: {
@@ -642,7 +642,7 @@ export const buildSync = <T = { [key: string]: any }, TVariables = OperationVari
         },
     };
 
-    loggerHelper('buildSync options', result);
+    //loggerHelper('buildSync options', result);
 
     return result;
 };
@@ -653,15 +653,15 @@ const writeCacheUpdates = <T = { [key: string]: any }>(
     result: T[],
     cacheUpdates: (item: T) => QueryWithVariables[] = () => [] as QueryWithVariables[]
 ) => {
-    const cacheUpdatesLogger = logger.extend('cacheUpdates');
+    //const cacheUpdatesLogger = undefined; //logger.extend('cacheUpdates');
 
-    cacheUpdatesLogger('writeCacheUpdates');
+    //cacheUpdatesLogger('writeCacheUpdates');
 
     result.forEach(item => cacheUpdates(item).forEach(({ query, variables }) => {
         const opFieldName = getOperationFieldName(query);
         const data = { [opFieldName]: item };
 
-        cacheUpdatesLogger(`Writing ${opFieldName}`, { variables, data });
+        //cacheUpdatesLogger(`Writing ${opFieldName}`, { variables, data });
 
         cache.writeQuery({ query, variables, data });
     }));
@@ -677,7 +677,7 @@ const deltaRecordsProcessor = <T = { [key: string]: any }>(
 ) => {
     const opType = getOpTypeFromOperationName(deltaOperationName);
 
-    logger({ deltaOperationName, opType, deltaRecords });
+    //logger({ deltaOperationName, opType, deltaRecords });
 
     if (!deltaRecords.length) {
         return baseResult;
@@ -696,7 +696,7 @@ const deltaRecordsProcessor = <T = { [key: string]: any }>(
             idField
         );
 
-        logger({ incomingRecord, isRemove });
+        //logger({ incomingRecord, isRemove });
 
         result = updater([...result], incomingRecord);
     });
@@ -714,7 +714,7 @@ const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationV
     typename: string,
     idField: string = 'id',
 ) => {
-    const updateLogger = logger.extend('update');
+    const updateLogger = undefined; //logger.extend('update');
 
     const opDefinition = getMainDefinition(otherQuery.query);
     const { name: { value: opName }, alias: opAliasNode } = opDefinition.selectionSet.selections[0] as FieldNode;
@@ -728,7 +728,7 @@ const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationV
     const deltaRecords = [].concat(records) as T[];
 
     if (!baseQuery || !baseQuery.query) {
-        updateLogger('No baseQuery provided');
+        //updatelogger('No baseQuery provided');
     } else {
         const { query, variables } = baseQuery;
 
