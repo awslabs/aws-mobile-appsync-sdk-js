@@ -87,9 +87,9 @@ export type CacheUpdateQuery = QueryWithVariables | DocumentNode;
 
 export type CacheUpdatesDefinitions = {
     [key in CacheOperationTypes]?: CacheUpdateQuery | CacheUpdateQuery[]
-};
+} | CacheUpdateQuery | CacheUpdateQuery[];
 
-export type CacheUpdatesOptions = (variables?: object) => CacheUpdatesDefinitions | CacheUpdatesDefinitions;
+export type CacheUpdatesOptions = ((variables?: object) => CacheUpdatesDefinitions) | CacheUpdatesDefinitions;
 
 /**
  * Builds a SubscribeToMoreOptions object ready to be used by Apollo's subscribeToMore() to automatically update the query result in the
@@ -171,9 +171,14 @@ const getOpTypeQueriesMap = (cacheUpdateQuery: CacheUpdatesOptions, variables): 
     const cacheUpdateQueryVal = typeof cacheUpdateQuery === 'function' ?
         cacheUpdateQuery(variables) :
         cacheUpdateQuery || {};
-    const opTypeQueriesMap = isDocument(cacheUpdateQueryVal) ?
-        { [CacheOperationTypes.AUTO]: [].concat(cacheUpdateQueryVal) } as CacheUpdatesDefinitions :
-        cacheUpdateQueryVal;
+
+    let opTypeQueriesMap = cacheUpdateQueryVal;
+
+    if (isDocument(cacheUpdateQueryVal) ||
+        isDocument((cacheUpdateQueryVal as QueryWithVariables).query) ||
+        Array.isArray(cacheUpdateQuery)) {
+        opTypeQueriesMap = { [CacheOperationTypes.AUTO]: [].concat(cacheUpdateQueryVal) } as CacheUpdatesDefinitions;
+    }
 
     return opTypeQueriesMap;
 };
