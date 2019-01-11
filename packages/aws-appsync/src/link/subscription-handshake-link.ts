@@ -72,7 +72,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                 errors: any[]
             } = subsInfo;
 
-        if (errors.length) {
+        if (errors && errors.length) {
             return new Observable(observer => {
                 observer.error(new ApolloError({
                     errorMessage: 'Error during subscription handshake',
