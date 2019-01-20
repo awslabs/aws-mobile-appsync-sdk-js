@@ -14,15 +14,20 @@ import { ExecutionResult, GraphQLError } from 'graphql';
 
 import upload from "./complex-object-link-uploader";
 import { AWSAppsyncGraphQLError } from '../types';
+import { S3 } from "aws-sdk";
+
+export interface S3Config{
+    modifyPutObjectRequest?: (request: S3.PutObjectRequest) => S3.PutObjectRequest
+}
 
 export class ComplexObjectLink extends ApolloLink {
 
     private link: ApolloLink;
 
-    constructor(credentials) {
+    constructor(credentials, s3Config = null) {
         super();
 
-        this.link = complexObjectLink(credentials);
+        this.link = complexObjectLink(credentials, s3Config);
     }
 
     request(operation, forward) {
@@ -30,7 +35,9 @@ export class ComplexObjectLink extends ApolloLink {
     }
 }
 
-export const complexObjectLink = (credentials) => {
+
+
+export const complexObjectLink = (credentials, s3Config = null) => {
     return new ApolloLink((operation, forward) => {
         return new Observable(observer => {
             let handle;
@@ -46,7 +53,7 @@ export const complexObjectLink = (credentials) => {
 
                 uploadPromise = Promise.resolve(uploadCredentials)
                     .then(credentials => {
-                        const uploadPromises = Object.entries(objectsToUpload).map(([_, fileField]) => upload(fileField, { credentials }));
+                        const uploadPromises = Object.entries(objectsToUpload).map(([_, fileField]) => upload(fileField, { credentials, s3Config }));
 
                         return Promise.all([operation, ...uploadPromises] as Promise<any>[]);
                     })
