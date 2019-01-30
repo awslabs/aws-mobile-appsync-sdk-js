@@ -29,7 +29,7 @@ export default (fileField, { credentials, s3Config }) => {
         ContentType,
     };
 
-    if (s3Config.modifyPutObjectRequest != null) {
+    if (s3Config && s3Config.modifyPutObjectRequest) {
         params = s3Config.modifyPutObjectRequest(params);
     }
 
