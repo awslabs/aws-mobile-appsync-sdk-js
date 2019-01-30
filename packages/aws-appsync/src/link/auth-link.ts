@@ -36,7 +36,7 @@ export class AuthLink extends ApolloLink {
     private link: ApolloLink;
 
     /**
-     * 
+     *
      * @param {*} options
      */
     constructor(options) {
@@ -167,7 +167,7 @@ export const authLink = ({ url, region, auth: { type = AUTH_TYPE.NONE, credentia
 const formatAsRequest = ({ operationName, variables, query }, options) => {
     const body = {
         operationName,
-        variables,
+        variables: removeTemporaryVariables(variables),
         query: print(query)
     };
 
@@ -182,3 +182,15 @@ const formatAsRequest = ({ operationName, variables, query }, options) => {
         },
     };
 }
+
+/**
+ * Removes all temporary variables (starting with '@@') so that the signature matches the final request.
+ */
+const removeTemporaryVariables = (variables: any) =>
+  Object.keys(variables)
+    .filter(key => !key.startsWith("@@"))
+    .reduce((acc, key) => {
+      acc[key] = variables[key];
+      return acc;
+    }, {});
+
