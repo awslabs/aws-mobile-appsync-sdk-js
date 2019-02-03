@@ -17,14 +17,16 @@ import { NORMALIZED_CACHE_KEY, METADATA_KEY } from "../cache";
 import { AWSAppsyncGraphQLError } from "../types";
 import { Store } from "redux";
 import { OfflineCache, AppSyncMetadataState } from "../cache/offline-cache";
-import { isUuid, getOperationFieldName } from "../utils";
+import { isUuid, getOperationFieldName, rootLogger } from "../utils";
 import AWSAppSyncClient from "..";
 import { ApolloCache } from "apollo-cache";
 import { MutationUpdaterFn, MutationQueryReducersMap, ApolloError } from "apollo-client";
-import { RefetchQueryDescription } from "apollo-client/core/watchQueryOptions";
+import { RefetchQueryDescription, FetchPolicy } from "apollo-client/core/watchQueryOptions";
 import { OfflineCallback } from "../client";
 import { SKIP_RETRY_KEY } from "./retry-link";
 import { OfflineEffectConfig } from "../store";
+
+const logger = rootLogger.extend('offline-link');
 
 const actions = {
     SAVE_SNAPSHOT: 'SAVE_SNAPSHOT',
@@ -127,6 +129,7 @@ export type EnqueuedMutationEffect<T> = {
     updateQueries: MutationQueryReducersMap<T>,
     refetchQueries: ((result: ExecutionResult) => RefetchQueryDescription) | RefetchQueryDescription,
     observer: ZenObservable.SubscriptionObserver<T>,
+    fetchPolicy?: FetchPolicy
 };
 
 const enqueueMutation = <T>(operation: Operation, theStore: Store<OfflineCache>, observer: ZenObservable.SubscriptionObserver<T>): object => {
@@ -137,25 +140,29 @@ const enqueueMutation = <T>(operation: Operation, theStore: Store<OfflineCache>,
             update,
             updateQueries,
             refetchQueries,
+            fetchPolicy,
         },
     } = operation.getContext();
 
     const optimisticResponse = typeof origOptimistic === 'function' ? origOptimistic(variables) : origOptimistic;
 
     setImmediate(() => {
+        const effect: EnqueuedMutationEffect<any> = {
+            optimisticResponse,
+            operation,
+            update,
+            updateQueries,
+            refetchQueries,
+            fetchPolicy,
+            observer,
+        };
+
         theStore.dispatch({
             type: actions.ENQUEUE,
             payload: { optimisticResponse },
             meta: {
                 offline: {
-                    effect: {
-                        optimisticResponse,
-                        operation,
-                        update,
-                        updateQueries,
-                        refetchQueries,
-                        observer,
-                    } as EnqueuedMutationEffect<any>,
+                    effect,
                     commit: { type: actions.COMMIT },
                     rollback: { type: actions.ROLLBACK },
                 }
@@ -180,10 +187,6 @@ const enqueueMutation = <T>(operation: Operation, theStore: Store<OfflineCache>,
     return result;
 }
 
-interface CanBeSilenced<TCache> extends ApolloCache<TCache> {
-    silenceBroadcast?: boolean
-};
-
 const effect = async <TCache extends NormalizedCacheObject>(
     store: Store<OfflineCache>,
     client: AWSAppSyncClient<TCache>,
@@ -192,13 +195,13 @@ const effect = async <TCache extends NormalizedCacheObject>(
     callback: OfflineCallback,
 ): Promise<FetchResult<Record<string, any>, Record<string, any>>> => {
     const doIt = true;
-    const { cache }: { cache: CanBeSilenced<TCache> } = client;
     const {
         optimisticResponse: origOptimistic,
         operation: { variables: origVars, query: mutation, context },
         update,
         updateQueries,
         refetchQueries,
+        fetchPolicy,
         observer,
     } = effect;
 
@@ -226,6 +229,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
         };
         const operation = buildOperationForLink.call(client.queryManager, mutation, variables, extraContext);
 
+        logger('Executing link', operation);
         execute(client.link, operation).subscribe({
             next: data => {
                 boundSaveServerId(store, optimisticResponse, data.data);
@@ -240,14 +244,16 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
                 const dataStore = client.queryManager.dataStore;
 
-                dataStore.markMutationResult({
-                    mutationId: null,
-                    result: data,
-                    document: mutation,
-                    variables,
-                    updateQueries: {}, // TODO: populate this?
-                    update
-                });
+                if (fetchPolicy !== 'no-cache') {
+                    dataStore.markMutationResult({
+                        mutationId: null,
+                        result: data,
+                        document: mutation,
+                        variables,
+                        updateQueries: {}, // TODO: populate this?
+                        update
+                    });
+                }
 
                 boundSaveSnapshot(store, client.cache);
 
@@ -262,30 +268,36 @@ const effect = async <TCache extends NormalizedCacheObject>(
                             operation: { variables = {}, query: document = null } = {},
                             update,
                             optimisticResponse: origOptimisticResponse,
+                            fetchPolicy,
                         } = effect as EnqueuedMutationEffect<any>;
 
                         if (typeof update !== 'function') {
+                            logger('No update function for mutation', { document, variables });
                             return;
                         }
 
                         const optimisticResponse = replaceUsingMap({ ...origOptimisticResponse }, idsMap);
                         const result = { data: optimisticResponse };
 
-                        dataStore.markMutationResult({
-                            mutationId: null,
-                            result,
-                            document,
-                            variables,
-                            updateQueries: {}, // TODO: populate this?
-                            update
-                        });
+                        if (fetchPolicy !== 'no-cache') {
+                            logger('Running update function for mutation', { document, variables });
+
+                            dataStore.markMutationResult({
+                                mutationId: null,
+                                result,
+                                document,
+                                variables,
+                                updateQueries: {}, // TODO: populate this?
+                                update
+                            });
+                        }
                     });
 
                 client.queryManager.broadcastQueries();
 
                 resolve({ data });
 
-                if (observer.next) {
+                if (observer.next && !observer.closed) {
                     observer.next({ ...data, [IS_OPTIMISTIC_KEY]: false });
                     observer.complete();
                 } else {
@@ -323,7 +335,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 }
             },
             error: err => {
-                // TODO: Undo cache updates?
+                logger('Error when executing link', err);
 
                 reject(err);
             }
@@ -439,14 +451,10 @@ const discard = (callback: OfflineCallback, error, action, retries) => {
 
     if (discardResult) {
         // Call global error callback or observer
-        try {
-            if (typeof callback === 'function') {
-                tryFunctionOrLogError(() => {
-                    callback({ error }, null);
-                });
-            }
-        } catch (error) {
-            // TODO: warn
+        if (typeof callback === 'function') {
+            tryFunctionOrLogError(() => {
+                callback({ error }, null);
+            });
         }
     }
 
@@ -457,7 +465,7 @@ const _discard = (error, action: OfflineAction, retries) => {
     const { graphQLErrors = [] }: { graphQLErrors: AWSAppsyncGraphQLError[] } = error;
 
     if (graphQLErrors.length) {
-        // console.error('Discarding action.', action, graphQLErrors);
+        logger('Discarding action.', action, graphQLErrors);
 
         return true;
     } else {
@@ -465,7 +473,7 @@ const _discard = (error, action: OfflineAction, retries) => {
         const appSyncClientError = graphQLErrors.find(err => err.errorType && err.errorType.startsWith('AWSAppSyncClient:'));
 
         if (appSyncClientError) {
-            // console.error('Discarding action.', action, appSyncClientError);
+            logger('Discarding action.', action, appSyncClientError);
 
             return true;
         }

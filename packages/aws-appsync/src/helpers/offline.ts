@@ -12,7 +12,9 @@ import { ApolloClient, MutationOptions, SubscribeToMoreOptions, OperationVariabl
 import { DocumentNode, InputObjectTypeDefinitionNode, NamedTypeNode } from 'graphql';
 import AWSAppSyncClient from '../client';
 import { replaceUsingMap } from '../link';
-import { getOperationFieldName } from '../utils';
+import { getOperationFieldName, rootLogger } from '../utils';
+
+const logger = rootLogger.extend('offline-helper');
 
 export enum CacheOperationTypes {
     AUTO = 'auto',
@@ -85,9 +87,9 @@ export type CacheUpdateQuery = QueryWithVariables | DocumentNode;
 
 export type CacheUpdatesDefinitions = {
     [key in CacheOperationTypes]?: CacheUpdateQuery | CacheUpdateQuery[]
-};
+} | CacheUpdateQuery | CacheUpdateQuery[];
 
-export type CacheUpdatesOptions = (variables?: object) => CacheUpdatesDefinitions | CacheUpdatesDefinitions;
+export type CacheUpdatesOptions = ((variables?: object) => CacheUpdatesDefinitions) | CacheUpdatesDefinitions;
 
 /**
  * Builds a SubscribeToMoreOptions object ready to be used by Apollo's subscribeToMore() to automatically update the query result in the
@@ -150,8 +152,10 @@ export const getUpdater = <T>(opType: CacheOperationTypes, idField = 'id'): (arr
 
     switch (opType) {
         case CacheOperationTypes.ADD:
-        case CacheOperationTypes.UPDATE:
             updater = (arr, newItem) => !newItem ? [...arr] : [...arr.filter(item => item[idField] !== newItem[idField]), newItem];
+            break;
+        case CacheOperationTypes.UPDATE:
+            updater = (arr, newItem) => !newItem ? [...arr] : arr.map(item => item[idField] === newItem[idField] ? newItem : item);
             break;
         case CacheOperationTypes.REMOVE:
             updater = (arr, newItem) => !newItem ? [] : arr.filter(item => item[idField] !== newItem[idField]);
@@ -167,9 +171,14 @@ const getOpTypeQueriesMap = (cacheUpdateQuery: CacheUpdatesOptions, variables): 
     const cacheUpdateQueryVal = typeof cacheUpdateQuery === 'function' ?
         cacheUpdateQuery(variables) :
         cacheUpdateQuery || {};
-    const opTypeQueriesMap = isDocument(cacheUpdateQueryVal) ?
-        { [CacheOperationTypes.AUTO]: [].concat(cacheUpdateQueryVal) } as CacheUpdatesDefinitions :
-        cacheUpdateQueryVal;
+
+    let opTypeQueriesMap = cacheUpdateQueryVal;
+
+    if (isDocument(cacheUpdateQueryVal) ||
+        isDocument((cacheUpdateQueryVal as QueryWithVariables).query) ||
+        Array.isArray(cacheUpdateQuery)) {
+        opTypeQueriesMap = { [CacheOperationTypes.AUTO]: [].concat(cacheUpdateQueryVal) } as CacheUpdatesDefinitions;
+    }
 
     return opTypeQueriesMap;
 };
@@ -298,7 +307,7 @@ const buildMutation = <T = OperationVariables>(
 
                 result = queryRead;
             } catch (err) {
-                console.warn('Skipping query', query, err.message);
+                logger('Skipping query', query, err.message);
 
                 return;
             }
@@ -358,7 +367,7 @@ const buildMutation = <T = OperationVariables>(
                     try {
                         data = proxy.readQuery({ query, variables: queryVars });
                     } catch (err) {
-                        console.warn('Skipping query', query, err.message);
+                        logger('Skipping query', query, err.message);
 
                         return;
                     }

@@ -6,6 +6,7 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
+import { rootLogger } from "./utils";
 import { applyMiddleware, createStore, compose, combineReducers, Store, Reducer, AnyAction, ReducersMapObject } from 'redux';
 import { offline } from '@redux-offline/redux-offline';
 import defaultOfflineConfig from '@redux-offline/redux-offline/lib/defaults';
@@ -23,6 +24,8 @@ import { Observable } from 'apollo-link';
 
 const { detectNetwork } = defaultOfflineConfig;
 
+const logger = rootLogger.extend('store');
+
 const newStore = <TCacheShape extends NormalizedCacheObject>(
     clientGetter: () => AWSAppSyncClient<TCacheShape> = () => null,
     persistCallback = () => null,
@@ -30,6 +33,7 @@ const newStore = <TCacheShape extends NormalizedCacheObject>(
     storage: any,
     callback: OfflineCallback = () => { },
 ): Store<any> => {
+    logger('Creating store');
 
     const store = createStore(
         combineReducers({
@@ -50,7 +54,11 @@ const newStore = <TCacheShape extends NormalizedCacheObject>(
             offline({
                 ...defaultOfflineConfig,
                 retry: getEffectDelay,
-                persistCallback,
+                persistCallback: () => {
+                    logger('Storage ready');
+
+                    persistCallback();
+                },
                 persistOptions: {
                     ...(storage && { storage }),
                     whitelist: [
@@ -115,17 +123,24 @@ const effect = async (effect, action: OfflineAction, store, clientGetter, callba
     });
 
     if (config && config.effect) {
+        logger(`Executing effect for ${action.type}`);
+
         return config.effect(store, clientGetter, effect, action, callback, observable);
     }
+
+    logger(`No effect found for ${action.type}`);
 };
 
 const discard = (callback, error, action, retries) => {
     const { discard } = offlineEffectsConfigs[action.type];
 
     if (discard) {
+        logger(`Executing discard for ${action.type}`, discard);
+
         return discard(callback, error, action, retries);
     }
 
+    logger(`No custom discard found for ${action.type}. Discarding effect.`);
     return true;
 };
 

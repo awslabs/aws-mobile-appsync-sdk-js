@@ -6,11 +6,14 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
+import { rootLogger } from "../utils";
 import { Cache } from 'apollo-cache';
 import { InMemoryCache, ApolloReducerConfig, defaultDataIdFromObject, NormalizedCacheObject } from 'apollo-cache-inmemory';
-import { Store } from 'redux';
-
+import { Store, AnyAction, Action } from 'redux';
 import { DeltaSyncState, DELTASYNC_KEY } from '../deltaSync';
+import { ThunkAction } from 'redux-thunk';
+
+const logger = rootLogger.extend('offline-cache');
 
 // Offline schema keys: Do not change in a non-backwards-compatible way
 export const NORMALIZED_CACHE_KEY = 'appsync';
@@ -46,27 +49,44 @@ export interface OfflineCache extends AppState {
     [METADATA_KEY]: AppSyncMetadataState,
 }
 
+export type OfflineCacheOptions = {
+    store: Store<OfflineCache>,
+    storeCacheRootMutation?: boolean,
+}
+
+function isOfflineCacheOptions(obj: any): obj is OfflineCacheOptions {
+    return !!(obj as OfflineCacheOptions).store;
+};
+
 export default class MyCache extends InMemoryCache {
 
     private store: Store<OfflineCache>;
+    private storeCacheRootMutation: boolean = false;
 
-    constructor(store: Store<OfflineCache>, config: ApolloReducerConfig = {}) {
+    constructor(optionsOrStore: Store<OfflineCache> | OfflineCacheOptions, config: ApolloReducerConfig = {}) {
         super(config);
 
-        this.store = store;
+        if (isOfflineCacheOptions(optionsOrStore)) {
+            const { store, storeCacheRootMutation = false } = optionsOrStore;
 
-        const cancelSubscription = store.subscribe(() => {
+            this.store = store;
+            this.storeCacheRootMutation = storeCacheRootMutation;
+        } else {
+            this.store = optionsOrStore;
+        }
+
+        const cancelSubscription = this.store.subscribe(() => {
             const { [NORMALIZED_CACHE_KEY]: normCache = {}, rehydrated = false } = this.store.getState();
             super.restore({ ...normCache });
             if (rehydrated) {
-                // console.log('Rehydrated! Cancelling subscription.');
+                logger('Rehydrated! Cancelling subscription.');
                 cancelSubscription();
             }
         });
     }
 
     restore(data: NormalizedCacheObject) {
-        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data) as any);
+        boundWriteCache(this.store, data);
 
         super.restore(data);
         super.broadcastWatches();
@@ -76,17 +96,23 @@ export default class MyCache extends InMemoryCache {
 
     write(write: Cache.WriteOptions) {
         super.write(write);
+
+        if (!this.storeCacheRootMutation && write.dataId === 'ROOT_MUTATION') {
+            this.data.delete('ROOT_MUTATION');
+        }
+
         if (this.data && typeof (this.data as any).record === 'undefined') {
             // do not persist contents of a RecordingCache
             const data = super.extract(true);
-            this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, data) as any);
+            boundWriteCache(this.store, data);
         } else {
-            // console.log('NO DISPATCH FOR RECORDINGCACHE')
+            logger('No dispatch for RecordingCache');
         }
     }
 
     reset() {
-        this.store.dispatch(writeThunk(WRITE_CACHE_ACTION, {}) as any);
+        logger('Resetting cache');
+        boundWriteCache(this.store, {});
 
         return super.reset();
     }
@@ -98,12 +124,18 @@ export default class MyCache extends InMemoryCache {
     }
 }
 
-const writeThunk = (type, payload) => (dispatch) => {
-    dispatch({
+const boundWriteCache = (store: Store<OfflineCache>, data: NormalizedCacheObject) => {
+    logger(`Dispatching ${WRITE_CACHE_ACTION}`, { data });
+
+    store.dispatch(writeThunk(WRITE_CACHE_ACTION, data) as any as Action);
+};
+
+const writeThunk:
+    (type: string, payload: any) => ThunkAction<Action, OfflineCache, null, AnyAction> =
+    (type, payload) => (dispatch, _getState) => dispatch({
         type,
         payload,
     });
-};
 
 export const reducer = () => ({
     [NORMALIZED_CACHE_KEY]: (state = {}, action) => {

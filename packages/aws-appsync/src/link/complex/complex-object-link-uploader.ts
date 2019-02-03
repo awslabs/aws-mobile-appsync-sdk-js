@@ -16,7 +16,6 @@ export default (fileField, { credentials }) => {
         mimeType: ContentType,
         localUri: Body,
     } = fileField;
-
     const s3 = new S3({
         credentials,
         region,

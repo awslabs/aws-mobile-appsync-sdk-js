@@ -15,7 +15,8 @@ import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 import upload from "./complex-object-link-uploader";
 import { AWSAppsyncGraphQLError } from '../../types';
 
-type CredentialsGetter = () => (Credentials | CredentialsOptions | null) | Credentials | CredentialsOptions | null;
+type CredentialsGetter = () => (Credentials | CredentialsOptions | Promise<Credentials> | Promise<CredentialsOptions> | null) | Credentials | CredentialsOptions | Promise<Credentials> | Promise<CredentialsOptions> | null;
+
 
 
 export class ComplexObjectLink extends ApolloLink {
@@ -37,13 +38,11 @@ export const complexObjectLink = (credentials: CredentialsGetter) => {
     return new ApolloLink((operation, forward) => {
         return new Observable(observer => {
             let handle;
-
             const { operation: operationType } = getOperationDefinition(operation.query);
             const isMutation = operationType === 'mutation';
             const objectsToUpload = isMutation ? findInObject(operation.variables) : {};
 
             let uploadPromise = Promise.resolve(operation);
-
             if (Object.keys(objectsToUpload).length) {
                 const uploadCredentials = typeof credentials === 'function' ? (credentials as any).call() : credentials;
 
@@ -99,7 +98,6 @@ const findInObject = obj => {
             const isOfType = hasValue && types.reduce((prev, curr) => {
                 return prev || typeof val[field.name] === curr;
             }, false);
-
             return isOfType;
         });
     };

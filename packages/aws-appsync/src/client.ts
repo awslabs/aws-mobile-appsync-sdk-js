@@ -137,6 +137,7 @@ export interface AWSAppSyncClientOptions {
 export interface OfflineConfig {
     storage?: any,
     callback?: OfflineCallback,
+    storeCacheRootMutation?: boolean,
 };
 
 // TODO: type defs
@@ -175,6 +176,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         offlineConfig: {
             storage = undefined,
             callback = () => { },
+            storeCacheRootMutation = false,
         } = {},
     }: AWSAppSyncClientOptions, options?: Partial<ApolloClientOptions<TCacheShape>>) {
         const { cache: customCache = undefined, link: customLink = undefined } = options || {};
@@ -194,7 +196,9 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             storage,
             callback
         );
-        const cache: ApolloCache<any> = disableOffline ? (customCache || new InMemoryCache(cacheOptions)) : new OfflineCache(store, cacheOptions);
+        const cache: ApolloCache<any> = disableOffline
+            ? (customCache || new InMemoryCache(cacheOptions))
+            : new OfflineCache({ store, storeCacheRootMutation }, cacheOptions);
 
         const waitForRehydrationLink = new ApolloLink((op, forward) => {
             let handle = null;
@@ -240,6 +244,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             context: origContext,
             optimisticResponse,
             update,
+            fetchPolicy,
             ...otherOptions
         } = options;
 
@@ -249,6 +254,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
                 doIt,
                 optimisticResponse,
                 update,
+                fetchPolicy,
                 // updateQueries,
                 // refetchQueries,
             }
@@ -258,6 +264,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             optimisticResponse,
             context,
             update,
+            fetchPolicy,
             ...otherOptions,
         });
     }

@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync",
-  "version": "1.5.2",
+  "version": "1.7.1-b",
   "main": "lib/index.js",
   "license": "SEE LICENSE IN LICENSE",
   "description": "AWS Mobile AppSync SDK for JavaScript",
@@ -27,6 +27,7 @@
     "apollo-link-http": "1.5.7",
     "apollo-link-retry": "2.2.5",
     "aws-sdk": "2.329.0",
+    "debug": "2.6.9",
     "graphql": "14.0.2",
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0",

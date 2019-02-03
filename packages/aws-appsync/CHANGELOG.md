@@ -3,6 +3,59 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.7.1"></a>
+## [1.7.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.7.0...aws-appsync@1.7.1) (2019-01-11)
+
+
+### Bug Fixes
+
+* **deltasync:** Fix error when baseQuery is not specified ([#320](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/320)) ([8dbe01d](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/8dbe01d))
+* **offline-helpers:** Offline helpers types and fix issue with different options ([#329](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/329)) ([42ac50a](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/42ac50a))
+* **offline-helpers:** Preserve order of elements in update cache operation type ([#325](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/325)) ([5b49946](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/5b49946))
+* **subscriptions:** Do not retry mqtt disconnections ([#319](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/319)) ([b933379](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/b933379))
+* **subscriptions:** Guard against errors: null response in subscription handshake ([#337](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/337)) ([a2035d0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/a2035d0))
+
+
+
+
+<a name="1.7.0"></a>
+# [1.7.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.6.0...aws-appsync@1.7.0) (2018-12-12)
+
+
+### Features
+
+* **logging:** Add logging ([#316](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/316)) ([04015ee](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/04015ee))
+
+
+
+
+<a name="1.6.0"></a>
+# [1.6.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.5.2...aws-appsync@1.6.0) (2018-12-07)
+
+
+### Bug Fixes
+
+* **offline:** Do not write mutations to cache if fetchPolicy = no-cache ([#312](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/312)) ([e5f66a9](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/e5f66a9))
+
+
+### Features
+
+* **offline-cache:** Add option to prevent storing the ROOT_MUTATION ([#313](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/313)) ([20e387a](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/20e387a))
+
+
+
+
+<a name="1.5.2"></a>
+## [1.5.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.5.1...aws-appsync@1.5.2) (2018-12-04)
+
+
+### Bug Fixes
+
+* **retry-link:** RetryLink keeps retrying even if 401 is thrown ([#311](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/311)) ([1d0b904](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/1d0b904)), closes [#308](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/308)
+
+
+
+
 <a name="1.5.1"></a>
 ## [1.5.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.5.0...aws-appsync@1.5.1) (2018-11-21)
 
