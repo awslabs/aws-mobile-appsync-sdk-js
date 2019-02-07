@@ -6,7 +6,4 @@
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY 
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-export { AuthType, AuthLink, AuthOptions } from './auth';
-export { OfflineLink, replaceUsingMap } from './offline-link';
-export { NonTerminatingHttpLink } from "./non-terminating-http-link";
-export { NonTerminatingLink } from "./non-terminating-link";
+export { createSubscriptionHandshakeLink as subscription } from './subscription-handshake-link';

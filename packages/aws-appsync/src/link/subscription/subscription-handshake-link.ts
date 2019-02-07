@@ -8,12 +8,15 @@
  */
 import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
 
-import { rootLogger } from "../utils";
-import * as Paho from '../vendor/paho-mqtt';
+import { rootLogger } from "../../utils";
+import * as Paho from '../../vendor/paho-mqtt';
 import { ApolloError } from "apollo-client";
-import { FieldNode } from "graphql";
+import { OperationDefinitionNode, FieldNode } from "graphql";
 import { getMainDefinition } from "apollo-utilities";
-import { PERMANENT_ERROR_KEY } from "./retry-link";
+import { PERMANENT_ERROR_KEY } from "../retry-link";
+import { createHttpLink } from 'apollo-link-http';
+import { NonTerminatingLink }  from '../';
+import { CONTROL_EVENTS_KEY } from "../../utils";
 
 const logger = rootLogger.extend('subscriptions');
 const mqttLogger = logger.extend('mqtt');
@@ -41,7 +44,36 @@ type ClientObservers = {
     observers: Set<ZenObservable.Observer<any>>,
 }
 
-export const CONTROL_EVENTS_KEY = '@@controlEvents';
+export const createSubscriptionHandshakeLink = (url: string, resultsFetcherLink: ApolloLink = createHttpLink({ uri: url })) => {
+        return ApolloLink.split(
+            operation => {
+                const { query } = operation;
+                const { kind, operation: graphqlOperation } = getMainDefinition(query) as OperationDefinitionNode;
+                const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
+
+                return isSubscription;
+            },
+            ApolloLink.from([
+                new NonTerminatingLink('controlMessages', {
+                    link: new ApolloLink((operation, _forward) => new Observable<any>(observer => {
+                        const { variables: { [CONTROL_EVENTS_KEY]: controlEvents, ...variables } } = operation;
+
+                        if (typeof controlEvents !== 'undefined') {
+                            operation.variables = variables;
+                        }
+
+                        observer.next({ [CONTROL_EVENTS_KEY]: controlEvents });
+
+                        return () => { };
+                    }))
+                }),
+                new NonTerminatingLink('subsInfo', { link: resultsFetcherLink }),
+
+                new SubscriptionHandshakeLink('subsInfo'),
+            ]),
+            resultsFetcherLink,
+        );
+};
 
 export class SubscriptionHandshakeLink extends ApolloLink {
 

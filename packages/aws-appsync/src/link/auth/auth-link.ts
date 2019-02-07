@@ -37,7 +37,6 @@ export class AuthLink extends ApolloLink {
                 ...extraHeaders
             },
         });
-
         return forward(operation);
     };
 

@@ -11,7 +11,6 @@ import ApolloClient, { ApolloClientOptions, MutationOptions, OperationVariables,
 import { InMemoryCache, ApolloReducerConfig, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloLink, Observable, FetchResult } from 'apollo-link';
 import { createHttpLink } from 'apollo-link-http';
-import { getMainDefinition } from 'apollo-utilities';
 import { Store } from 'redux';
 
 import { OfflineCache, defaultDataIdFromObject } from './cache/index';
@@ -20,53 +19,22 @@ import {
     OfflineLink,
     AuthLink,
     AuthType,
-    NonTerminatingLink,
-    SubscriptionHandshakeLink
 } from './link';
 import { createStore } from './store';
 import { ApolloCache } from 'apollo-cache';
 import { AuthOptions } from './link';
-import { OperationDefinitionNode, DocumentNode } from 'graphql';
+import { DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
 import { createRetryLink } from './link/retry-link';
 import { boundEnqueueDeltaSync, buildSync, DELTASYNC_KEY, hashForOptions } from "./deltaSync";
 import { Subscription } from 'apollo-client/util/Observable';
-import { CONTROL_EVENTS_KEY } from './link/subscription-handshake-link';
 
 export { defaultDataIdFromObject };
 
-export const createSubscriptionHandshakeLink = (url: string, resultsFetcherLink: ApolloLink = createHttpLink({ uri: url })) => {
-    return ApolloLink.split(
-        operation => {
-            const { query } = operation;
-            const { kind, operation: graphqlOperation } = getMainDefinition(query) as OperationDefinitionNode;
-            const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
 
-            return isSubscription;
-        },
-        ApolloLink.from([
-            new NonTerminatingLink('controlMessages', {
-                link: new ApolloLink((operation, _forward) => new Observable<any>(observer => {
-                    const { variables: { [CONTROL_EVENTS_KEY]: controlEvents, ...variables } } = operation;
 
-                    if (typeof controlEvents !== 'undefined') {
-                        operation.variables = variables;
-                    }
-
-                    observer.next({ [CONTROL_EVENTS_KEY]: controlEvents });
-
-                    return () => { };
-                }))
-            }),
-            new NonTerminatingLink('subsInfo', { link: resultsFetcherLink }),
-            new SubscriptionHandshakeLink('subsInfo'),
-        ]),
-        resultsFetcherLink,
-    );
-};
-
-export const createAuthLink = ({ authType, url, region  }: AuthOptions) => new AuthLink({ authType, url, region });
+export const createAuthLink = ({ authType, url, region }: AuthOptions) => new AuthLink({ authType, url, region });
 
 export const createAppSyncLink = ({
     url,
@@ -75,22 +43,26 @@ export const createAppSyncLink = ({
     complexObjects,
     resultsFetcherLink = createHttpLink({ uri: url }),
     conflictResolver,
+    subscription,
 }: {
-        url: string,
-        region: string,
-        authType: AuthType,
-        complexObjects: ApolloLink,
-        resultsFetcherLink?: ApolloLink,
-        conflictResolver?: ConflictResolver,
-    }) => {
+    url: string,
+    region: string,
+    authType: AuthType,
+    complexObjects: ApolloLink,
+    resultsFetcherLink?: ApolloLink,
+    conflictResolver?: ConflictResolver,
+    subscription?: (string, ApolloLink) => ApolloLink,
+}) => {
     const link = ApolloLink.from([
         createLinkWithStore((store) => new OfflineLink(store)),
         new ConflictResolutionLink(conflictResolver),
         complexObjects,//new ComplexObjectLink(complexObjectsCredentials),
-        createRetryLink(ApolloLink.from([
-            createAuthLink({ authType, url, region  }),
-            createSubscriptionHandshakeLink(url, resultsFetcherLink)
-        ]))
+        subscription ? createRetryLink(ApolloLink.from([
+            createAuthLink({ authType, url, region }),
+            subscription(url, resultsFetcherLink)])) :
+            createRetryLink(ApolloLink.from([
+                createAuthLink({ authType, url, region }), resultsFetcherLink]))
+
     ].filter(Boolean));
 
     return link;
@@ -132,6 +104,7 @@ export interface AWSAppSyncClientOptions {
     cacheOptions?: ApolloReducerConfig,
     disableOffline?: boolean,
     offlineConfig?: OfflineConfig,
+    subscription?: (string, ApolloLink) => ApolloLink,
 }
 
 export interface OfflineConfig {
@@ -173,6 +146,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         complexObjects,
         cacheOptions = {},
         disableOffline = false,
+        subscription,
         offlineConfig: {
             storage = undefined,
             callback = () => { },
@@ -215,7 +189,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
                 };
             });
         });
-        const link = waitForRehydrationLink.concat(customLink || createAppSyncLink({ url, region, authType, complexObjects, conflictResolver }));
+        const link = waitForRehydrationLink.concat(customLink || createAppSyncLink({ url, region, authType, complexObjects, conflictResolver, subscription }));
 
         const newOptions = {
             ...options,
