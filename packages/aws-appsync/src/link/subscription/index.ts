@@ -7,3 +7,6 @@
  * KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 export { createSubscriptionHandshakeLink as subscription } from './subscription-handshake-link';
+export { NonTerminatingHttpLink } from "./non-terminating-http-link";
+export { NonTerminatingLink } from "./non-terminating-link";
+

@@ -11,7 +11,7 @@ import { cloneDeep } from 'apollo-utilities';
 import { ApolloClient, MutationOptions, SubscribeToMoreOptions, OperationVariables } from 'apollo-client';
 import { DocumentNode, InputObjectTypeDefinitionNode, NamedTypeNode } from 'graphql';
 import AWSAppSyncClient from '../client';
-import { replaceUsingMap } from '../link';
+import { replaceUsingMap } from '../link/offline-link';
 import { getOperationFieldName, rootLogger } from '../utils';
 
 const logger = rootLogger.extend('offline-helper');

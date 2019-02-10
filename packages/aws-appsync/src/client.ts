@@ -8,7 +8,7 @@
  */
 import 'setimmediate';
 import ApolloClient, { ApolloClientOptions, MutationOptions, OperationVariables, MutationUpdaterFn } from 'apollo-client';
-import { InMemoryCache, ApolloReducerConfig, NormalizedCacheObject } from 'apollo-cache-inmemory';
+import { ApolloReducerConfig, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloLink, Observable, FetchResult } from 'apollo-link';
 import { createHttpLink } from 'apollo-link-http';
 import { Store } from 'redux';
@@ -16,10 +16,12 @@ import { Store } from 'redux';
 import { OfflineCache, defaultDataIdFromObject } from './cache/index';
 import { OfflineCache as OfflineCacheType, METADATA_KEY } from './cache/offline-cache';
 import {
-    OfflineLink,
     AuthLink,
     AuthType,
 } from './link';
+import {
+    OfflineLink
+} from './link/offline-link';
 import { createStore } from './store';
 import { ApolloCache } from 'apollo-cache';
 import { AuthOptions } from './link';
@@ -136,8 +138,6 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         return this.hydratedPromise
     };
 
-    private _disableOffline: boolean;
-
     constructor({
         url,
         region,
@@ -145,7 +145,6 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         conflictResolver,
         complexObjects,
         cacheOptions = {},
-        disableOffline = false,
         subscription,
         offlineConfig: {
             storage = undefined,
@@ -163,16 +162,16 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
 
         let resolveClient;
 
-        const dataIdFromObject = disableOffline ? () => null : cacheOptions.dataIdFromObject || defaultDataIdFromObject;
-        const store = disableOffline ? null : createStore(
+        //const subs = subscription ? require('./link/subscription') : null;
+
+        const dataIdFromObject = cacheOptions.dataIdFromObject || defaultDataIdFromObject;
+        const store = createStore(
             () => this, () => { resolveClient(this); },
             dataIdFromObject,
             storage,
             callback
         );
-        const cache: ApolloCache<any> = disableOffline
-            ? (customCache || new InMemoryCache(cacheOptions))
-            : new OfflineCache({ store, storeCacheRootMutation }, cacheOptions);
+        const cache: ApolloCache<any> = new OfflineCache({ store, storeCacheRootMutation }, cacheOptions);
 
         const waitForRehydrationLink = new ApolloLink((op, forward) => {
             let handle = null;
@@ -199,20 +198,15 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
 
         super(newOptions);
 
-        this.hydratedPromise = disableOffline ? Promise.resolve(this) : new Promise(resolve => { resolveClient = resolve; });
-        this._disableOffline = disableOffline;
+        this.hydratedPromise = new Promise(resolve => { resolveClient = resolve; });
         this._store = store;
     }
 
     isOfflineEnabled() {
-        return !this._disableOffline;
+        return true;
     }
 
     mutate<T, TVariables = OperationVariables>(options: MutationOptions<T, TVariables>): Promise<FetchResult<T>> {
-        if (!this.isOfflineEnabled()) {
-            return super.mutate(options);
-        }
-
         const doIt = false;
         const {
             context: origContext,
@@ -244,10 +238,6 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
     }
 
     sync<T, TVariables = OperationVariables>(options: SubscribeWithSyncOptions<T, TVariables>): Subscription {
-        if (!this.isOfflineEnabled()) {
-            throw new Error('Not supported');
-        }
-
         return new Observable<T>(observer => {
             let handle: Subscription;
             const callback = (subscription: Subscription) => {

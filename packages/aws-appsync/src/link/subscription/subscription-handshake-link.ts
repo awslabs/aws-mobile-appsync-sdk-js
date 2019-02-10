@@ -15,7 +15,7 @@ import { OperationDefinitionNode, FieldNode } from "graphql";
 import { getMainDefinition } from "apollo-utilities";
 import { PERMANENT_ERROR_KEY } from "../retry-link";
 import { createHttpLink } from 'apollo-link-http';
-import { NonTerminatingLink }  from '../';
+import { NonTerminatingLink }  from './';
 import { CONTROL_EVENTS_KEY } from "../../utils";
 
 const logger = rootLogger.extend('subscriptions');
