@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.7.2"></a>
+## [1.7.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.7.1...aws-appsync@1.7.2) (2019-03-12)
+
+
+### Bug Fixes
+
+* **auth:** Remove temporary variables (starting with '@@') before signing ([#347](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/347)) ([920b47d](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/920b47d)), closes [#354](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/354)
+* **deltaSync:** Make sure query manager is initialized ([13a2dec](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/13a2dec)), closes [#893237](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/893237)
+
+
+
+
 <a name="1.7.1"></a>
 ## [1.7.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.7.0...aws-appsync@1.7.1) (2019-01-11)
 
