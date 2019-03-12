@@ -417,6 +417,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
         boundSaveSnapshot(store, client.cache);
 
+        client.initQueryManager();
         const dataStore = client.queryManager.dataStore;
         const enqueuedActionsFilter = [mutationsConfig.enqueueAction];
         enquededMutations
