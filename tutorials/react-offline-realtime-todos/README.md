@@ -52,7 +52,7 @@ input UpdateTodoInput {
 }
 ```
 
-**Save** the schema again. On the navigation bar in the left of the console, click on `<your api name>`, scroll down and select the **Web** section then click **Download** and save the `AppSync.js` file somewhere for later.
+**Save** the schema again. On the navigation bar in the left of the console, click on `<your api name>`, scroll down and select the **Web** section then click **Download Config** and save the `aws-exports.js` file somewhere for later.
 
 ## Imports and configuration
 
@@ -65,13 +65,13 @@ create-react-app todos && cd ./todos
 yarn add aws-appsync aws-appsync-react graphql-tag react-apollo
 ```
 
-Copy the `AppSync.js` file that you downloaded from the console into the `./todos/src` directory. Next add the following imports towards the top of the `App.js` file:
+Copy the `aws-exports.js` file that you downloaded from the console into the `./todos/src` directory. Next add the following imports towards the top of the `App.js` file:
 
 
 ```javascript
 import AWSAppSyncClient, { buildSubscription } from 'aws-appsync';
 import { Rehydrated, graphqlMutation } from 'aws-appsync-react';
-import AppSyncConfig from './AppSync';
+import awsmobile from './aws-exports';
 import { ApolloProvider } from 'react-apollo';
 ```
 
@@ -79,11 +79,11 @@ Replace everything __after__ the definition of the `<App />` component with the 
 
 ```jsx
 const client = new AWSAppSyncClient({
-  url: AppSyncConfig.graphqlEndpoint,
-  region: AppSyncConfig.region,
+  url: awsmobile.graphqlEndpoint,
+  region: awsmobile.region,
   auth: {
-    type: AppSyncConfig.authenticationType,
-    apiKey: AppSyncConfig.apiKey
+    type: awsmobile.authenticationType,
+    apiKey: awsmobile.apiKey
   }
 })
 
