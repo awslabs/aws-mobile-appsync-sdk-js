@@ -336,7 +336,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                     query,
                     variables,
                 });
-                cacheProxy.writeQuery({ query, data: result.data });
+                cacheProxy.writeQuery({ query, variables, data: result.data });
 
                 if (typeof update === 'function') {
                     tryFunctionOrLogError(() => {
