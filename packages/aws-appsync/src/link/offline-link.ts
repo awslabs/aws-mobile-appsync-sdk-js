@@ -240,7 +240,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                 } = store.getState();
 
                 // Restore from cache snapshot
-                client.cache.restore(cacheSnapshot as TCache);
+                // client.cache.restore(cacheSnapshot as TCache);
 
                 const dataStore = client.queryManager.dataStore;
 
