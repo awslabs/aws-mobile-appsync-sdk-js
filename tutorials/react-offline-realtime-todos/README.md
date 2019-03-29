@@ -2,7 +2,7 @@
 
 This is an example tutorial of building an offline and realtime enabled React application with the AWS AppSync SDK cache abstractions for the Apollo client. The tutorial takes you through a sample GraphQL schema for a "Todo" application in steps:
 - Persisting queries offline for reads
-- Mutations offline, with automatic optimistic UI and syncronization
+- Mutations offline, with automatic optimistic UI and synchronization
 - Subscribing to data and automatically updating UI
 - Mutations with version checks and conflict resolution
 - Mutations to update multiple UIs (e.g. queries) simultaneously
@@ -181,7 +181,7 @@ mutation addTodo {
 }
 ```
 
-Press the arrow at the top to run your query and then from the running client application press the **Refresh** button. Alter the mutation text for `name` and `description` a couple of times in the console and add more items then refresh the client again. If you keep the app running, or build as a PWA, but disable the network connection (which can be similated in browsers such as Google Chrome) the items will be persisted in the cache and visible on the screen.
+Press the arrow at the top to run your query and then from the running client application press the **Refresh** button. Alter the mutation text for `name` and `description` a couple of times in the console and add more items then refresh the client again. If you keep the app running, or build as a PWA, but disable the network connection (which can be simulated in browsers such as Google Chrome) the items will be persisted in the cache and visible on the screen.
 
 ## Add offline writes
 
@@ -299,7 +299,7 @@ Import this into your `App.js` file:
 import SubscribeTodos from './GraphQLSubscribeTodos';
 ```
 
-It is recommended to initiate the subscription inside of the `componentDidMount()` lifecyle method of the `<Todos />` component like so:
+It is recommended to initiate the subscription inside of the `componentDidMount()` lifecycle method of the `<Todos />` component like so:
 
 ```javascript
 class Todos extends Component {
@@ -339,7 +339,7 @@ You should see the change automatically show up in your client application. Note
 
 If you wanted to add capabilities to perform updates to your Todos you could use the generated `updateTodo` mutation and just create a new component. However if performing offline functions or shared data it is valuable to perform version checks against each individual object.
 
-The SDK will automatically account for this, however you will need to modify the schema as well as your resolvers in order to do server validaton on the versions. Edit your schema as following:
+The SDK will automatically account for this, however you will need to modify the schema as well as your resolvers in order to do server validation on the versions. Edit your schema as following:
 
 - Add a `version` field in the `Todo` type
 - Add a required field of `expectedVersion` to `UpdateTodoInput`
@@ -385,7 +385,7 @@ Also, replace the resolver Request Mapping Template for `createTodo` mutation (O
 
 If you are unfamiliar with editing resolvers in AWS AppSync please [reference this section of the documentation](https://docs.aws.amazon.com/appsync/latest/devguide/configuring-resolvers.html).
 
-Now modify the resolver Request Mapping template attached to the `updateTodo` field and overwite it with the contents below:
+Now modify the resolver Request Mapping template attached to the `updateTodo` field and overwrite it with the contents below:
 
 ```
 {
