@@ -22,7 +22,7 @@ import { OfflineAction, NetInfo, NetworkCallback } from '@redux-offline/redux-of
 import { offlineEffectConfig as deltaSyncConfig } from "./deltaSync";
 import { Observable } from 'apollo-link';
 
-const { detectNetwork } = defaultOfflineConfig;
+const { detectNetwork : defaultDetectNetwork } = defaultOfflineConfig;
 
 const logger = rootLogger.extend('store');
 
@@ -32,6 +32,8 @@ const newStore = <TCacheShape extends NormalizedCacheObject>(
     dataIdFromObject: (obj) => string | null,
     storage: any,
     callback: OfflineCallback = () => { },
+    detectNetwork: OfflineStatusChangeCallbackCreator = defaultDetectNetwork,
+    getDelay?: (retries:number) => number
 ): Store<any> => {
     logger('Creating store');
 
@@ -53,7 +55,7 @@ const newStore = <TCacheShape extends NormalizedCacheObject>(
             applyMiddleware(thunk),
             offline({
                 ...defaultOfflineConfig,
-                retry: getEffectDelay,
+                retry: getEffectDelay(getDelay),
                 persistCallback: () => {
                     logger('Storage ready');
 

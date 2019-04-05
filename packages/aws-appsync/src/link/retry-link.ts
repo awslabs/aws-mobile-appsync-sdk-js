@@ -15,18 +15,18 @@ const BASE_TIME_MS = 100;
 const JITTER_FACTOR = 100;
 const MAX_DELAY_MS = 5 * 60 * 1000;
 
-const getDelay = count => ((2 ** count) * BASE_TIME_MS) + (JITTER_FACTOR * Math.random());
+const getDefaultDelay = count => ((2 ** count) * BASE_TIME_MS) + (JITTER_FACTOR * Math.random());
 
 export const SKIP_RETRY_KEY = '@@skipRetry';
 export const PERMANENT_ERROR_KEY = typeof Symbol !== 'undefined' ? Symbol('permanentError') : '@@permanentError';
 
-export const getEffectDelay = (_action: OfflineAction, retries: number) => {
+export const getEffectDelay = (getDelay:(retries:number) => number=getDefaultDelay) => (_action: OfflineAction, retries: number) => {
     const delay = getDelay(retries);
 
     return delay <= MAX_DELAY_MS ? delay : null;
 };
 
-export const createRetryLink = (origLink: ApolloLink) => {
+export const createRetryLink = (origLink: ApolloLink, getDelay:(retries:number) => number=getDefaultDelay) => {
     let delay;
 
     const retryLink = new RetryLink({
