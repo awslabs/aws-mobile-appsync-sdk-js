@@ -743,7 +743,7 @@ const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationV
         const result = deltaRecordsProcessor<T>(updateLogger, deltaOperationName, deltaRecords, baseResult, typename, idField);
 
         if (result !== baseResult) {
-            cache.writeQuery({ query, data: { [operationName]: result } });
+            cache.writeQuery({ query, variables, data: { [operationName]: result } });
         }
     }
 
