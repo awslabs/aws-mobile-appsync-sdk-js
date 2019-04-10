@@ -86,6 +86,7 @@ const complexObjectFields = [
     { name: 'key', type: 'string' },
     { name: 'region', type: 'string' },
     { name: 'mimeType', type: 'string' },
+    { name: 'acl', type: 'string' },
     { name: 'localUri', type: ['object', 'string'] },
 ];
 const findInObject = obj => {
@@ -109,6 +110,7 @@ const findInObject = obj => {
         if (testFn(obj)) {
             acc[path] = { ...obj };
             delete obj.mimeType;
+            delete obj.acl;
             delete obj.localUri;
         }
 

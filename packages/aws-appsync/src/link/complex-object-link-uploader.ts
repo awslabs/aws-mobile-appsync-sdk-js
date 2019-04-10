@@ -15,6 +15,7 @@ export default (fileField, { credentials }) => {
         region,
         mimeType: ContentType,
         localUri: Body,
+        acl: ACL,
     } = fileField;
 
     const s3 = new S3({
@@ -27,5 +28,6 @@ export default (fileField, { credentials }) => {
         Key,
         Body,
         ContentType,
+        ACL,
     }).promise();
 };
