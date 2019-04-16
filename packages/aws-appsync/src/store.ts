@@ -104,7 +104,11 @@ declare type OfflineEffectConfigMap = {
 const offlineEffectsConfigs = [
     mutationsConfig,
     deltaSyncConfig
-].reduce((acc, { enqueueAction, ...rest }) => (acc[enqueueAction] = { enqueueAction, ...rest }, acc), {}) as OfflineEffectConfigMap;
+].filter(Boolean).reduce((acc, { enqueueAction, ...rest }) => {
+    acc[enqueueAction] = { enqueueAction, ...rest };
+
+    return acc;
+}, {}) as OfflineEffectConfigMap;
 
 const reducer: (dataIdFromObject: IdGetter) => ReducersMapObject = <S>(dataIdFromObject) => ({
     [METADATA_KEY]: (state: S, action: AnyAction) => Object.entries(offlineEffectsConfigs)
