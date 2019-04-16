@@ -11,10 +11,6 @@ import { GraphQLError } from "graphql";
 import { ApolloError } from "apollo-client";
 import { AWSAppsyncGraphQLError } from "../src/types";
 
-jest.mock('apollo-link-http-common', () => ({
-    checkFetcher: () => { },
-}));
-
 jest.mock('apollo-link-http', () => ({
     createHttpLink: jest.fn(),
 }));
