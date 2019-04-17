@@ -193,12 +193,13 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         let resolveClient;
 
         const dataIdFromObject = disableOffline ? () => null : cacheOptions.dataIdFromObject || defaultDataIdFromObject;
-        const store = disableOffline ? null : createStore(
-            () => this, () => { resolveClient(this); },
+        const store = disableOffline ? null : createStore({
+            clientGetter: () => this,
+            persistCallback: () => { resolveClient(this); },
             dataIdFromObject,
             storage,
             callback
-        );
+        });
         const cache: ApolloCache<any> = disableOffline
             ? (customCache || new InMemoryCache(cacheOptions))
             : new OfflineCache({ store, storeCacheRootMutation }, cacheOptions);

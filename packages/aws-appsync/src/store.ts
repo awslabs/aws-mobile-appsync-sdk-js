@@ -26,13 +26,23 @@ const { detectNetwork } = defaultOfflineConfig;
 
 const logger = rootLogger.extend('store');
 
-const newStore = <TCacheShape extends NormalizedCacheObject>(
-    clientGetter: () => AWSAppSyncClient<TCacheShape> = () => null,
+export type StoreOptions<TCacheShape extends NormalizedCacheObject> = {
+    clientGetter: () => AWSAppSyncClient<TCacheShape>,
+    persistCallback: () => void,
+    dataIdFromObject: (obj: any) => string | null,
+    keyPrefix?: string,
+    storage?: any,
+    callback: OfflineCallback,
+};
+
+const newStore = <TCacheShape extends NormalizedCacheObject>({
+    clientGetter = () => null,
     persistCallback = () => null,
-    dataIdFromObject: (obj) => string | null,
-    storage: any,
-    callback: OfflineCallback = () => { },
-): Store<any> => {
+    dataIdFromObject,
+    keyPrefix,
+    storage,
+    callback = () => { },
+}: StoreOptions<TCacheShape>): Store<any> => {
     logger('Creating store');
 
     const store = createStore(
@@ -60,6 +70,7 @@ const newStore = <TCacheShape extends NormalizedCacheObject>(
                     persistCallback();
                 },
                 persistOptions: {
+                    ...(keyPrefix && { keyPrefix }),
                     ...(storage && { storage }),
                     whitelist: [
                         NORMALIZED_CACHE_KEY,
