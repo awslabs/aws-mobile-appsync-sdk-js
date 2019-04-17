@@ -24,7 +24,7 @@ import {
     ComplexObjectLink,
     AUTH_TYPE
 } from './link';
-import { createStore } from './store';
+import { createStore, StoreOptions } from './store';
 import { ApolloCache } from 'apollo-cache';
 import { AuthOptions } from './link/auth-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
@@ -137,10 +137,8 @@ export interface AWSAppSyncClientOptions {
     offlineConfig?: OfflineConfig,
 }
 
-export interface OfflineConfig {
-    storage?: any,
-    callback?: OfflineCallback,
-    storeCacheRootMutation?: boolean,
+export type OfflineConfig = Pick<Partial<StoreOptions<any>>, 'storage' | 'callback' | 'keyPrefix'> & {
+    storeCacheRootMutation?: boolean
 };
 
 // TODO: type defs
@@ -178,6 +176,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         disableOffline = false,
         offlineConfig: {
             storage = undefined,
+            keyPrefix = undefined,
             callback = () => { },
             storeCacheRootMutation = false,
         } = {},
@@ -198,6 +197,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             persistCallback: () => { resolveClient(this); },
             dataIdFromObject,
             storage,
+            keyPrefix,
             callback
         });
         const cache: ApolloCache<any> = disableOffline
