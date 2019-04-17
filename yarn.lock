@@ -330,10 +330,6 @@
   version "0.12.4"
   resolved "http://registry.npmjs.org/@types/graphql/-/graphql-0.12.4.tgz#d43bb55d45c6de0178bbd11dd59d04fd42138d94"
 
-"@types/graphql@0.12.6":
-  version "0.12.6"
-  resolved "http://registry.npmjs.org/@types/graphql/-/graphql-0.12.6.tgz#3d619198585fcabe5f4e1adfb5cf5f3388c66c13"
-
 "@types/istanbul-lib-coverage@^2.0.0":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@types/istanbul-lib-coverage/-/istanbul-lib-coverage-2.0.0.tgz#1eb8c033e98cf4e1a4cedcaf8bcafe8cb7591e85"
@@ -568,15 +564,7 @@ apollo-link-retry@2.2.5:
     "@types/zen-observable" "0.8.0"
     apollo-link "^1.2.3"
 
-apollo-link@1.2.2:
-  version "1.2.2"
-  resolved "http://registry.npmjs.org/apollo-link/-/apollo-link-1.2.2.tgz#54c84199b18ac1af8d63553a68ca389c05217a03"
-  dependencies:
-    "@types/graphql" "0.12.6"
-    apollo-utilities "^1.0.0"
-    zen-observable-ts "^0.8.9"
-
-apollo-link@^1.0.0, apollo-link@^1.0.6, apollo-link@^1.2.3:
+apollo-link@1.2.3, apollo-link@^1.0.0, apollo-link@^1.0.6, apollo-link@^1.2.3:
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/apollo-link/-/apollo-link-1.2.3.tgz#9bd8d5fe1d88d31dc91dae9ecc22474d451fb70d"
   dependencies:
@@ -6945,7 +6933,7 @@ yargs@^9.0.0:
     y18n "^3.2.1"
     yargs-parser "^7.0.0"
 
-zen-observable-ts@^0.8.10, zen-observable-ts@^0.8.9:
+zen-observable-ts@^0.8.10:
   version "0.8.10"
   resolved "https://registry.yarnpkg.com/zen-observable-ts/-/zen-observable-ts-0.8.10.tgz#18e2ce1c89fe026e9621fd83cc05168228fce829"
   dependencies:
