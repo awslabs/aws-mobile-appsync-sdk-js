@@ -303,7 +303,7 @@ const buildMutation = <T = OperationVariables>(
 
             let result;
             try {
-                const { [queryField]: queryRead } = client.readQuery({ query, variables: queryVars });
+                const { [queryField]: queryRead } = client.readQuery<{ [key: string]: any }>({ query, variables: queryVars });
 
                 result = queryRead;
             } catch (err) {
