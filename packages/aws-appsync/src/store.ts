@@ -70,7 +70,7 @@ const newStore = <TCacheShape extends NormalizedCacheObject>({
                     persistCallback();
                 },
                 persistOptions: {
-                    ...(keyPrefix && { keyPrefix }),
+                    ...(keyPrefix && { keyPrefix: `${keyPrefix}:` }),
                     ...(storage && { storage }),
                     whitelist: [
                         NORMALIZED_CACHE_KEY,
