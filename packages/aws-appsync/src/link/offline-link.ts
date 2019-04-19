@@ -19,7 +19,6 @@ import { Store } from "redux";
 import { OfflineCache, AppSyncMetadataState } from "../cache/offline-cache";
 import { isUuid, getOperationFieldName, rootLogger } from "../utils";
 import AWSAppSyncClient from "..";
-import { ApolloCache } from "apollo-cache";
 import { MutationUpdaterFn, MutationQueryReducersMap, ApolloError } from "apollo-client";
 import { RefetchQueryDescription, FetchPolicy } from "apollo-client/core/watchQueryOptions";
 import { OfflineCallback } from "../client";
