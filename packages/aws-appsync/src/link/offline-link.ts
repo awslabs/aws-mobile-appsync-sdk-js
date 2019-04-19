@@ -37,7 +37,7 @@ const actions = {
 
 const IS_OPTIMISTIC_KEY = typeof Symbol !== 'undefined' ? Symbol('isOptimistic') : '@@isOptimistic';
 
-export const isOptimistic = obj => typeof obj[IS_OPTIMISTIC_KEY] !== undefined ? obj[IS_OPTIMISTIC_KEY] : undefined;
+export const isOptimistic = obj => typeof obj[IS_OPTIMISTIC_KEY] !== undefined ? !!obj[IS_OPTIMISTIC_KEY] : false;
 
 export class OfflineLink extends ApolloLink {
 
