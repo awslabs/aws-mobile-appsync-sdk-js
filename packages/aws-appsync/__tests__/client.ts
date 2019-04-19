@@ -1,19 +1,13 @@
 import gql from "graphql-tag";
 import { v4 as uuid } from "uuid";
 import { Observable } from "apollo-link";
-import { createHttpLink } from "apollo-link-http";
 import { AWSAppSyncClientOptions, AWSAppSyncClient, AUTH_TYPE, ConflictResolutionInfo, ConflictResolver } from "../src/client";
 import { Store } from "redux";
 import { OfflineCache } from "../src/cache/offline-cache";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
-import { isOptimistic } from "../src/link/offline-link";
 import { GraphQLError } from "graphql";
 import { ApolloError } from "apollo-client";
 import { AWSAppsyncGraphQLError } from "../src/types";
-
-jest.mock('apollo-link-http', () => ({
-    createHttpLink: jest.fn(),
-}));
 
 let setNetworkOnlineStatus: (online: boolean) => void;
 jest.mock("@redux-offline/redux-offline/lib/defaults/detectNetwork", () => (callback) => {
@@ -24,35 +18,54 @@ jest.mock("@redux-offline/redux-offline/lib/defaults/detectNetwork", () => (call
     // Setting initial network online status
     callback({ online: true });
 });
+jest.mock('apollo-link-http', () => ({
+    createHttpLink: jest.fn(),
+}));
+let mockHttpResponse;
+let factory;
+let isOptimistic;
+beforeEach(() => {
+    let AWSAppSyncClient;
+    let createHttpLink;
+    jest.resetModules();
+    jest.isolateModules(() => {
+        ({ AWSAppSyncClient } = require('../src/client'));
+        ({ isOptimistic } = require("../src/link/offline-link"));
+        ({ createHttpLink } = require("apollo-link-http"));
+
+        factory = (opts) => {
+            return new AWSAppSyncClient(opts);
+        };
+    });
+
+    mockHttpResponse = (responses: any[] | any, delay = 0) => {
+        const mock = (createHttpLink as jest.Mock);
+
+        const requestMock = jest.fn();
+
+        [].concat(responses).forEach((resp) => {
+            requestMock.mockImplementationOnce(() => new Observable(observer => {
+                const timer = setTimeout(() => {
+                    observer.next({ ...resp });
+                    observer.complete();
+                }, delay);
+
+                // On unsubscription, cancel the timer
+                return () => clearTimeout(timer);
+            }));
+        });
+
+        mock.mockImplementation(() => ({
+            request: requestMock
+        }));
+    };
+});
 
 const getStoreState = <T extends NormalizedCacheObject>(client: AWSAppSyncClient<T>) => ((client as any)._store as Store<OfflineCache>).getState();
 
 const isNetworkOnline = <T extends NormalizedCacheObject>(client: AWSAppSyncClient<T>) => getStoreState(client).offline.online;
 
 const getOutbox = <T extends NormalizedCacheObject>(client: AWSAppSyncClient<T>) => getStoreState(client).offline.outbox;
-
-const mockHttpResponse = (responses: any[] | any, delay = 0) => {
-
-    const mock = (createHttpLink as jest.Mock);
-
-    const requestMock = jest.fn();
-
-    [].concat(responses).forEach((resp) => {
-        requestMock.mockImplementationOnce(() => new Observable(observer => {
-            const timer = setTimeout(() => {
-                observer.next({ ...resp });
-                observer.complete();
-            }, delay);
-
-            // On unsubscription, cancel the timer
-            return () => clearTimeout(timer);
-        }));
-    });
-
-    mock.mockImplementation(() => ({
-        request: requestMock
-    }));
-};
 
 class MemoryStorage {
     private storage;
@@ -67,7 +80,7 @@ class MemoryStorage {
             this.logger(...args)
         }
     }
-    setItem(key, value, callback) {
+    setItem(key, value, callback?) {
         return new Promise((resolve, reject) => {
             this.storage[key] = value
             this.log('setItem called with', key, value)
@@ -76,7 +89,7 @@ class MemoryStorage {
         })
     }
 
-    getItem(key, callback) {
+    getItem(key, callback?) {
         return new Promise((resolve, reject) => {
             this.log('getItem called with', key)
             const value = this.storage[key]
@@ -85,7 +98,7 @@ class MemoryStorage {
         })
     }
 
-    removeItem(key, callback) {
+    removeItem(key, callback?) {
         return new Promise((resolve, reject) => {
             this.log('removeItem called with', key)
             const value = this.storage[key]
@@ -95,7 +108,7 @@ class MemoryStorage {
         })
     }
 
-    getAllKeys(callback) {
+    getAllKeys(callback?) {
         return new Promise((resolve, reject) => {
             this.log('getAllKeys called')
             const keys = Object.keys(this.storage)
@@ -106,7 +119,7 @@ class MemoryStorage {
 }
 
 const getClient = (options?: Partial<AWSAppSyncClientOptions>) => {
-    const defaultOptions = {
+    const defaultOptions: AWSAppSyncClientOptions = {
         url: 'some url',
         region: 'some region',
         auth: {
@@ -116,11 +129,11 @@ const getClient = (options?: Partial<AWSAppSyncClientOptions>) => {
         disableOffline: false,
         offlineConfig: {
             storage: new MemoryStorage(),
-            callback: null, // console.warn,
+            callback: null,
         },
     };
 
-    const client = new AWSAppSyncClient({
+    const client = factory({
         ...defaultOptions,
         ...options,
         offlineConfig: {
@@ -898,4 +911,105 @@ describe("Offline enabled", () => {
     });
 
     // missing update function
+});
+
+describe("Multi client", () => {
+    test("Can pass a prefix and it is used", async () => {
+        const storage = new MemoryStorage();
+
+        mockHttpResponse({
+            data: {
+                someQuery: {
+                    __typename: 'someType',
+                    someField: 'someValue'
+                }
+            }
+        });
+
+        const client = getClient({
+            disableOffline: false,
+            offlineConfig: {
+                keyPrefix: 'myPrefix',
+                storage,
+            }
+        });
+
+        await client.hydrated();
+
+        await client.query({
+            query: gql`query {
+                someQuery {
+                    someField
+                }
+            }`
+        });
+
+        // Give it some time
+        await new Promise(r => setTimeout(r, WAIT));
+
+        const allKeys = await storage.getAllKeys() as string[];
+
+        expect(allKeys.length).toBeGreaterThan(0);
+        allKeys.forEach(key => expect(key).toMatch(/^myPrefix:.+/));
+    });
+
+    test("Can use different prefixes", async () => {
+        const prefixes = ['myPrefix1', 'myPrefix2', 'myPrefix3'];
+
+        for (let keyPrefix of prefixes) {
+            const storage = new MemoryStorage();
+            mockHttpResponse({
+                data: {
+                    someQuery: {
+                        __typename: 'someType',
+                        someField: 'someValue'
+                    }
+                }
+            });
+
+            const client = getClient({
+                disableOffline: false,
+                offlineConfig: {
+                    keyPrefix,
+                    storage,
+                }
+            });
+
+            await client.hydrated();
+
+            await client.query({
+                query: gql`query {
+                    someQuery {
+                        someField
+                    }
+                }`
+            });
+
+            // Give it some time
+            await new Promise(r => setTimeout(r, WAIT));
+
+            const allKeys = await storage.getAllKeys() as string[];
+
+            expect(allKeys.length).toBeGreaterThan(0);
+            allKeys.forEach(key => expect(key).toMatch(new RegExp(`^${keyPrefix}:.+`)));
+        };
+    });
+});
+
+test('Cannot use same keyPrefix more than once', () => {
+    getClient({
+        disableOffline: false,
+        offlineConfig: {
+            keyPrefix: 'myPrefix',
+        }
+    });
+
+    expect(() => {
+        getClient({
+            disableOffline: false,
+            offlineConfig: {
+                keyPrefix: 'myPrefix',
+            }
+        });
+    }).toThrowError('The keyPrefix myPrefix is already in use. Multiple clients cannot share the same keyPrefix.');
 });

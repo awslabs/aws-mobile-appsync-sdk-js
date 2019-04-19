@@ -78,13 +78,13 @@ export const createAppSyncLink = ({
     resultsFetcherLink = createHttpLink({ uri: url }),
     conflictResolver,
 }: {
-        url: string,
-        region: string,
-        auth: AuthOptions,
-        complexObjectsCredentials: CredentialsGetter,
-        resultsFetcherLink?: ApolloLink,
-        conflictResolver?: ConflictResolver,
-    }) => {
+    url: string,
+    region: string,
+    auth: AuthOptions,
+    complexObjectsCredentials: CredentialsGetter,
+    resultsFetcherLink?: ApolloLink,
+    conflictResolver?: ConflictResolver,
+}) => {
     const link = ApolloLink.from([
         createLinkWithStore((store) => new OfflineLink(store)),
         new ConflictResolutionLink(conflictResolver),
@@ -155,6 +155,8 @@ export interface ConflictResolutionInfo {
 
 export type ConflictResolver = (obj: ConflictResolutionInfo) => 'DISCARD' | any;
 
+const keyPrefixesInUse = new Set<string>();
+
 class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends ApolloClient<TCacheShape> {
 
     private _store: Store<OfflineCacheType>
@@ -187,6 +189,10 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             throw new Error(
                 'In order to initialize AWSAppSyncClient, you must specify url, region and auth properties on the config object or a custom link.'
             );
+        }
+
+        if (!disableOffline && keyPrefixesInUse.has(keyPrefix)) {
+            throw new Error(`The keyPrefix ${keyPrefix} is already in use. Multiple clients cannot share the same keyPrefix. Provide a different keyPrefix in the offlineConfig object.`);
         }
 
         let resolveClient;
@@ -232,6 +238,10 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         this.hydratedPromise = disableOffline ? Promise.resolve(this) : new Promise(resolve => { resolveClient = resolve; });
         this._disableOffline = disableOffline;
         this._store = store;
+
+        if (!disableOffline) {
+            keyPrefixesInUse.add(keyPrefix);
+        }
     }
 
     isOfflineEnabled() {
