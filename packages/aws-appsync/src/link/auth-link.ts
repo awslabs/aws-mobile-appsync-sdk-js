@@ -16,6 +16,7 @@ import * as Url from 'url';
 
 import { userAgent } from "../platform";
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
+import { PERMANENT_ERROR_KEY } from './retry-link';
 
 const packageInfo = require("../../package.json");
 
@@ -160,7 +161,10 @@ export const authLink = ({ url, region, auth: { type } = <AuthOptions>{}, auth }
                     promise = headerBasedAuth({ header: 'Authorization', value: jwtToken }, operation, forward);
                     break;
                 default:
-                    throw new Error(`Invalid AUTH_TYPE: ${(<AuthOptions>auth).type}`);
+                    const error = new Error(`Invalid AUTH_TYPE: ${(<AuthOptions>auth).type}`);
+                    error[PERMANENT_ERROR_KEY] = true;
+
+                    throw error;
             }
 
             promise.then(observable => {
