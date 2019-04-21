@@ -21,24 +21,25 @@ jest.mock("@redux-offline/redux-offline/lib/defaults/detectNetwork", () => (call
 jest.mock('apollo-link-http', () => ({
     createHttpLink: jest.fn(),
 }));
-let mockHttpResponse;
-let factory;
+let mockHttpResponse: (responses: any[] | any, delay?: number) => void;
+let factory: (opts: AWSAppSyncClientOptions) => AWSAppSyncClient<any>;
 let isOptimistic;
+let Signer;
 beforeEach(() => {
-    let AWSAppSyncClient;
     let createHttpLink;
     jest.resetModules();
     jest.isolateModules(() => {
-        ({ AWSAppSyncClient } = require('../src/client'));
+        const { AWSAppSyncClient } = require('../src/client');
         ({ isOptimistic } = require("../src/link/offline-link"));
         ({ createHttpLink } = require("apollo-link-http"));
+        ({ Signer } = require("../src/link/signer"));
 
         factory = (opts) => {
             return new AWSAppSyncClient(opts);
         };
     });
 
-    mockHttpResponse = (responses: any[] | any, delay = 0) => {
+    mockHttpResponse = (responses: any[] | any, delay:number = 0) => {
         const mock = (createHttpLink as jest.Mock);
 
         const requestMock = jest.fn();
@@ -133,7 +134,7 @@ const getClient = (options?: Partial<AWSAppSyncClientOptions>) => {
         },
     };
 
-    const client = factory({
+    const client: AWSAppSyncClient<any> = factory({
         ...defaultOptions,
         ...options,
         offlineConfig: {
@@ -994,22 +995,80 @@ describe("Multi client", () => {
             allKeys.forEach(key => expect(key).toMatch(new RegExp(`^${keyPrefix}:.+`)));
         };
     });
-});
 
-test('Cannot use same keyPrefix more than once', () => {
-    getClient({
-        disableOffline: false,
-        offlineConfig: {
-            keyPrefix: 'myPrefix',
-        }
-    });
-
-    expect(() => {
+    test('Cannot use same keyPrefix more than once', () => {
         getClient({
             disableOffline: false,
             offlineConfig: {
                 keyPrefix: 'myPrefix',
             }
         });
-    }).toThrowError('The keyPrefix myPrefix is already in use. Multiple clients cannot share the same keyPrefix.');
+
+        expect(() => {
+            getClient({
+                disableOffline: false,
+                offlineConfig: {
+                    keyPrefix: 'myPrefix',
+                }
+            });
+        }).toThrowError('The keyPrefix myPrefix is already in use. Multiple clients cannot share the same keyPrefix.');
+    });
+});
+
+describe('Auth modes', () => {
+    test('AWS_IAM calls signer', async () => {
+        // Signer.sign = jest.fn().mockImplementation(x => x);
+        const signerSpy = jest.spyOn(Signer, 'sign');
+
+        mockHttpResponse({
+            data: {
+                someQuery: {
+                    __typename: 'someType',
+                    someField: 'someValue'
+                }
+            }
+        });
+
+        const credentials = {
+            accessKeyId: 'access',
+            secretAccessKey: 'secret',
+            sessionToken: 'session',
+        };
+
+        const client = getClient({
+            disableOffline: false,
+            url: 'https://somehost/graphql',
+            auth: {
+                type: AUTH_TYPE.AWS_IAM,
+                credentials: () => credentials
+            }
+        });
+
+        await client.hydrated();
+
+        await client.query({
+            query: gql`query {
+                someQuery {
+                    someField
+                }
+            }`,
+            fetchPolicy: "network-only"
+        });
+
+        // Give it some time
+        await new Promise(r => setTimeout(r, WAIT));
+
+        expect(signerSpy).toHaveBeenCalledWith(expect.anything(), {
+            access_key: credentials.accessKeyId,
+            secret_key: credentials.secretAccessKey,
+            session_token: credentials.sessionToken,
+        });
+        expect(signerSpy).toReturnWith(expect.objectContaining({
+            headers: expect.objectContaining({
+                Authorization: expect.stringMatching(/^AWS4\-HMAC\-SHA256 Credential=/),
+                'X-Amz-Security-Token': 'session',
+                'x-amz-date': expect.stringMatching(/^\d{8}T\d{6}Z$/),
+            })
+        }));
+    });
 });
