@@ -24,7 +24,7 @@ import {
     ComplexObjectLink,
     AUTH_TYPE
 } from './link';
-import { createStore, StoreOptions } from './store';
+import { createStore, StoreOptions, DEFAULT_KEY_PREFIX } from './store';
 import { ApolloCache } from 'apollo-cache';
 import { AuthOptions } from './link/auth-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
@@ -191,6 +191,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             );
         }
 
+        keyPrefix = keyPrefix || DEFAULT_KEY_PREFIX;
         if (!disableOffline && keyPrefixesInUse.has(keyPrefix)) {
             throw new Error(`The keyPrefix ${keyPrefix} is already in use. Multiple clients cannot share the same keyPrefix. Provide a different keyPrefix in the offlineConfig object.`);
         }

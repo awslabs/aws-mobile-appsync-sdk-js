@@ -11,6 +11,7 @@ import { applyMiddleware, createStore, compose, combineReducers, Store, Reducer,
 import { offline } from '@redux-offline/redux-offline';
 import defaultOfflineConfig from '@redux-offline/redux-offline/lib/defaults';
 import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
+import { KEY_PREFIX as REDUX_PERSIST_KEY_PREFIX } from "redux-persist/constants";
 import thunk from 'redux-thunk';
 
 import { AWSAppSyncClient, OfflineCallback } from './client';
@@ -34,6 +35,8 @@ export type StoreOptions<TCacheShape extends NormalizedCacheObject> = {
     storage?: any,
     callback: OfflineCallback,
 };
+
+export const DEFAULT_KEY_PREFIX = REDUX_PERSIST_KEY_PREFIX;
 
 const newStore = <TCacheShape extends NormalizedCacheObject>({
     clientGetter = () => null,

@@ -8,6 +8,7 @@ import { NormalizedCacheObject } from "apollo-cache-inmemory";
 import { GraphQLError } from "graphql";
 import { ApolloError } from "apollo-client";
 import { AWSAppsyncGraphQLError } from "../src/types";
+import { DEFAULT_KEY_PREFIX } from "../src/store";
 
 let setNetworkOnlineStatus: (online: boolean) => void;
 jest.mock("@redux-offline/redux-offline/lib/defaults/detectNetwork", () => (callback) => {
@@ -954,6 +955,44 @@ describe("Multi client", () => {
         allKeys.forEach(key => expect(key).toMatch(/^myPrefix:.+/));
     });
 
+    test.each([false, null, ''])("Uses default prefix for falsey (%o) keyPrefix", async (keyPrefix: any) => {
+        const storage = new MemoryStorage();
+        mockHttpResponse({
+            data: {
+                someQuery: {
+                    __typename: 'someType',
+                    someField: 'someValue'
+                }
+            }
+        });
+
+        const client = getClient({
+            disableOffline: false,
+            offlineConfig: {
+                keyPrefix,
+                storage,
+            }
+        });
+
+        await client.hydrated();
+
+        await client.query({
+            query: gql`query {
+                someQuery {
+                    someField
+                }
+            }`
+        });
+
+        // Give it some time
+        await new Promise(r => setTimeout(r, WAIT));
+
+        const allKeys = await storage.getAllKeys() as string[];
+
+        expect(allKeys.length).toBeGreaterThan(0);
+        allKeys.forEach(key => expect(key).toMatch(new RegExp(`^${DEFAULT_KEY_PREFIX}:.+`)));
+    });
+
     test("Can use different prefixes", async () => {
         const prefixes = ['myPrefix1', 'myPrefix2', 'myPrefix3'];
 
@@ -1023,7 +1062,6 @@ describe("Multi client", () => {
 
 describe('Auth modes', () => {
     test('AWS_IAM calls signer', async () => {
-        // Signer.sign = jest.fn().mockImplementation(x => x);
         const signerSpy = jest.spyOn(Signer, 'sign');
 
         mockHttpResponse({
