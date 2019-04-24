@@ -957,6 +957,8 @@ describe("Multi client", () => {
     test("Can use different prefixes", async () => {
         const prefixes = ['myPrefix1', 'myPrefix2', 'myPrefix3'];
 
+        const instances = [];
+
         for (let keyPrefix of prefixes) {
             const storage = new MemoryStorage();
             mockHttpResponse({
@@ -976,6 +978,8 @@ describe("Multi client", () => {
                 }
             });
 
+            instances.push(client);
+
             await client.hydrated();
 
             await client.query({
@@ -994,6 +998,8 @@ describe("Multi client", () => {
             expect(allKeys.length).toBeGreaterThan(0);
             allKeys.forEach(key => expect(key).toMatch(new RegExp(`^${keyPrefix}:.+`)));
         };
+
+        expect(instances.length).toEqual(prefixes.length);
     });
 
     test('Cannot use same keyPrefix more than once', () => {
