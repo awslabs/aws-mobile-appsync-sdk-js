@@ -173,9 +173,13 @@ const effect = async <TCache extends NormalizedCacheObject>(
 
     let upperBoundTimeMS = DEFAULT_UPPER_BOUND_TIME_MS;
 
-    let { lastSyncTimestamp, baseLastSyncTimestamp } = options;
     const hash = hashForOptions(options);
     const itemInHash = store.getState()[METADATA_KEY][DELTASYNC_KEY].metadata[hash];
+    let {
+        lastSyncTimestamp = itemInHash.lastSyncTimestamp,
+        baseLastSyncTimestamp = itemInHash.baseLastSyncTimestamp
+    } = options;
+
 
     let networkStatusSubscription: Subscription;
     let subscription: Subscription;
