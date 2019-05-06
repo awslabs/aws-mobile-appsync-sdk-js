@@ -124,7 +124,7 @@ export default class MyCache extends InMemoryCache {
 }
 
 const boundWriteCache = (store: Store<OfflineCache>, data: NormalizedCacheObject) => {
-    logger(`Dispatching ${WRITE_CACHE_ACTION}`, { data });
+    logger(`Dispatching ${WRITE_CACHE_ACTION}`);
 
     store.dispatch(writeThunk(WRITE_CACHE_ACTION, data) as any as Action);
 };
