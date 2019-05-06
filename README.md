@@ -652,4 +652,4 @@ To create a new AppSync project, go to https://aws.amazon.com/appsync/.
 
 ## License
 
-This library is licensed under the Amazon Software License.
+This library is licensed under the Apache License 2.0.
