@@ -12,6 +12,7 @@ import * as Url from 'url';
 
 import { userAgent } from "../platform";
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
+import { PERMANENT_ERROR_KEY } from './retry-link';
 
 const packageInfo = require("../../package.json");
 
@@ -109,14 +110,25 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
     return forward(operation);
 }
 
-export interface AuthOptions {
-    type: AUTH_TYPE,
-    credentials?: (() => Credentials | CredentialsOptions | null | Promise<Credentials | CredentialsOptions | null>) | Credentials | CredentialsOptions | null,
-    apiKey?: (() => (string | Promise<string>)) | string,
-    jwtToken?: (() => (string | Promise<string>)) | string,
+type KeysWithType<O, T> = {
+    [K in keyof O]: O[K] extends T ? K : never
+}[keyof O];
+type AuthOptionsNone = { type: AUTH_TYPE.NONE };
+type AuthOptionsIAM = {
+    type: KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.AWS_IAM>,
+    credentials: (() => Credentials | CredentialsOptions | Promise<Credentials | CredentialsOptions | null>) | Credentials | CredentialsOptions | null,
 };
+type AuthOptionsApiKey = {
+    type: KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.API_KEY>,
+    apiKey: (() => (string | Promise<string>)) | string,
+};
+type AuthOptionsOAuth = {
+    type: KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.AMAZON_COGNITO_USER_POOLS> | KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.OPENID_CONNECT>,
+    jwtToken: (() => (string | Promise<string>)) | string,
+};
+export type AuthOptions = AuthOptionsNone | AuthOptionsIAM | AuthOptionsApiKey | AuthOptionsOAuth;
 
-export const authLink = ({ url, region, auth: { type = AUTH_TYPE.NONE, credentials = {}, apiKey = '', jwtToken = '' } = <AuthOptions>{} }) => {
+export const authLink = ({ url, region, auth: { type } = <AuthOptions>{}, auth }) => {
     return new ApolloLink((operation, forward) => {
         return new Observable(observer => {
             let handle;
@@ -128,6 +140,7 @@ export const authLink = ({ url, region, auth: { type = AUTH_TYPE.NONE, credentia
                     promise = headerBasedAuth(undefined, operation, forward);
                     break;
                 case AUTH_TYPE.AWS_IAM:
+                    const { credentials = {} } = auth;
                     promise = iamBasedAuth({
                         credentials,
                         region,
@@ -135,14 +148,19 @@ export const authLink = ({ url, region, auth: { type = AUTH_TYPE.NONE, credentia
                     }, operation, forward);
                     break;
                 case AUTH_TYPE.API_KEY:
+                    const { apiKey = '' } = auth;
                     promise = headerBasedAuth({ header: 'X-Api-Key', value: apiKey }, operation, forward);
                     break;
                 case AUTH_TYPE.AMAZON_COGNITO_USER_POOLS:
                 case AUTH_TYPE.OPENID_CONNECT:
+                    const { jwtToken = '' } = auth;
                     promise = headerBasedAuth({ header: 'Authorization', value: jwtToken }, operation, forward);
                     break;
                 default:
-                    throw new Error(`Invalid AUTH_TYPE: ${type}`);
+                    const error = new Error(`Invalid AUTH_TYPE: ${(<AuthOptions>auth).type}`);
+                    error[PERMANENT_ERROR_KEY] = true;
+
+                    throw error;
             }
 
             promise.then(observable => {
@@ -183,10 +201,10 @@ const formatAsRequest = ({ operationName, variables, query }, options) => {
  * Removes all temporary variables (starting with '@@') so that the signature matches the final request.
  */
 const removeTemporaryVariables = (variables: any) =>
-  Object.keys(variables)
-    .filter(key => !key.startsWith("@@"))
-    .reduce((acc, key) => {
-      acc[key] = variables[key];
-      return acc;
-    }, {});
+    Object.keys(variables)
+        .filter(key => !key.startsWith("@@"))
+        .reduce((acc, key) => {
+            acc[key] = variables[key];
+            return acc;
+        }, {});
 

@@ -5,7 +5,6 @@
         "module": "commonjs",
         "target": "es5",
         "moduleResolution": "node",
-        "noEmitOnError": true,
         "declaration": true,
         "lib": [
             "dom",

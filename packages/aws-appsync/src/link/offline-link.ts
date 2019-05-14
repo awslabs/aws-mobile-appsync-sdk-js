@@ -15,7 +15,6 @@ import { Store } from "redux";
 import { OfflineCache, AppSyncMetadataState } from "../cache/offline-cache";
 import { isUuid, getOperationFieldName, rootLogger } from "../utils";
 import AWSAppSyncClient from "..";
-import { ApolloCache } from "apollo-cache";
 import { MutationUpdaterFn, MutationQueryReducersMap, ApolloError } from "apollo-client";
 import { RefetchQueryDescription, FetchPolicy } from "apollo-client/core/watchQueryOptions";
 import { OfflineCallback } from "../client";
@@ -34,7 +33,7 @@ const actions = {
 
 const IS_OPTIMISTIC_KEY = typeof Symbol !== 'undefined' ? Symbol('isOptimistic') : '@@isOptimistic';
 
-export const isOptimistic = obj => typeof obj[IS_OPTIMISTIC_KEY] !== undefined ? obj[IS_OPTIMISTIC_KEY] : undefined;
+export const isOptimistic = obj => typeof obj[IS_OPTIMISTIC_KEY] !== undefined ? !!obj[IS_OPTIMISTIC_KEY] : false;
 
 export class OfflineLink extends ApolloLink {
 

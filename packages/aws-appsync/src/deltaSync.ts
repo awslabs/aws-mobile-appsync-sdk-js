@@ -734,7 +734,7 @@ const updateBaseWithDelta = <T = { [key: string]: any }, TVariables = OperationV
 
         const operationName = getOperationFieldName(query);
 
-        const { [operationName]: baseResult } = cache.readQuery({ query, variables });
+        const { [operationName]: baseResult } = cache.readQuery<{ [key: string]: any }>({ query, variables });
 
         if (!Array.isArray(baseResult)) {
             throw new Error('Result of baseQuery is not an array');

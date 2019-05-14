@@ -20,7 +20,7 @@ import {
     ComplexObjectLink,
     AUTH_TYPE
 } from './link';
-import { createStore } from './store';
+import { createStore, StoreOptions, DEFAULT_KEY_PREFIX } from './store';
 import { ApolloCache } from 'apollo-cache';
 import { AuthOptions } from './link/auth-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
@@ -74,13 +74,13 @@ export const createAppSyncLink = ({
     resultsFetcherLink = createHttpLink({ uri: url }),
     conflictResolver,
 }: {
-        url: string,
-        region: string,
-        auth: AuthOptions,
-        complexObjectsCredentials: CredentialsGetter,
-        resultsFetcherLink?: ApolloLink,
-        conflictResolver?: ConflictResolver,
-    }) => {
+    url: string,
+    region: string,
+    auth: AuthOptions,
+    complexObjectsCredentials: CredentialsGetter,
+    resultsFetcherLink?: ApolloLink,
+    conflictResolver?: ConflictResolver,
+}) => {
     const link = ApolloLink.from([
         createLinkWithStore((store) => new OfflineLink(store)),
         new ConflictResolutionLink(conflictResolver),
@@ -133,10 +133,8 @@ export interface AWSAppSyncClientOptions {
     offlineConfig?: OfflineConfig,
 }
 
-export interface OfflineConfig {
-    storage?: any,
-    callback?: OfflineCallback,
-    storeCacheRootMutation?: boolean,
+export type OfflineConfig = Pick<Partial<StoreOptions<any>>, 'storage' | 'callback' | 'keyPrefix'> & {
+    storeCacheRootMutation?: boolean
 };
 
 // TODO: type defs
@@ -152,6 +150,8 @@ export interface ConflictResolutionInfo {
 }
 
 export type ConflictResolver = (obj: ConflictResolutionInfo) => 'DISCARD' | any;
+
+const keyPrefixesInUse = new Set<string>();
 
 class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends ApolloClient<TCacheShape> {
 
@@ -174,6 +174,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         disableOffline = false,
         offlineConfig: {
             storage = undefined,
+            keyPrefix = undefined,
             callback = () => { },
             storeCacheRootMutation = false,
         } = {},
@@ -186,15 +187,22 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             );
         }
 
+        keyPrefix = keyPrefix || DEFAULT_KEY_PREFIX;
+        if (!disableOffline && keyPrefixesInUse.has(keyPrefix)) {
+            throw new Error(`The keyPrefix ${keyPrefix} is already in use. Multiple clients cannot share the same keyPrefix. Provide a different keyPrefix in the offlineConfig object.`);
+        }
+
         let resolveClient;
 
         const dataIdFromObject = disableOffline ? () => null : cacheOptions.dataIdFromObject || defaultDataIdFromObject;
-        const store = disableOffline ? null : createStore(
-            () => this, () => { resolveClient(this); },
+        const store = disableOffline ? null : createStore({
+            clientGetter: () => this,
+            persistCallback: () => { resolveClient(this); },
             dataIdFromObject,
             storage,
+            keyPrefix,
             callback
-        );
+        });
         const cache: ApolloCache<any> = disableOffline
             ? (customCache || new InMemoryCache(cacheOptions))
             : new OfflineCache({ store, storeCacheRootMutation }, cacheOptions);
@@ -227,6 +235,10 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         this.hydratedPromise = disableOffline ? Promise.resolve(this) : new Promise(resolve => { resolveClient = resolve; });
         this._disableOffline = disableOffline;
         this._store = store;
+
+        if (!disableOffline) {
+            keyPrefixesInUse.add(keyPrefix);
+        }
     }
 
     isOfflineEnabled() {
