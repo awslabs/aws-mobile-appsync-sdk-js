@@ -5,7 +5,7 @@ import * as S3 from 'aws-sdk/clients/s3';
 
 const uploadMock = jest.fn(() => ({ promise: () => Promise.resolve() }));
 
-S3.prototype.upload = uploadMock;
+(<any>S3.prototype).upload = uploadMock;
 
 const inspectionLink = jest.fn((operation, forward) => forward(operation));
 
