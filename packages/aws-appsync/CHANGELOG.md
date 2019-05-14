@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="1.8.0"></a>
+# [1.8.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.7.2...aws-appsync@1.8.0) (2019-05-14)
+
+
+### Bug Fixes
+
+* **deltaSync:** Read last sync timestamps from store if not present in options ([#401](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/401)) ([8d3602f](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/8d3602f))
+
+
+### Features
+
+* Multi-client support ([#398](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/398)) ([1885a8a](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/1885a8a))
+
+
+
+
 <a name="1.7.2"></a>
 ## [1.7.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.7.1...aws-appsync@1.7.2) (2019-03-12)
 
