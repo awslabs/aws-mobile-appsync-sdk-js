@@ -7,6 +7,7 @@ import { applyMiddleware, createStore, compose, combineReducers, Store, Reducer,
 import { offline } from '@redux-offline/redux-offline';
 import defaultOfflineConfig from '@redux-offline/redux-offline/lib/defaults';
 import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
+import { KEY_PREFIX as REDUX_PERSIST_KEY_PREFIX } from "redux-persist/constants";
 import thunk from 'redux-thunk';
 
 import { AWSAppSyncClient, OfflineCallback } from './client';
@@ -22,13 +23,25 @@ const { detectNetwork } = defaultOfflineConfig;
 
 const logger = rootLogger.extend('store');
 
-const newStore = <TCacheShape extends NormalizedCacheObject>(
-    clientGetter: () => AWSAppSyncClient<TCacheShape> = () => null,
+export type StoreOptions<TCacheShape extends NormalizedCacheObject> = {
+    clientGetter: () => AWSAppSyncClient<TCacheShape>,
+    persistCallback: () => void,
+    dataIdFromObject: (obj: any) => string | null,
+    keyPrefix?: string,
+    storage?: any,
+    callback: OfflineCallback,
+};
+
+export const DEFAULT_KEY_PREFIX = REDUX_PERSIST_KEY_PREFIX;
+
+const newStore = <TCacheShape extends NormalizedCacheObject>({
+    clientGetter = () => null,
     persistCallback = () => null,
-    dataIdFromObject: (obj) => string | null,
-    storage: any,
-    callback: OfflineCallback = () => { },
-): Store<any> => {
+    dataIdFromObject,
+    keyPrefix,
+    storage,
+    callback = () => { },
+}: StoreOptions<TCacheShape>): Store<any> => {
     logger('Creating store');
 
     const store = createStore(
@@ -56,6 +69,7 @@ const newStore = <TCacheShape extends NormalizedCacheObject>(
                     persistCallback();
                 },
                 persistOptions: {
+                    ...(keyPrefix && { keyPrefix: `${keyPrefix}:` }),
                     ...(storage && { storage }),
                     whitelist: [
                         NORMALIZED_CACHE_KEY,
@@ -100,7 +114,11 @@ declare type OfflineEffectConfigMap = {
 const offlineEffectsConfigs = [
     mutationsConfig,
     deltaSyncConfig
-].reduce((acc, { enqueueAction, ...rest }) => (acc[enqueueAction] = { enqueueAction, ...rest }, acc), {}) as OfflineEffectConfigMap;
+].filter(Boolean).reduce((acc, { enqueueAction, ...rest }) => {
+    acc[enqueueAction] = { enqueueAction, ...rest };
+
+    return acc;
+}, {}) as OfflineEffectConfigMap;
 
 const reducer: (dataIdFromObject: IdGetter) => ReducersMapObject = <S>(dataIdFromObject) => ({
     [METADATA_KEY]: (state: S, action: AnyAction) => Object.entries(offlineEffectsConfigs)
