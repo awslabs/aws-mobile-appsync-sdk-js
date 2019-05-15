@@ -445,7 +445,13 @@ const discard = (callback: OfflineCallback, error, action, retries) => {
     const discardResult = _discard(error, action, retries);
 
     if (discardResult) {
-        // Call global error callback or observer
+        // Call global error callback and observer
+        const { meta: { offline: { effect: { observer } } } } = action;
+
+        if (observer && !observer.closed) {
+            observer.error(error);
+        }
+
         if (typeof callback === 'function') {
             tryFunctionOrLogError(() => {
                 callback({ error }, null);
