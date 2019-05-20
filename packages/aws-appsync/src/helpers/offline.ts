@@ -331,7 +331,7 @@ const buildMutation = <T = OperationVariables>(
     return {
         mutation,
         variables: hasInputType
-            ? { input: { ...(useVersioning && { [versionFieldName]: version }), ...variables.input } }
+            ? { input: { ...(useVersioning ? { [versionFieldName]: version } : {}), ...variables.input } }
             : { version, expectedVersion: version, ...variables },
         optimisticResponse: typename ? {
             __typename: "Mutation",
