@@ -79,11 +79,11 @@ Replace everything __after__ the definition of the `<App />` component with the 
 
 ```jsx
 const client = new AWSAppSyncClient({
-  url: awsmobile.graphqlEndpoint,
-  region: awsmobile.region,
+  url: awsmobile.aws_appsync_graphqlEndpoint,
+  region: awsmobile.aws_appsync_region,
   auth: {
-    type: awsmobile.authenticationType,
-    apiKey: awsmobile.apiKey
+    type: awsmobile.aws_appsync_authenticationType,
+    apiKey: awsmobile.aws_appsync_apiKey
   }
 })
 
