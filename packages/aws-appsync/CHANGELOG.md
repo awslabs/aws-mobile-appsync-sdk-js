@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.8.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.8.0...aws-appsync@1.8.1) (2019-06-17)
+
+
+### Bug Fixes
+
+* **offline:** Call observer.error when discarding mutation ([#408](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/408)) ([526b9b8](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/526b9b8)), closes [aws-amplify/amplify-js#3243](https://github.com/aws-amplify/amplify-js/issues/3243)
+
+
+
+
+
 <a name="1.8.0"></a>
 # [1.8.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.7.2...aws-appsync@1.8.0) (2019-05-14)
 
