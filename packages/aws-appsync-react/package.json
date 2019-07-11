@@ -25,6 +25,7 @@
     "react-apollo": "2.x"
   },
   "devDependencies": {
+    "@react-native-community/netinfo": "^4.0.0",
     "@types/graphql": "0.12.4",
     "@types/react": "^16.0.25",
     "aws-appsync": "^1.8.1",

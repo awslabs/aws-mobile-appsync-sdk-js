@@ -282,6 +282,11 @@
     "@types/istanbul-lib-coverage" "^2.0.0"
     "@types/yargs" "^12.0.9"
 
+"@react-native-community/netinfo@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@react-native-community/netinfo/-/netinfo-4.0.0.tgz#fd1fb453a3a9def3d64244a29a16159235f99341"
+  integrity sha512-jpeSQF4hb4fRI03uMmAwXyuObn+AdbL01zGQiUIcR9EDo+eu/q8tc4Z2kuxv2uTCfj+r/fptrElZDLd/ybMzuQ==
+
 "@redux-offline/redux-offline@2.2.1":
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/@redux-offline/redux-offline/-/redux-offline-2.2.1.tgz#4e7622da0b37bb90b5c713b1db50863f81b1038b"
@@ -739,9 +744,10 @@ atob@^2.1.1:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/atob/-/atob-2.1.2.tgz#6d9517eb9e030d2436666651e86bd9f6f13533c9"
 
-aws-sdk@2.329.0:
-  version "2.329.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.329.0.tgz#616da7ca5e1909e53333148694990e068272150f"
+aws-sdk@2.472.0:
+  version "2.472.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.472.0.tgz#0da7062299125a85fdea5786d13019d80aac8ee4"
+  integrity sha512-uFatrjfMSwC34VxdG9ollX6K61e+iaoE5ZHQ/OKeSoWx9HXs3AwJqIS90iBLEhaAm2WoTMFYAv0irMC8eMCu3g==
   dependencies:
     buffer "4.9.1"
     events "1.1.1"
@@ -750,7 +756,7 @@ aws-sdk@2.329.0:
     querystring "0.2.0"
     sax "1.2.1"
     url "0.10.3"
-    uuid "3.1.0"
+    uuid "3.3.2"
     xml2js "0.4.19"
 
 aws-sign2@~0.7.0:
@@ -6579,11 +6585,7 @@ uuid@3.0.1:
   version "3.0.1"
   resolved "http://registry.npmjs.org/uuid/-/uuid-3.0.1.tgz#6544bba2dfda8c1cf17e629a3a305e2bb1fee6c1"
 
-uuid@3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.1.0.tgz#3dd3d3e790abc24d7b0d3a034ffababe28ebbc04"
-
-uuid@3.x, uuid@^3.0.1, uuid@^3.3.2:
+uuid@3.3.2, uuid@3.x, uuid@^3.0.1, uuid@^3.3.2:
   version "3.3.2"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.3.2.tgz#1b4af4955eb3077c501c23872fc6513811587131"
 
