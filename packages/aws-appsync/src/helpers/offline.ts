@@ -212,7 +212,7 @@ const findArrayInObject = (obj, path: string[] = []): string[] => {
     return result;
 };
 
-const getValueByPath = (obj, path: string[]) => {
+const getValueByPath = (obj, path: string[] = []) => {
     if (!isObject(obj)) {
         return obj;
     }
