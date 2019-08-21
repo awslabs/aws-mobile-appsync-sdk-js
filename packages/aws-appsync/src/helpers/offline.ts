@@ -119,15 +119,19 @@ const buildSubscription = (
             const optype = operationType || getOpTypeFromOperationName(subField);
 
             const updater = getUpdater(optype, idField);
-
-            const path = findArrayInObject(prev);
-            const arr = [...getValueByPath(prev, path)];
-
-            const updatedOpResult = updater(arr, mutadedItem);
-
+            let updatedOpResult;
             let result;
 
-            if (path.length === 0) {
+            const path = findArrayInObject(prev);
+            if(path) {
+                const arr = [...getValueByPath(prev, path)];
+                updatedOpResult = updater(arr, mutadedItem);
+            }
+            else {
+                updatedOpResult = updater(prev, mutadedItem);
+            }            
+
+            if (!path || path.length === 0) {
                 result = updatedOpResult;
             } else {
                 const cloned = cloneDeep(prev);
@@ -148,16 +152,34 @@ export const getUpdater = <T>(opType: CacheOperationTypes, idField = 'id'): (arr
 
     switch (opType) {
         case CacheOperationTypes.ADD:
-            updater = (arr, newItem) => !newItem ? [...arr] : [...arr.filter(item => item[idField] !== newItem[idField]), newItem];
+            updater = (currentValue, newItem) => {
+                if (Array.isArray(currentValue)) {
+                    return !newItem ? [...currentValue] : [...currentValue.filter(item => item[idField] !== newItem[idField]), newItem]
+                } else {
+                    return newItem;
+                }
+            };
             break;
         case CacheOperationTypes.UPDATE:
-            updater = (arr, newItem) => !newItem ? [...arr] : arr.map(item => item[idField] === newItem[idField] ? newItem : item);
+            updater = (currentValue, newItem) => {
+                if (Array.isArray(currentValue)) {
+                    return !newItem ? [...currentValue] : currentValue.map(item => item[idField] === newItem[idField] ? newItem : item);
+                } else {
+                    return newItem;
+                }
+            };
             break;
         case CacheOperationTypes.REMOVE:
-            updater = (arr, newItem) => !newItem ? [] : arr.filter(item => item[idField] !== newItem[idField]);
+            updater = (currentValue, newItem) => {
+                if (Array.isArray(currentValue)) {
+                    return !newItem ? [...currentValue] : currentValue.filter(item => item[idField] !== newItem[idField]);
+                } else {
+                    return null;
+                }
+            }
             break;
         default:
-            updater = arr => arr;
+            updater = (currentValue) => currentValue;
     }
 
     return updater;
@@ -284,7 +306,7 @@ const buildMutation = <T = OperationVariables>(
     const opTypeQueriesMap = getOpTypeQueriesMap(cacheUpdateQuery, variables);
 
     const { [idField || 'id']: idCustomField } = hasInputType ? variables.input : variables;
-
+    
     const comparator = elem => elem[idField] === idCustomField;
 
     let version = 0;
@@ -298,9 +320,9 @@ const buildMutation = <T = OperationVariables>(
             const queryField = getOperationFieldName(query);
 
             let result;
+            let cachedItem;
             try {
                 const { [queryField]: queryRead } = client.readQuery<{ [key: string]: any }>({ query, variables: queryVars });
-
                 result = queryRead;
             } catch (err) {
                 logger('Skipping query', query, err.message);
@@ -309,9 +331,12 @@ const buildMutation = <T = OperationVariables>(
             }
 
             const path = findArrayInObject(result);
-            const arr = [...getValueByPath(result, path)];
-
-            const cachedItem = arr.find(comparator);
+            if(path) {
+                const arr = [...getValueByPath(result, path)]
+                cachedItem = arr.find(comparator);
+            } else {
+                cachedItem = result;
+            }
 
             if (cachedItem) {
                 version = Math.max(version, cachedItem.version);
@@ -359,7 +384,7 @@ const buildMutation = <T = OperationVariables>(
                     }
 
                     let data;
-
+                    let updatedOpResult;
                     try {
                         data = proxy.readQuery({ query, variables: queryVars });
                     } catch (err) {
@@ -371,11 +396,15 @@ const buildMutation = <T = OperationVariables>(
                     const opResultCachedValue = data[queryField];
 
                     const path = findArrayInObject(opResultCachedValue);
-                    const arr = [...getValueByPath(opResultCachedValue, path)];
+                    if (path) {
+                        const arr = [...getValueByPath(opResultCachedValue, path)];
+                        updatedOpResult = updaterFn(arr, mutatedItem);
+                    } else {
+                        updatedOpResult = updaterFn(opResultCachedValue, mutatedItem);
+                    }
+                   
 
-                    const updatedOpResult = updaterFn(arr, mutatedItem);
-
-                    if (path.length === 0) {
+                    if (!path || path.length === 0) {
                         data[queryField] = updatedOpResult;
                     } else {
                         setValueByPath(data[queryField], path, updatedOpResult);
