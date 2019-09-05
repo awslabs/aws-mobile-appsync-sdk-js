@@ -44,7 +44,7 @@ export default class Rehydrated extends React.Component<RehydratedProps, Rehydra
         };
     }
 
-    async componentWillMount() {
+    async componentDidMount() {
         await this.context.client.hydrated();
 
         this.setState({

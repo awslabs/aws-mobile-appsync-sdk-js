@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import * as React from "react";
-import { View, Text, StyleSheet, NetInfo, ViewPropTypes } from "react-native";
+import { View, Text, StyleSheet, ViewPropTypes } from "react-native";
+import NetInfo from '@react-native-community/netinfo';
 import * as PropTypes from 'prop-types';
 
 import AWSAppSyncClient from 'aws-appsync';
@@ -55,7 +56,7 @@ export default class Rehydrated extends React.Component<RehydratedProps, Rehydra
         };
     }
 
-    async componentWillMount() {
+    async componentDidMount() {
         await this.context.client.hydrated();
         await NetInfo.isConnected.fetch();
 
