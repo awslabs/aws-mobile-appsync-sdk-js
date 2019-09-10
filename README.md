@@ -27,6 +27,28 @@ npm install --save aws-appsync
 yarn add aws-appsync
 ```
 
+#### React Native Compatibility
+When using this library with React Native, you need to ensure you are using the correct version of the library based on your version of React Native. Take a look at the table below to determine what version to use.
+
+
+| `aws-appsync` version                     | Required React Native Version                                                 
+| ----------------------------------------- | -------------------------------------------------------------------------------- |
+| `2.x.x`                                   | `>= 0.60`
+| `1.x.x`                                   | `<= 0.59`                                                                      
+
+If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo`:
+
+```
+npm install --save @react-native-community/netinfo
+```
+or 
+```
+yarn add @react-native-community/netinfo
+```
+If you are using React Native `0.60+` for iOS, run the following command as an additional step: 
+```
+cd ios && pod install && cd ..
+```
 ## Usage
 
 Please visit the [documentation with the Amplify Framework](https://aws-amplify.github.io/docs/js/api) for detailed instructions.
