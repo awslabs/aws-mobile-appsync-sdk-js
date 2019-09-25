@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.0.0"></a>
+# [2.0.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@1.2.9...aws-appsync-react@2.0.0) (2019-09-06)
+
+
+### Bug Fixes
+
+* Add support for React Native 0.60 ([#457](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/457)) ([fa19c4a](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/fa19c4a))
+
+
+
+
+<a name="1.2.9"></a>
 ## [1.2.9](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@1.2.8...aws-appsync-react@1.2.9) (2019-06-17)
 
 **Note:** Version bump only for package aws-appsync-react
