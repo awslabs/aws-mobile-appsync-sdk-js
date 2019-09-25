@@ -3,13 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.0.0"></a>
+# [2.0.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.8.1...aws-appsync@2.0.0) (2019-09-15)
+
+
+### Bug Fixes
+* Adding support in the offline helpers to update the cache for queries whose result does not contain a list ([#455](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/455)) ([a7539fb](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/a7539fb))
+* Add support for React Native 0.60 ([#457](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/457)) ([fa19c4a](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/fa19c4a))
+* **aws-appsync:** Update aws-sdk to be the same as amplify ([#458](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/458)) ([fe513d8](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/fe513d8))
+
+
+
+
+<a name="1.8.1"></a>
 ## [1.8.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@1.8.0...aws-appsync@1.8.1) (2019-06-17)
 
 
 ### Bug Fixes
 
 * **offline:** Call observer.error when discarding mutation ([#408](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/408)) ([526b9b8](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/526b9b8)), closes [aws-amplify/amplify-js#3243](https://github.com/aws-amplify/amplify-js/issues/3243)
-
 
 
 
