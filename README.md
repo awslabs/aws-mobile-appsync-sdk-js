@@ -89,6 +89,7 @@ const client = new AWSAppSyncClient({
   auth: {
     type: AppSyncConfig.authenticationType,
     apiKey: AppSyncConfig.apiKey,
+    // customHeaders: {"Authorization" : "Bearer 1234"} // optional : these headers will be added to each request 
     // jwtToken: async () => token, // Required when you use Cognito UserPools OR OpenID Connect. token object is obtained previously
   }
 })
