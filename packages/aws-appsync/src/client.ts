@@ -14,11 +14,7 @@ import { OfflineCache, defaultDataIdFromObject } from './cache/index';
 import { OfflineCache as OfflineCacheType, METADATA_KEY } from './cache/offline-cache';
 import {
     OfflineLink,
-    AuthLink,
-    NonTerminatingLink,
-    SubscriptionHandshakeLink,
     ComplexObjectLink,
-    AUTH_TYPE
 } from './link';
 import { createStore, StoreOptions, DEFAULT_KEY_PREFIX } from './store';
 import { ApolloCache } from 'apollo-cache';
@@ -30,41 +26,16 @@ import ConflictResolutionLink from './link/conflict-resolution-link';
 import { createRetryLink } from './link/retry-link';
 import { boundEnqueueDeltaSync, buildSync, DELTASYNC_KEY, hashForOptions } from "./deltaSync";
 import { Subscription } from 'apollo-client/util/Observable';
-import { CONTROL_EVENTS_KEY } from './link/subscription-handshake-link';
+import {
+    createAuthLink,
+    AUTH_TYPE
+} from 'aws-appsync-auth-link';
+
+import {
+    createSubscriptionHandshakeLink
+} from 'aws-appsync-subscription-link';
 
 export { defaultDataIdFromObject };
-
-export const createSubscriptionHandshakeLink = (url: string, resultsFetcherLink: ApolloLink = createHttpLink({ uri: url })) => {
-    return ApolloLink.split(
-        operation => {
-            const { query } = operation;
-            const { kind, operation: graphqlOperation } = getMainDefinition(query) as OperationDefinitionNode;
-            const isSubscription = kind === 'OperationDefinition' && graphqlOperation === 'subscription';
-
-            return isSubscription;
-        },
-        ApolloLink.from([
-            new NonTerminatingLink('controlMessages', {
-                link: new ApolloLink((operation, _forward) => new Observable<any>(observer => {
-                    const { variables: { [CONTROL_EVENTS_KEY]: controlEvents, ...variables } } = operation;
-
-                    if (typeof controlEvents !== 'undefined') {
-                        operation.variables = variables;
-                    }
-
-                    observer.next({ [CONTROL_EVENTS_KEY]: controlEvents });
-
-                    return () => { };
-                }))
-            }),
-            new NonTerminatingLink('subsInfo', { link: resultsFetcherLink }),
-            new SubscriptionHandshakeLink('subsInfo'),
-        ]),
-        resultsFetcherLink,
-    );
-};
-
-export const createAuthLink = ({ url, region, auth }: { url: string, region: string, auth: AuthOptions }) => new AuthLink({ url, region, auth });
 
 export const createAppSyncLink = ({
     url,
