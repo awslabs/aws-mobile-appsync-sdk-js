@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync-subscription-link",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync SDK for JavaScript",
@@ -28,11 +28,11 @@
   },
   "devDependencies": {
     "@redux-offline/redux-offline": "2.5.2-native.0",
-    "graphql": "0.13.0",
     "@types/graphql": "0.12.4",
     "@types/jest": "24",
     "@types/node": "^8.0.46",
     "@types/zen-observable": "^0.5.3",
+    "graphql": "0.13.0",
     "graphql-tag": "^2.9.2",
     "jest": "24",
     "node-fetch": "^2.2.0",
