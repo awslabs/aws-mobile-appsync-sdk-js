@@ -23,9 +23,7 @@
     "aws-sdk": "2.518.0",
     "debug": "2.6.9",
     "graphql": "0.13.0",
-    "setimmediate": "^1.0.5",
-    "url": "^0.11.0",
-    "uuid": "3.x"
+    "url": "^0.11.0"
   },
   "devDependencies": {
     "@types/graphql": "0.12.4",
