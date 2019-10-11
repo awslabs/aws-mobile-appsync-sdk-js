@@ -10,11 +10,10 @@ import { print } from 'graphql/language/printer';
 import { Signer } from './signer';
 import * as Url from 'url';
 
-import { userAgent } from "../platform";
+import { userAgent } from "./platform";
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
-import { PERMANENT_ERROR_KEY } from './retry-link';
 
-const packageInfo = require("../../package.json");
+const packageInfo = require("../package.json");
 
 const SERVICE = 'appsync';
 const USER_AGENT_HEADER = 'x-amz-user-agent';
@@ -158,7 +157,6 @@ export const authLink = ({ url, region, auth: { type } = <AuthOptions>{}, auth }
                     break;
                 default:
                     const error = new Error(`Invalid AUTH_TYPE: ${(<AuthOptions>auth).type}`);
-                    error[PERMANENT_ERROR_KEY] = true;
 
                     throw error;
             }

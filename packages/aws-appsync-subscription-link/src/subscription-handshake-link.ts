@@ -4,12 +4,11 @@
  */
 import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
 
-import { rootLogger } from "../utils";
-import * as Paho from '../vendor/paho-mqtt';
+import { rootLogger } from "./utils";
+import * as Paho from './vendor/paho-mqtt';
 import { ApolloError } from "apollo-client";
 import { FieldNode } from "graphql";
 import { getMainDefinition } from "apollo-utilities";
-import { PERMANENT_ERROR_KEY } from "./retry-link";
 
 const logger = rootLogger.extend('subscriptions');
 const mqttLogger = logger.extend('mqtt');
@@ -167,7 +166,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
             if (errorCode !== 0) {
                 topics.forEach(t => {
                     if (this.topicObservers.has(t)) {
-                        this.topicObservers.get(t).forEach(observer => observer.error({ ...args, [PERMANENT_ERROR_KEY]: true }));
+                        this.topicObservers.get(t).forEach(observer => observer.error({ ...args, permanent: true }));
                     }
                 });
             }
