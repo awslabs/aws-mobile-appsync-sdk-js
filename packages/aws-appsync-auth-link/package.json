@@ -20,10 +20,8 @@
   },
   "dependencies": {
     "apollo-link": "^1.2.3",
-    "aws-sdk": "2.518.0",
-    "debug": "2.6.9",
-    "graphql": "0.13.0",
-    "url": "^0.11.0"
+    "aws-sdk": "^2.518.0",
+    "debug": "2.6.9"
   },
   "devDependencies": {
     "@types/graphql": "0.12.4",
