@@ -13,7 +13,7 @@ import * as Url from 'url';
 import { userAgent } from "./platform";
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 
-const packageInfo = require("../../package.json");
+const packageInfo = require("../package.json");
 
 const SERVICE = 'appsync';
 const USER_AGENT_HEADER = 'x-amz-user-agent';
