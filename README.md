@@ -666,11 +666,11 @@ export default {
 }
 ```
 
-### Angular / Ionic examples coming soon
+### Using Authorization and Subscription links with Apollo Client (No offline support)
 
-### Integration with Apollo Client (No offline support)
+For versions of the Apollo client newer than 2.4.6 you can use custom links for Authorization and Subscriptions. Offline support is not available for these newer versions. The packages available are
+`aws-appsync-auth-link` and `aws-apsync-subscription-link`.
 
-In order to use AppSync with Apollo Client you need to install `aws-appsync-auth-link` and `aws-apsync-subscription-link` (if you want real time subscriptions)
 
 ```javascript
 import { createAuthLink } from 'aws-appsync-auth-link';
