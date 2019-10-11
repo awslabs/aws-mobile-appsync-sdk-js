@@ -4,4 +4,3 @@
  */
 export { OfflineLink, replaceUsingMap } from './offline-link';
 export { ComplexObjectLink } from "./complex-object-link";
-export { Signer } from "./signer";

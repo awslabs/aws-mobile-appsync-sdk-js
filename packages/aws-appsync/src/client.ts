@@ -63,16 +63,20 @@ class PermanentErrorLink extends ApolloLink {
 
     request(operation, forward?: NextLink) {
         return new Observable(observer => {
-            this.link.request(operation, forward).subscribe({
-                next: observer.next,
+            const subscription = this.link.request(operation, forward).subscribe({
+                next: observer.next.bind(observer),
                 error: err => {
                     if (err.permanent) {
                         err[PERMANENT_ERROR_KEY] = true;
                     }
-                    observer.error(err);
+                    observer.error.call(observer, err);
                 },
-                complete: observer.complete
+                complete: observer.complete.bind(observer)
             })
+
+            return () => {
+                subscription.unsubscribe();
+            }
         });
     }
 }
@@ -97,7 +101,7 @@ export const createAppSyncLink = ({
         new ConflictResolutionLink(conflictResolver),
         new ComplexObjectLink(complexObjectsCredentials),
         createRetryLink(ApolloLink.from([
-            new CatchErrorLink(() => new AuthLink({ url, region, auth })),
+            new CatchErrorLink(() =>new AuthLink({ url, region, auth })),
             new PermanentErrorLink(createSubscriptionHandshakeLink(url, resultsFetcherLink))
         ]))
     ].filter(Boolean));

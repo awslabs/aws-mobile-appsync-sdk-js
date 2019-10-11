@@ -668,6 +668,35 @@ export default {
 
 ### Angular / Ionic examples coming soon
 
+### Integration with Apollo Client (No offline support)
+
+In order to use AppSync with Apollo Client you need to install `aws-appsync-auth-link` and `aws-apsync-subscription-link` (if you want real time subscriptions)
+
+```javascript
+import { createAuthLink } from 'aws-appsync-auth-link';
+import { createSubscriptionHandshakeLink } from 'aws-appsync-subscription-link';
+import { createHttpLink } from 'apollo-link-http';
+import appSyncConfig from "./aws-exports";
+
+const url = appSyncConfig.aws_appsync_graphqlEndpoint;
+const region = appSyncConfig.aws_appsync_region;
+const auth = {
+  type: appSyncConfig.aws_appsync_authenticationType,
+  apiKey: appSyncConfig.aws_appsync_apiKey,
+};
+
+const link = ApolloLink.from([
+  createAuthLink({ url, region, auth }),
+  createSubscriptionHandshakeLink(url),
+  createHttpLink({ uri: url })
+]);
+
+const client = new ApolloClient({
+  link,
+  cache: new InMemoryCache()
+})
+```
+
 ## Creating an AppSync Project    
 
 To create a new AppSync project, go to https://aws.amazon.com/appsync/.
