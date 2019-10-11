@@ -9,7 +9,8 @@ import * as Paho from './vendor/paho-mqtt';
 import { ApolloError } from "apollo-client";
 import { FieldNode } from "graphql";
 import { getMainDefinition } from "apollo-utilities";
-import { PERMANENT_ERROR_KEY } from "./retry-link";
+
+import { PERMANENT_ERROR_KEY } from "aws-appsync-constants";
 
 const logger = rootLogger.extend('subscriptions');
 const mqttLogger = logger.extend('mqtt');

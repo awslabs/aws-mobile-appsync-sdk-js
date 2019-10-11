@@ -33,3 +33,5 @@ export const createSubscriptionHandshakeLink = (url: string, resultsFetcherLink:
         resultsFetcherLink,
     );
 };
+
+export { CONTROL_EVENTS_KEY }; 

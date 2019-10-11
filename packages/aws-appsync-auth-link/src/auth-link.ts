@@ -12,7 +12,7 @@ import * as Url from 'url';
 
 import { userAgent } from "./platform";
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
-import { PERMANENT_ERROR_KEY } from './retry-link';
+import { PERMANENT_ERROR_KEY } from 'aws-appsync-constants';
 
 const packageInfo = require("../../package.json");
 
