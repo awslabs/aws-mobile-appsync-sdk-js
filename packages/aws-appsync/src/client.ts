@@ -5,7 +5,7 @@
 import 'setimmediate';
 import ApolloClient, { ApolloClientOptions, MutationOptions, OperationVariables, MutationUpdaterFn } from 'apollo-client';
 import { InMemoryCache, ApolloReducerConfig, NormalizedCacheObject } from 'apollo-cache-inmemory';
-import { ApolloLink, Observable, FetchResult } from 'apollo-link';
+import { ApolloLink, Observable, FetchResult, NextLink } from 'apollo-link';
 import { createHttpLink } from 'apollo-link-http';
 import { getMainDefinition } from 'apollo-utilities';
 import { Store } from 'redux';
@@ -18,7 +18,8 @@ import {
 } from './link';
 import { createStore, StoreOptions, DEFAULT_KEY_PREFIX } from './store';
 import { ApolloCache } from 'apollo-cache';
-import { AuthOptions } from 'aws-appsync-auth-link';
+import { AuthOptions, AuthLink, AUTH_TYPE } from 'aws-appsync-auth-link';
+import { createSubscriptionHandshakeLink } from 'aws-appsync-subscription-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
@@ -26,16 +27,55 @@ import ConflictResolutionLink from './link/conflict-resolution-link';
 import { createRetryLink } from './link/retry-link';
 import { boundEnqueueDeltaSync, buildSync, DELTASYNC_KEY, hashForOptions } from "./deltaSync";
 import { Subscription } from 'apollo-client/util/Observable';
-import {
-    createAuthLink,
-    AUTH_TYPE
-} from 'aws-appsync-auth-link';
+import { PERMANENT_ERROR_KEY } from './link/retry-link';
 
-import {
-    createSubscriptionHandshakeLink
-} from 'aws-appsync-subscription-link';
 
 export { defaultDataIdFromObject };
+
+class CatchErrorLink extends ApolloLink {
+    
+    private link: ApolloLink;
+    
+    constructor(linkGenerator: () => ApolloLink) {
+        try {
+            super();
+            this.link = linkGenerator();
+        } catch (error) {
+            error[PERMANENT_ERROR_KEY] = true;
+            throw error;
+        }
+    }
+
+    request(operation, forward?: NextLink) {
+        return this.link.request(operation, forward);
+    }
+}
+
+class PermanentErrorLink extends ApolloLink {
+
+    private link: ApolloLink;
+
+    constructor(link: ApolloLink) {
+        super();
+
+        this.link = link;
+    }
+
+    request(operation, forward?: NextLink) {
+        return new Observable(observer => {
+            this.link.request(operation, forward).subscribe({
+                next: observer.next,
+                error: err => {
+                    if (err.permanent) {
+                        err[PERMANENT_ERROR_KEY] = true;
+                    }
+                    observer.error(err);
+                },
+                complete: observer.complete
+            })
+        });
+    }
+}
 
 export const createAppSyncLink = ({
     url,
@@ -57,8 +97,8 @@ export const createAppSyncLink = ({
         new ConflictResolutionLink(conflictResolver),
         new ComplexObjectLink(complexObjectsCredentials),
         createRetryLink(ApolloLink.from([
-            createAuthLink({ url, region, auth }),
-            createSubscriptionHandshakeLink(url, resultsFetcherLink)
+            new CatchErrorLink(() => new AuthLink({ url, region, auth })),
+            new PermanentErrorLink(createSubscriptionHandshakeLink(url, resultsFetcherLink))
         ]))
     ].filter(Boolean));
 

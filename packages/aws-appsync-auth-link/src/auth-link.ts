@@ -12,7 +12,6 @@ import * as Url from 'url';
 
 import { userAgent } from "./platform";
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
-import { PERMANENT_ERROR_KEY } from 'aws-appsync-constants';
 
 const packageInfo = require("../../package.json");
 
@@ -158,7 +157,6 @@ export const authLink = ({ url, region, auth: { type } = <AuthOptions>{}, auth }
                     break;
                 default:
                     const error = new Error(`Invalid AUTH_TYPE: ${(<AuthOptions>auth).type}`);
-                    error[PERMANENT_ERROR_KEY] = true;
 
                     throw error;
             }

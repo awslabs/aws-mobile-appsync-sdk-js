@@ -7,7 +7,7 @@ import { RetryLink } from "apollo-link-retry";
 import { OfflineAction } from "@redux-offline/redux-offline/lib/types";
 import { graphQLResultHasError } from "apollo-utilities";
 
-import { PERMANENT_ERROR_KEY } from "aws-appsync-constants";
+export const PERMANENT_ERROR_KEY = typeof Symbol !== 'undefined' ? Symbol('permanentError') : '@@permanentError';
 const BASE_TIME_MS = 100;
 const JITTER_FACTOR = 100;
 const MAX_DELAY_MS = 5 * 60 * 1000;

@@ -14,7 +14,7 @@
     "url": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git"
   },
   "scripts": {
-    "prepare": "tsc && cp -r src/vendor lib/vendor",
+    "prepare": "tsc",
     "test": "jest --coverage --coverageReporters=text",
     "test-watch": "jest --watch"
   },
@@ -28,7 +28,6 @@
     "apollo-link-retry": "2.2.5",
     "aws-appsync-auth-link": "^1.0.0",
     "aws-appsync-subscription-link": "^1.0.0",
-    "aws-appsync-constants": "^1.0.0",
     "aws-sdk": "2.518.0",
     "debug": "2.6.9",
     "graphql": "0.13.0",
