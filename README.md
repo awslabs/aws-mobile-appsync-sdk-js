@@ -669,7 +669,7 @@ export default {
 ### Using Authorization and Subscription links with Apollo Client (No offline support)
 
 For versions of the Apollo client newer than 2.4.6 you can use custom links for Authorization and Subscriptions. Offline support is not available for these newer versions. The packages available are
-`aws-appsync-auth-link` and `aws-apsync-subscription-link`.
+`aws-appsync-auth-link` and `aws-appsync-subscription-link`. Below is a sample code snippet that shows how to use it.
 
 
 ```javascript
