@@ -677,6 +677,7 @@ import { createAuthLink } from 'aws-appsync-auth-link';
 import { createSubscriptionHandshakeLink } from 'aws-appsync-subscription-link';
 
 import { ApolloLink } from 'apollo-link';
+import { createHttpLink } from 'apollo-link-http';
 import ApolloClient from 'apollo-client';
 import { InMemoryCache } from 'apollo-cache-inmemory';
 
@@ -689,9 +690,11 @@ const auth = {
   apiKey: appSyncConfig.aws_appsync_apiKey,
 };
 
+const httpLink = createHttpLink({ uri: url });
+
 const link = ApolloLink.from([
   createAuthLink({ url, region, auth }),
-  createSubscriptionHandshakeLink(url)
+  createSubscriptionHandshakeLink(url, httpLink)
 ]);
 
 const client = new ApolloClient({
