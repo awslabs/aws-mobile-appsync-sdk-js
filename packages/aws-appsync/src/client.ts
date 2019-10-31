@@ -83,10 +83,11 @@ class PermanentErrorLink extends ApolloLink {
 
 export const createAppSyncLink = ({
     url,
+    fetch,
     region,
     auth,
     complexObjectsCredentials,
-    resultsFetcherLink = createHttpLink({ uri: url }),
+    resultsFetcherLink = createHttpLink({ uri: url, fetch }),
     conflictResolver,
 }: {
     url: string,
@@ -95,6 +96,7 @@ export const createAppSyncLink = ({
     complexObjectsCredentials: CredentialsGetter,
     resultsFetcherLink?: ApolloLink,
     conflictResolver?: ConflictResolver,
+    fetch: GlobalFetch['fetch']
 }) => {
     const link = ApolloLink.from([
         createLinkWithStore((store) => new OfflineLink(store)),
