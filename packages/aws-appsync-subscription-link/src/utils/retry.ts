@@ -22,8 +22,8 @@ const isNonRetryableError = (obj: any): obj is NonRetryableError => {
 };
 
 /**
- * Internal use of Subscription link 
  * @private
+ * Internal use of Subscription link 
  */ 
 export async function retry(
   functionToRetry: Function,
@@ -63,8 +63,8 @@ function jitteredBackoff(maxDelayMs: number): DelayFunction {
 }
 
 /**
- * Internal use of Subscription link 
  * @private
+ * Internal use of Subscription link 
  */ 
 export const jitteredExponentialRetry = (
   functionToRetry: Function,
