@@ -16,8 +16,8 @@ import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 const packageInfo = require("../package.json");
 
 const SERVICE = 'appsync';
-const USER_AGENT_HEADER = 'x-amz-user-agent';
-const USER_AGENT = `aws-amplify/${packageInfo.version}${userAgent && ' '}${userAgent}`;
+export const USER_AGENT_HEADER = 'x-amz-user-agent';
+export const USER_AGENT = `aws-amplify/${packageInfo.version}${userAgent && ' '}${userAgent}`;
 
 export enum AUTH_TYPE {
     NONE = 'NONE',
