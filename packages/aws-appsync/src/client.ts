@@ -102,7 +102,7 @@ export const createAppSyncLink = ({
         new ComplexObjectLink(complexObjectsCredentials),
         createRetryLink(ApolloLink.from([
             new CatchErrorLink(() =>new AuthLink({ url, region, auth })),
-            new PermanentErrorLink(createSubscriptionHandshakeLink(url, resultsFetcherLink))
+            new PermanentErrorLink(createSubscriptionHandshakeLink({ url, region, auth }, resultsFetcherLink))
         ]))
     ].filter(Boolean));
 
