@@ -28,7 +28,7 @@ yarn add aws-appsync
 ```
 
 ### AWS AppSync Compatibility
-For version <= 2.x.x, the selection set filtering was only working for the mutation selection set. For version >= 3.x.x, the subscription selection set and mutation selection set need to match in order to recieve proper `key:value` updates.
+For version <= 2.x.x, the selection set filtering will only working for the mutation selection set. For version >= 3.x.x, the subscription selection set and mutation selection set need to match in order to recieve proper `key:value` updates.
 
 #### React Native Compatibility
 When using this library with React Native, you need to ensure you are using the correct version of the library based on your version of React Native. Take a look at the table below to determine what version to use.
