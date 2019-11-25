@@ -27,6 +27,9 @@ npm install --save aws-appsync
 yarn add aws-appsync
 ```
 
+### AWS AppSync Compatibility
+For version <= 2.x.x, the selection set for the subscription will be the mutation selection set. For version >= 3.x.x, the subscription selection set will be the intersection between mutation and subscription selection sets. More info [here](https://docs.aws.amazon.com/appsync/latest/devguide/real-time-data.html)
+
 #### React Native Compatibility
 When using this library with React Native, you need to ensure you are using the correct version of the library based on your version of React Native. Take a look at the table below to determine what version to use.
 
@@ -701,6 +704,18 @@ const client = new ApolloClient({
   link,
   cache: new InMemoryCache()
 })
+```
+
+For version 3+, the `createSubscriptionHandshakeLink` can also be configured the same as `createAuthLink`. [This will have the same behavior as mentioned here for version 3+](#aws-appsync-compatibility) Please see the example below: 
+```javascript
+// Previous code snippets above work the same.
+// ...
+const link = ApolloLink.from([
+  createAuthLink({ url, region, auth }),
+  createSubscriptionHandshakeLink({ url, region, auth })
+]);
+// ...
+
 ```
 
 ## Creating an AppSync Project    
