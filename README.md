@@ -706,7 +706,7 @@ const client = new ApolloClient({
 })
 ```
 
-For version 3+, the `createSubscriptionHandshakeLink` can also be configured the same as `createAuthLink`. [This will have the same behavior as mentioned here for version 3+](### AWS AppSync Compatibility) Please see the example below: 
+For version 3+, the `createSubscriptionHandshakeLink` can also be configured the same as `createAuthLink`. [This will have the same behavior as mentioned here for version 3+](#aws-appsync-compatibility) Please see the example below: 
 ```javascript
 // Previous code snippets above work the same.
 // ...
