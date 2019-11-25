@@ -28,7 +28,7 @@ yarn add aws-appsync
 ```
 
 ### AWS AppSync Compatibility
-For version <= 2.x.x, the selection set filtering will only working for the mutation selection set. For version >= 3.x.x, the subscription selection set and mutation selection set need to match in order to recieve proper `key:value` updates.
+For version <= 2.x.x, the selection set for the subscription will be the mutation selection set. For version >= 3.x.x, the subscription selection set will be the intersection between mutation and subscription selection sets. More info [here](https://docs.aws.amazon.com/appsync/latest/devguide/real-time-data.html)
 
 #### React Native Compatibility
 When using this library with React Native, you need to ensure you are using the correct version of the library based on your version of React Native. Take a look at the table below to determine what version to use.
@@ -706,7 +706,7 @@ const client = new ApolloClient({
 })
 ```
 
-For version 3+, the `createSubscriptionHandshakeLink` will use the same object as `createAuthLink`. Pleae see the example below:
+For version 3+, the `createSubscriptionHandshakeLink` can also be configured the same as `createAuthLink`. [This will have the same behavior as mentioned here for version 3+](#AWS AppSync Compatibility) Please see the example below: 
 ```javascript
 // Previous code snippets above work the same.
 // ...
