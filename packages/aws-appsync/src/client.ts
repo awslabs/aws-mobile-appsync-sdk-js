@@ -28,14 +28,17 @@ import { createRetryLink } from './link/retry-link';
 import { boundEnqueueDeltaSync, buildSync, DELTASYNC_KEY, hashForOptions } from "./deltaSync";
 import { Subscription } from 'apollo-client/util/Observable';
 import { PERMANENT_ERROR_KEY } from './link/retry-link';
+import { OfflineStatusChangeCallbackCreator } from './store';
+import defaultOfflineConfig from '@redux-offline/redux-offline/lib/defaults';
 
+const { detectNetwork: defaultDetectNetwork } = defaultOfflineConfig;
 
 export { defaultDataIdFromObject };
 
 class CatchErrorLink extends ApolloLink {
-    
+
     private link: ApolloLink;
-    
+
     constructor(linkGenerator: () => ApolloLink) {
         try {
             super();
@@ -146,6 +149,7 @@ export interface AWSAppSyncClientOptions {
     cacheOptions?: ApolloReducerConfig,
     disableOffline?: boolean,
     offlineConfig?: OfflineConfig,
+    detectNetwork?: OfflineStatusChangeCallbackCreator,
 }
 
 export type OfflineConfig = Pick<Partial<StoreOptions<any>>, 'storage' | 'callback' | 'keyPrefix'> & {
@@ -193,6 +197,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             callback = () => { },
             storeCacheRootMutation = false,
         } = {},
+        detectNetwork = defaultDetectNetwork,
     }: AWSAppSyncClientOptions, options?: Partial<ApolloClientOptions<TCacheShape>>) {
         const { cache: customCache = undefined, link: customLink = undefined } = options || {};
 
@@ -216,7 +221,8 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             dataIdFromObject,
             storage,
             keyPrefix,
-            callback
+            callback,
+            detectNetwork,
         });
         const cache: ApolloCache<any> = disableOffline
             ? (customCache || new InMemoryCache(cacheOptions))
