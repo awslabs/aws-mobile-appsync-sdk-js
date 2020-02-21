@@ -42,11 +42,11 @@ When using this library with React Native, you need to ensure you are using the 
 If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo`:
 
 ```
-npm install --save @react-native-community/netinfo@4.x.x
+npm install --save @react-native-community/netinfo@4.7.0
 ```
 or 
 ```
-yarn add @react-native-community/netinfo@4.x.x
+yarn add @react-native-community/netinfo@4.7.0
 ```
 If you are using React Native `0.60+` for iOS, run the following command as an additional step: 
 ```
