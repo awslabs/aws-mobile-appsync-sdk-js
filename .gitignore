@@ -3,3 +3,4 @@ lib
 *.tgz
 lerna-debug.log
 .npmrc
+yarn.lock
