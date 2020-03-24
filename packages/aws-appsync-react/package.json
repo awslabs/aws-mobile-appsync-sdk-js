@@ -1,5 +1,5 @@
 {
-  "name": "aws-appsync-react",
+  "name": "@boxcc/aws-appsync-react",
   "version": "3.0.2",
   "main": "lib/index.js",
   "license": "Apache-2.0",
