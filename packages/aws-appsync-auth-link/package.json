@@ -24,7 +24,6 @@
     "debug": "2.6.9"
   },
   "devDependencies": {
-    "@types/graphql": "0.12.4",
     "@types/jest": "24",
     "@types/node": "^8.0.46",
     "@types/zen-observable": "^0.5.3",
