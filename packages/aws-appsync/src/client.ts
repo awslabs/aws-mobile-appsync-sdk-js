@@ -260,7 +260,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         return !this._disableOffline;
     }
 
-    mutate<T, TVariables = OperationVariables>(options: MutationOptions<T, TVariables>): Promise<FetchResult<T>> {
+    mutate<T, TVariables = OperationVariables>(options: MutationOptions<T, TVariables>) {
         if (!this.isOfflineEnabled()) {
             return super.mutate(options);
         }
