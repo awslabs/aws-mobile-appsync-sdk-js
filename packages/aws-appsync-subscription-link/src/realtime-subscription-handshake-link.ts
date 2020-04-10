@@ -477,7 +477,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       throw new Error("No credentials");
     }
     const { accessKeyId, secretAccessKey, sessionToken } = await creds;
-    
+
     const formattedCredentials = {
       access_key: accessKeyId,
       secret_key: secretAccessKey,
@@ -739,6 +739,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   private static _discoverAppSyncRealTimeEndpoint(url: string): string {
     return url
       .replace("https://", "wss://")
+      .replace('http://', 'ws://')
       .replace("appsync-api", "appsync-realtime-api")
       .replace("gogi-beta", "grt-beta");
   }
