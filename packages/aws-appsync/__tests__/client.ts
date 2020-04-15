@@ -710,7 +710,9 @@ describe("Offline enabled", () => {
                 name: 'Parent'
             },
             optimisticResponse: optimisticResponseParent,
-            update: (proxy, { data }) => {
+            update: <T = {
+                [key: string]: any;
+            }>(proxy, { data }) => {
                 proxy.writeQuery({
                     query: gql`query Bla($id: ID) {
                         getParent(id: $id) {
@@ -745,7 +747,9 @@ describe("Offline enabled", () => {
                 name: 'Child'
             },
             optimisticResponse: optimisticResponseChild,
-            update: (proxy, { data }) => {
+            update: <T = {
+                [key: string]: any;
+            }>(proxy, { data }) => {
                 proxy.writeQuery({
                     query: gql`query Ble($id: ID!) {
                         getChild(id: $id) {

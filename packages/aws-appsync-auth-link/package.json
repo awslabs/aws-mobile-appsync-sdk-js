@@ -15,7 +15,7 @@
   },
   "scripts": {
     "prepare": "tsc",
-    "test": "jest --coverage --coverageReporters=text",
+    "test": "jest --coverage --coverageReporters=text --passWithNoTests",
     "test-watch": "jest --watch"
   },
   "dependencies": {
