@@ -77,7 +77,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     const {
       controlMessages: { [CONTROL_EVENTS_KEY]: controlEvents } = {
         [CONTROL_EVENTS_KEY]: undefined
-      }
+      },
+      headers
     } = operation.getContext();
     return new Observable<FetchResult>(observer => {
       const subscriptionId = uuid();
@@ -87,6 +88,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
         authenticationType: this.auth.type,
         query: print(query),
         region: this.region,
+        graphql_headers: () => ( headers ),
         variables,
         apiKey: this.auth.type === AUTH_TYPE.API_KEY ? this.auth.apiKey : "",
         credentials:
