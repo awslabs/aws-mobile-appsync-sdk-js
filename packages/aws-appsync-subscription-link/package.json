@@ -1,6 +1,6 @@
 {
   "name": "@boxcc/aws-appsync-subscription-link",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "main": "lib/index.js",
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync SDK for JavaScript",
@@ -19,7 +19,7 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "@boxcc/aws-appsync-auth-link": "^2.0.3",
+    "@boxcc/aws-appsync-auth-link": "^2.0.4",
     "apollo-link": "^1.2.3",
     "apollo-link-context": "^1.0.9",
     "apollo-link-http": "^1.3.1",
