@@ -7,6 +7,16 @@
         "packages/*"
     ],
     "devDependencies": {
-        "lerna": "^2.9.0"
+        "@types/graphql": "0.12.4",
+        "@types/jest": "24",
+        "@types/node": "^8.0.46",
+        "@types/zen-observable": "^0.5.3",
+        "graphql": "0.13.0",
+        "graphql-tag": "^2.9.2",
+        "jest": "24",
+        "lerna": "^2.9.0",
+        "node-fetch": "^2.2.0",
+        "ts-jest": "24",
+        "typescript": "~3.6"
     }
 }

@@ -18,7 +18,7 @@ import {
 } from './link';
 import { createStore, StoreOptions, DEFAULT_KEY_PREFIX } from './store';
 import { ApolloCache } from 'apollo-cache';
-import { AuthOptions, AuthLink, AUTH_TYPE } from 'aws-appsync-auth-link';
+import { AuthOptions, AuthLink, AUTH_TYPE } from '@boxcc/aws-appsync-auth-link';
 import { createSubscriptionHandshakeLink } from '@boxcc/aws-appsync-subscription-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 import { OperationDefinitionNode, DocumentNode } from 'graphql';
@@ -260,7 +260,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         return !this._disableOffline;
     }
 
-    mutate<T, TVariables = OperationVariables>(options: MutationOptions<T, TVariables>): Promise<FetchResult<T>> {
+    mutate<T, TVariables = OperationVariables>(options: MutationOptions<T, TVariables>) {
         if (!this.isOfflineEnabled()) {
             return super.mutate(options);
         }

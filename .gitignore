@@ -2,5 +2,6 @@ node_modules
 lib
 *.tgz
 lerna-debug.log
+yarn.lock
 .npmrc
 yarn.lock

@@ -12,7 +12,7 @@ import {
   AUTH_TYPE,
   USER_AGENT_HEADER,
   USER_AGENT
-} from "aws-appsync-auth-link";
+} from "@boxcc/aws-appsync-auth-link";
 import { GraphQLError, print } from "graphql";
 import * as url from "url";
 import { v4 as uuid } from "uuid";
@@ -77,7 +77,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     const {
       controlMessages: { [CONTROL_EVENTS_KEY]: controlEvents } = {
         [CONTROL_EVENTS_KEY]: undefined
-      }
+      },
+      headers
     } = operation.getContext();
     return new Observable<FetchResult>(observer => {
       const subscriptionId = uuid();
@@ -87,6 +88,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
         authenticationType: this.auth.type,
         query: print(query),
         region: this.region,
+        graphql_headers: () => ( headers ),
         variables,
         apiKey: this.auth.type === AUTH_TYPE.API_KEY ? this.auth.apiKey : "",
         credentials:
@@ -477,7 +479,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       throw new Error("No credentials");
     }
     const { accessKeyId, secretAccessKey, sessionToken } = await creds;
-    
+
     const formattedCredentials = {
       access_key: accessKeyId,
       secret_key: secretAccessKey,
@@ -739,6 +741,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   private static _discoverAppSyncRealTimeEndpoint(url: string): string {
     return url
       .replace("https://", "wss://")
+      .replace('http://', 'ws://')
       .replace("appsync-api", "appsync-realtime-api")
       .replace("gogi-beta", "grt-beta");
   }
