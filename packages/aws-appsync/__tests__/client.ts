@@ -34,7 +34,7 @@ beforeEach(() => {
         const { AWSAppSyncClient } = require('../src/client');
         ({ isOptimistic } = require("../src/link/offline-link"));
         ({ createHttpLink } = require("apollo-link-http"));
-        ({ Signer } = require("aws-appsync-auth-link"));
+        ({ Signer } = require("@boxcc/aws-appsync-auth-link"));
 
         factory = (opts) => {
             return new AWSAppSyncClient(opts);

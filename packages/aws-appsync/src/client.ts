@@ -18,8 +18,8 @@ import {
 } from './link';
 import { createStore, StoreOptions, DEFAULT_KEY_PREFIX } from './store';
 import { ApolloCache } from 'apollo-cache';
-import { AuthOptions, AuthLink, AUTH_TYPE } from 'aws-appsync-auth-link';
-import { createSubscriptionHandshakeLink } from 'aws-appsync-subscription-link';
+import { AuthOptions, AuthLink, AUTH_TYPE } from '@boxcc/aws-appsync-auth-link';
+import { createSubscriptionHandshakeLink } from '@boxcc/aws-appsync-subscription-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';

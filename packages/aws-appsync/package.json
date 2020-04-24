@@ -1,6 +1,6 @@
 {
-  "name": "aws-appsync",
-  "version": "3.0.3",
+  "name": "@boxcc/aws-appsync",
+  "version": "3.0.7",
   "main": "lib/index.js",
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync SDK for JavaScript",
@@ -19,15 +19,15 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "@redux-offline/redux-offline": "2.5.2-native.0",
+    "@boxcc/aws-appsync-auth-link": "^2.0.4",
+    "@boxcc/aws-appsync-subscription-link": "^2.0.4",
+    "@redux-offline/redux-offline": "2.5.2-native.3",
     "apollo-cache-inmemory": "1.3.12",
     "apollo-client": "2.4.6",
     "apollo-link": "1.2.3",
     "apollo-link-context": "1.0.9",
     "apollo-link-http": "1.3.1",
     "apollo-link-retry": "2.2.5",
-    "aws-appsync-auth-link": "^2.0.2",
-    "aws-appsync-subscription-link": "^2.1.0",
     "aws-sdk": "2.518.0",
     "debug": "2.6.9",
     "graphql": "0.13.0",

@@ -12,7 +12,7 @@ import {
   AUTH_TYPE,
   USER_AGENT_HEADER,
   USER_AGENT
-} from "aws-appsync-auth-link";
+} from "@boxcc/aws-appsync-auth-link";
 import { GraphQLError, print } from "graphql";
 import * as url from "url";
 import { v4 as uuid } from "uuid";
