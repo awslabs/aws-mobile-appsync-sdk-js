@@ -1,5 +1,5 @@
 import { AUTH_TYPE } from "aws-appsync-auth-link";
-import { execute } from "apollo-link";
+import { execute } from "@apollo/client";
 import gql from 'graphql-tag';
 import { AppSyncRealTimeSubscriptionHandshakeLink } from '../../src/realtime-subscription-handshake-link';
 
@@ -75,7 +75,7 @@ describe("RealTime subscription link", () => {
             region: 'us-east-1',
             url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
         });
-        
+
         execute(link, { query }).subscribe({
             error: (err) => {
                 console.log({ err });
@@ -112,7 +112,7 @@ describe("RealTime subscription link", () => {
             region: 'us-east-1',
             url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
         });
-        
+
         execute(link, { query }).subscribe({
             error: (err) => {
                 console.log({ err });
@@ -149,7 +149,7 @@ describe("RealTime subscription link", () => {
             region: 'us-east-1',
             url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
         });
-        
+
         execute(link, { query }).subscribe({
             error: (err) => {
                 console.log({ err });
