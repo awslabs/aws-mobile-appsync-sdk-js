@@ -50,7 +50,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         this.subsInfoContextKey = subsInfoContextKey;
     }
 
-    request(operation: Operation) {
+    request(operation: Operation): Observable<FetchResult> | null {
         const {
             [this.subsInfoContextKey]: subsInfo,
             controlMessages: { [CONTROL_EVENTS_KEY]: controlEvents } = { [CONTROL_EVENTS_KEY]: undefined }
