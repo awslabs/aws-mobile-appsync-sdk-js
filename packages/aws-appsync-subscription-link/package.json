@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync-subscription-link",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "main": "lib/index.js",
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync SDK for JavaScript",
