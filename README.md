@@ -8,10 +8,10 @@
 ![npm](https://img.shields.io/npm/dm/aws-appsync.svg)
 
 
-package | version
---- | ---
-aws-appsync | ![npm](https://img.shields.io/npm/v/aws-appsync.svg)
-aws-appsync-react | ![npm](https://img.shields.io/npm/v/aws-appsync-react.svg)
+| package           | version                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| aws-appsync       | ![npm](https://img.shields.io/npm/v/aws-appsync.svg)       |
+| aws-appsync-react | ![npm](https://img.shields.io/npm/v/aws-appsync-react.svg) |
 
 
 ## Installation    
@@ -34,23 +34,23 @@ For version <= 2.x.x, the selection set for the subscription will be the mutatio
 When using this library with React Native, you need to ensure you are using the correct version of the library based on your version of React Native. Take a look at the table below to determine what version to use.
 
 
-| `aws-appsync` version                     | Required React Native Version                                                 
-| ----------------------------------------- | -------------------------------------------------------------------------------- |
-| `2.x.x`                                   | `>= 0.60`
-| `1.x.x`                                   | `<= 0.59`                                                                      
+| `aws-appsync` version | Required React Native Version |
+| --------------------- | ----------------------------- |
+| `2.x.x`               | `>= 0.60`                     |
+| `1.x.x`               | `<= 0.59`                     |
 
-If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo`:
+If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo` and `@react-native-community/async-storage`:
 
 ```
-npm install --save @react-native-community/netinfo@4.7.0
+npm install --save @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
 ```
 or 
 ```
-yarn add @react-native-community/netinfo@4.7.0
+yarn add @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
 ```
 If you are using React Native `0.60+` for iOS, run the following command as an additional step: 
 ```
-cd ios && pod install && cd ..
+npx pod-install
 ```
 ## Usage
 
