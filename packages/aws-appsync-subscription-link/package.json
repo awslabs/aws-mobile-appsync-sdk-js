@@ -19,7 +19,7 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "apollo-link": "^1.2.3",
+    "apollo-link": "1.2.5",
     "apollo-link-context": "^1.0.9",
     "apollo-link-http": "^1.3.1",
     "apollo-link-retry": "^2.2.5",
