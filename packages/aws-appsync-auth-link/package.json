@@ -1,6 +1,6 @@
 {
   "name": "@boxcc/aws-appsync-auth-link",
-  "version": "3.0.1",
+  "version": "3.0.2-alpha.0",
   "main": "lib/index.js",
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync Auth Link for JavaScript",
