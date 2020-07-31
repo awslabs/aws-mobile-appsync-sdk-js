@@ -58,7 +58,7 @@ export default class Rehydrated extends React.Component<RehydratedProps, Rehydra
 
     async componentDidMount() {
         await this.context.client.hydrated();
-        await NetInfo.isConnected.fetch();
+        await NetInfo.fetch();
 
         this.setState({
             rehydrated: true

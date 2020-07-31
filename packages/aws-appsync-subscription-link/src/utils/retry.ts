@@ -1,4 +1,4 @@
-import { rootLogger } from "./";
+import { rootLogger } from "./index";
 import { DelayFunction } from "../types";
 
 const logger = rootLogger.extend("retry");

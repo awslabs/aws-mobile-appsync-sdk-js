@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.1
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.2.0"></a>
+# [2.2.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.1.0...aws-appsync-subscription-link@2.2.0) (2020-06-24)
+
+
+### Bug Fixes
+
+* **aws-appsync-subscription-link:** change relativ ([#564](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/564)) ([f9d95a6](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/f9d95a6))
+
+
+### Features
+
+* **aws-appsync-subscription-link:** allow custom headers to be processed by a Subscription resolver's vtl ([#497](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/497)) ([6851a36](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/6851a36))
+
+
+
+
 <a name="2.1.0"></a>
 # [2.1.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.0.1...aws-appsync-subscription-link@2.1.0) (2020-04-15)
 
