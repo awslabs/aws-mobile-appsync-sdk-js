@@ -2,7 +2,7 @@ import {
   SubscriptionHandshakeLink,
   CONTROL_EVENTS_KEY
 } from "./subscription-handshake-link";
-import { ApolloLink, Observable, createHttpLink  } from "@apollo/client";
+import { ApolloLink, Observable, createHttpLink } from "@apollo/client";
 import { getMainDefinition } from "apollo-utilities";
 import { NonTerminatingLink } from "./non-terminating-link";
 import { OperationDefinitionNode } from "graphql";
@@ -30,7 +30,7 @@ function createSubscriptionHandshakeLink(
     resultsFetcherLink =
       theResultsFetcherLink || createHttpLink({ uri: infoOrUrl });
     subscriptionLinks = ApolloLink.from([
-      new NonTerminatingLink("controlMessages", {
+      (new NonTerminatingLink("controlMessages", {
         link: new ApolloLink(
           (operation, _forward) =>
             new Observable<any>(observer => {
@@ -47,14 +47,14 @@ function createSubscriptionHandshakeLink(
               return () => {};
             })
         )
-      }),
-      new NonTerminatingLink("subsInfo", { link: resultsFetcherLink }),
-      new SubscriptionHandshakeLink("subsInfo")
+      }) as unknown) as ApolloLink,
+      (new NonTerminatingLink("subsInfo", { link: resultsFetcherLink }) as unknown) as ApolloLink,
+      (new SubscriptionHandshakeLink("subsInfo") as unknown) as ApolloLink
     ]);
   } else {
     const { url } = infoOrUrl;
     resultsFetcherLink = theResultsFetcherLink || createHttpLink({ uri: url });
-    subscriptionLinks = new AppSyncRealTimeSubscriptionHandshakeLink(infoOrUrl);
+    subscriptionLinks = new AppSyncRealTimeSubscriptionHandshakeLink(infoOrUrl) as unknown as ApolloLink;
   }
 
   return ApolloLink.split(
