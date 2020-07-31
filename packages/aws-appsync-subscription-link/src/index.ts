@@ -2,8 +2,7 @@ import {
   SubscriptionHandshakeLink,
   CONTROL_EVENTS_KEY
 } from "./subscription-handshake-link";
-import { ApolloLink, Observable } from "apollo-link";
-import { createHttpLink } from "apollo-link-http";
+import { ApolloLink, Observable, createHttpLink  } from "@apollo/client";
 import { getMainDefinition } from "apollo-utilities";
 import { NonTerminatingLink } from "./non-terminating-link";
 import { OperationDefinitionNode } from "graphql";
