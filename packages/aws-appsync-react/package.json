@@ -37,5 +37,6 @@
   },
   "react-native": {
     "./lib/rehydrated": "./lib/rehydrated-rn"
-  }
+  },
+  "gitHead": "4307763211df51882f599527e41e9aa5e07ec8c3"
 }
