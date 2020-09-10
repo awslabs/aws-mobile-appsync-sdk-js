@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="4.0.1"></a>
+## [4.0.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@4.0.0...aws-appsync-react@4.0.1) (2020-09-10)
+
+
+
+
+**Note:** Version bump only for package aws-appsync-react
+
 <a name="3.0.4"></a>
 ## [3.0.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-react@3.0.3...aws-appsync-react@3.0.4) (2020-06-24)
 
