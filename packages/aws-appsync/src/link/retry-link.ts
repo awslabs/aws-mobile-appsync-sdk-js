@@ -53,18 +53,18 @@ export const createRetryLink = (origLink: ApolloLink) => {
         delay: (_count, _operation, _error) => delay,
     });
 
-    const link = ApolloLink.from([
-        retryLink,
-        origLink,
-    ]);
-
-    return new ApolloLink((operation, forward) => {
+    var origFilteredLink = new ApolloLink((operation, forward) => {
         const { [SKIP_RETRY_KEY]: skipRetry = false, ...otherVars } = operation.variables;
 
         if (skipRetry) {
             operation.variables = otherVars;
         }
 
-        return link.request(operation, forward);
+        return origLink.request(operation, forward);
     });
+
+    return ApolloLink.from([
+        retryLink,
+        origFilteredLink,
+    ]);
 };
