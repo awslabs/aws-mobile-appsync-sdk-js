@@ -19,10 +19,10 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "@apollo/client": "^3.0.0-beta.44",
+    "@apollo/client": "^3.2.0",
     "@apollo/link-context": "^2.0.0-beta.3",
     "@apollo/link-retry": "^2.0.0-beta.3",
-    "aws-appsync-auth-link": "^2.0.2",
+    "aws-appsync-auth-link": "^2.0.3",
     "debug": "2.6.9",
     "url": "^0.11.0"
   },
