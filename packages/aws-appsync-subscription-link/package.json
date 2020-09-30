@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync-subscription-link",
-  "version": "2.2.1",
+  "version": "3.0.0",
   "main": "lib/index.js",
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync SDK for JavaScript",
@@ -19,10 +19,7 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "apollo-link": "1.2.5",
-    "apollo-link-context": "1.0.11",
-    "apollo-link-http": "1.5.8",
-    "apollo-link-retry": "2.2.7",
+    "@apollo/client": "^3.2.0",
     "aws-appsync-auth-link": "^2.0.3",
     "debug": "2.6.9",
     "url": "^0.11.0"
@@ -31,6 +28,6 @@
     "@redux-offline/redux-offline": "2.5.2-native.0"
   },
   "peerDependencies": {
-    "apollo-client": "2.x"
+    "@apollo/client": "3.x"
   }
 }
