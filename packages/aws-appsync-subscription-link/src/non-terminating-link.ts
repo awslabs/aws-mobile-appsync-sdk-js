@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { ApolloLink, NextLink } from '@apollo/client';
-import { setContext } from '@apollo/link-context';
+import { setContext } from '@apollo/client/link/context';
 
 export class NonTerminatingLink extends ApolloLink {
 
