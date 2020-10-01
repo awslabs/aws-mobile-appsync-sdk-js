@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="3.0.3"></a>
+## [3.0.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@3.0.2...aws-appsync-subscription-link@3.0.3) (2020-10-01)
+
+
+### Bug Fixes
+
+* Add apollo-utilities dependency to subscription link ([3eeb77e](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/3eeb77e))
+
+
+
+
 <a name="3.0.2"></a>
 ## [3.0.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.2.1...aws-appsync-subscription-link@3.0.2) (2020-10-01)
 
