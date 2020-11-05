@@ -7,7 +7,7 @@ import { View, Text, StyleSheet, ViewPropTypes } from "react-native";
 import NetInfo from '@react-native-community/netinfo';
 import * as PropTypes from 'prop-types';
 
-import AWSAppSyncClient from 'aws-appsync';
+import AWSAppSyncClient from '@lime-energy/aws-appsync';
 import { RehydratedState } from './index'
 
 export interface RehydrateProps {

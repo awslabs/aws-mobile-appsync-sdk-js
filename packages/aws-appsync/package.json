@@ -1,5 +1,5 @@
 {
-  "name": "aws-appsync",
+  "name": "@lime-energy/aws-appsync",
   "version": "4.0.1",
   "main": "lib/index.js",
   "license": "Apache-2.0",
@@ -8,10 +8,10 @@
     "name": "Amazon Web Services",
     "url": "https://aws.amazon.com/"
   },
-  "homepage": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git",
+  "homepage": "https://github.com/lime-energy/aws-mobile-appsync-sdk-js.git",
   "repository": {
     "type": "git",
-    "url": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git"
+    "url": "https://github.com/lime-energy/aws-mobile-appsync-sdk-js.git"
   },
   "scripts": {
     "prepare": "tsc",
@@ -26,8 +26,8 @@
     "apollo-link-context": "1.0.11",
     "apollo-link-http": "1.5.8",
     "apollo-link-retry": "2.2.7",
-    "aws-appsync-auth-link": "^2.0.3",
-    "aws-appsync-subscription-link": "^2.2.1",
+    "@lime-energy/aws-appsync-auth-link": "^3.0.2",
+    "@lime-energy/aws-appsync-subscription-link": "^3.0.4",
     "aws-sdk": "2.518.0",
     "debug": "2.6.9",
     "graphql": "0.13.0",

@@ -417,7 +417,7 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
 
             return {
                 ...state,
-                ...entries,
+                ...entries as any,
             };
         case actions.COMMIT:
             const { remainingMutations } = action;

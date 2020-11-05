@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 
-import AWSAppSyncClient, { buildSubscription } from 'aws-appsync';
-import { Rehydrated, graphqlMutation } from 'aws-appsync-react';
+import AWSAppSyncClient, { buildSubscription } from '@lime-energy/aws-appsync';
+import { Rehydrated, graphqlMutation } from '@lime-energy/aws-appsync-react';
 import { graphql, ApolloProvider, compose } from 'react-apollo';
 import ListTodosByStatus from './GraphQLAllTodosByStatus';
 import ListTodos from './GraphQLAllTodos';

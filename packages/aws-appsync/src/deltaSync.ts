@@ -18,7 +18,7 @@ import { SKIP_RETRY_KEY } from "./link/retry-link";
 import { DocumentNode, print, OperationDefinitionNode, FieldNode, ExecutionResult } from "graphql";
 import { getOpTypeFromOperationName, CacheOperationTypes, getUpdater, QueryWithVariables } from "./helpers/offline";
 import { boundSaveSnapshot, replaceUsingMap, EnqueuedMutationEffect, offlineEffectConfig as mutationsConfig } from "./link/offline-link";
-import { CONTROL_EVENTS_KEY } from "aws-appsync-subscription-link";
+import { CONTROL_EVENTS_KEY } from "@lime-energy/aws-appsync-subscription-link";
 
 const logger = rootLogger.extend('deltasync');
 

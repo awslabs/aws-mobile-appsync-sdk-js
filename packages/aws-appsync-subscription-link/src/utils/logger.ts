@@ -4,7 +4,7 @@ export type Logger = Function & {
     extend(category: string): Logger;
 };
 
-const debugLogger = debug('aws-appsync') as Logger;
+const debugLogger = debug('@lime-energy/aws-appsync') as Logger;
 
 const extend = function (category = '') {
     const newCategory = category ? [...this.namespace.split(':'), category].join(':') : this.namespace;

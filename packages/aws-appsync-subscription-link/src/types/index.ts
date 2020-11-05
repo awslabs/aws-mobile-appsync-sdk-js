@@ -1,4 +1,4 @@
-import { AuthOptions } from "aws-appsync-auth-link";
+import { AuthOptions } from "@lime-energy/aws-appsync-auth-link";
 
 //#region Subscription link enums
 

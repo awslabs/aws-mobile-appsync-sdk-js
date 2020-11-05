@@ -1,5 +1,5 @@
 {
-  "name": "aws-appsync-auth-link",
+  "name": "@lime-energy/aws-appsync-auth-link",
   "version": "3.0.2",
   "main": "lib/index.js",
   "license": "Apache-2.0",
@@ -8,10 +8,10 @@
     "name": "Amazon Web Services",
     "url": "https://aws.amazon.com/"
   },
-  "homepage": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git",
+  "homepage": "https://github.com/lime-energy/aws-mobile-appsync-sdk-js.git",
   "repository": {
     "type": "git",
-    "url": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git"
+    "url": "https://github.com/lime-energy/aws-mobile-appsync-sdk-js.git"
   },
   "scripts": {
     "prepare": "tsc",

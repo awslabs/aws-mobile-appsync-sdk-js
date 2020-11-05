@@ -12,7 +12,7 @@ import {
   AUTH_TYPE,
   USER_AGENT_HEADER,
   USER_AGENT
-} from "aws-appsync-auth-link";
+} from "@lime-energy/aws-appsync-auth-link";
 import { GraphQLError, print } from "graphql";
 import * as url from "url";
 import { v4 as uuid } from "uuid";
@@ -173,6 +173,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
         const stringToAWSRealTime = JSON.stringify(unsubscribeMessage);
         this.awsRealTimeSocket.send(stringToAWSRealTime);
 
+        this._removeSubscriptionObserver(subscriptionId);
+      } else if (this.awsRealTimeSocket && this.awsRealTimeSocket.readyState === WebSocket.CLOSED) {
         this._removeSubscriptionObserver(subscriptionId);
       }
     } catch (err) {

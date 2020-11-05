@@ -18,8 +18,8 @@ import {
 } from './link';
 import { createStore, StoreOptions, DEFAULT_KEY_PREFIX } from './store';
 import { ApolloCache } from 'apollo-cache';
-import { AuthOptions, AuthLink, AUTH_TYPE } from 'aws-appsync-auth-link';
-import { createSubscriptionHandshakeLink } from 'aws-appsync-subscription-link';
+import { AuthOptions, AuthLink, AUTH_TYPE } from '@lime-energy/aws-appsync-auth-link';
+import { createSubscriptionHandshakeLink } from '@lime-energy/aws-appsync-subscription-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
 import { OperationDefinitionNode, DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
@@ -101,8 +101,8 @@ export const createAppSyncLink = ({
         new ConflictResolutionLink(conflictResolver),
         new ComplexObjectLink(complexObjectsCredentials),
         createRetryLink(ApolloLink.from([
-            new CatchErrorLink(() =>new AuthLink({ url, region, auth })),
-            new PermanentErrorLink(createSubscriptionHandshakeLink({ url, region, auth }, resultsFetcherLink))
+            new CatchErrorLink(() => new AuthLink({ url, region, auth }) as any as ApolloLink),
+            new PermanentErrorLink(createSubscriptionHandshakeLink({ url, region, auth } as any, resultsFetcherLink as any) as any)
         ]))
     ].filter(Boolean));
 

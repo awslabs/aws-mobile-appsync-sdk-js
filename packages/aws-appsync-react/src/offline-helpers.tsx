@@ -5,7 +5,7 @@ import { resultKeyNameFromField } from 'apollo-utilities';
 import { DocumentNode, OperationDefinitionNode, FieldNode } from 'graphql';
 import { graphql, OptionProps, MutationOpts } from 'react-apollo';
 
-import { buildMutation, CacheOperationTypes, CacheUpdatesOptions } from 'aws-appsync';
+import { buildMutation, CacheOperationTypes, CacheUpdatesOptions } from '@lime-energy/aws-appsync';
 
 export const graphqlMutation = (
     mutation: DocumentNode,

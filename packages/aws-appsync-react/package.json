@@ -1,5 +1,5 @@
 {
-  "name": "aws-appsync-react",
+  "name": "@lime-energy/aws-appsync-react",
   "version": "4.0.1",
   "main": "lib/index.js",
   "license": "Apache-2.0",
@@ -8,10 +8,10 @@
     "name": "Amazon Web Services",
     "url": "https://aws.amazon.com/"
   },
-  "homepage": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git",
+  "homepage": "https://github.com/lime-energy/aws-mobile-appsync-sdk-js.git",
   "repository": {
     "type": "git",
-    "url": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git"
+    "url": "https://github.com/lime-energy/aws-mobile-appsync-sdk-js.git"
   },
   "scripts": {
     "prepare": "tsc",
@@ -21,14 +21,14 @@
     "prop-types": "^15.6.0"
   },
   "peerDependencies": {
-    "aws-appsync": "3.x.x",
+    "@lime-energy/aws-appsync": "3.x.x",
     "react": "0.14.x || 15.* || ^15.0.0 || ^16.0.0",
     "react-apollo": "2.x"
   },
   "devDependencies": {
     "@react-native-community/netinfo": "^5.0.0",
     "@types/react": "^16.0.25",
-    "aws-appsync": "^4.0.1",
+    "@lime-energy/aws-appsync": "^4.0.1",
     "react": "^16.1.1",
     "react-apollo": "^2.1.9",
     "react-native": "^0.50.3",
