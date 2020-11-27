@@ -33,6 +33,10 @@ export const createRetryLink = (origLink: ApolloLink) => {
             if (permanent) {
                 return false;
             }
+            
+            if (error.errors && error.errors.length && error.errors.find(e => e.message && e.message.toLowerCase().includes('unauthorized'))) {
+				return false;
+			}
 
             if (error.statusCode >= 400 && error.statusCode < 500) {
                 return false;
