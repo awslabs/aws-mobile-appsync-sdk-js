@@ -696,6 +696,10 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
 
   private _timeoutDisconnect() {
     this.subscriptionObserverMap.forEach(({ observer }) => {
+      if (!observer) {
+        return;
+      }
+
       observer.error({
         errors: [{ ...new GraphQLError(`Timeout disconnect`) }]
       });
