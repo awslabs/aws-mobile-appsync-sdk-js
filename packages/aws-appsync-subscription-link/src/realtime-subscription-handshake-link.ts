@@ -713,6 +713,11 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     const { observer, query, variables } = this.subscriptionObserverMap.get(
       subscriptionId
     );
+
+    if (!observer) {
+      return;
+    }
+
     this.subscriptionObserverMap.set(subscriptionId, {
       observer,
       query,
