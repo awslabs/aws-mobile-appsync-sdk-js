@@ -19,8 +19,13 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "@apollo/client": "^3.2.0",
     "aws-sdk": "^2.518.0",
     "debug": "2.6.9"
+  },
+  "devDependencies": {
+    "@apollo/client": "^3.2.0"
+  },
+  "peerDependencies": {
+    "@apollo/client": "3.x"
   }
 }
