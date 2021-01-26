@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync-auth-link",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "main": "lib/index.js",
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync Auth Link for JavaScript",
