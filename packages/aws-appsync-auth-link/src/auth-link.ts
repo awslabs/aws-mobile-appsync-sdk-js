@@ -2,14 +2,15 @@
  * Copyright 2017-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+import { Sha256 } from '@aws-crypto/sha256-universal';
+import { SignatureV4 } from '@aws-sdk/signature-v4';
 import { ApolloLink, Observable } from '@apollo/client';
 import { print } from 'graphql/language/printer';
 
-import { Signer } from './signer';
 import * as Url from 'url';
 
 import { userAgent } from "./platform";
-import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
+import { Credentials, CredentialProvider, HttpRequest } from '@aws-sdk/types';
 
 const packageInfo = require("../package.json");
 
@@ -88,12 +89,13 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
 
     const { host, path } = Url.parse(url);
 
-    const formatted = {
+    const formatted: HttpRequest = {
         ...formatAsRequest(operation, {}),
         service, region, url, host, path
     };
 
-    const { headers } = Signer.sign(formatted, { access_key: accessKeyId, secret_key: secretAccessKey, session_token: sessionToken });
+    const signatureV4 = new SignatureV4({ credentials: { accessKeyId, secretAccessKey, sessionToken }, region, service, sha256: Sha256 });
+    const { headers } = await signatureV4.sign(formatted);
 
     operation.setContext({
         ...origContext,
@@ -113,7 +115,7 @@ type KeysWithType<O, T> = {
 type AuthOptionsNone = { type: AUTH_TYPE.NONE };
 type AuthOptionsIAM = {
     type: KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.AWS_IAM>,
-    credentials: (() => Credentials | CredentialsOptions | Promise<Credentials | CredentialsOptions | null>) | Credentials | CredentialsOptions | null,
+    credentials: (() => Credentials | CredentialProvider) | Credentials | null,
 };
 type AuthOptionsApiKey = {
     type: KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.API_KEY>,
