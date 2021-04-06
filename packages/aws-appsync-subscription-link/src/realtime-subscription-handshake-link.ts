@@ -290,7 +290,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
         authenticationType,
         region,
         credentials,
-        jwtToken
+        jwtToken,
+        graphql_headers
       });
     } catch (err) {
       const { message = "" } = err;
@@ -346,7 +347,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     apiKey,
     region,
     credentials,
-    jwtToken
+    jwtToken,
+    graphql_headers
   }): Promise<void> {
     if (this.socketStatus === SOCKET_STATUS.READY) {
       return;
@@ -363,8 +365,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           );
 
           const payloadString = "{}";
-          const headerString = JSON.stringify(
-            await this._awsRealTimeHeaderBasedAuth({
+          const headerString = JSON.stringify({
+            ...(await this._awsRealTimeHeaderBasedAuth({
               authenticationType,
               payload: payloadString,
               canonicalUri: "/connect",
@@ -373,8 +375,9 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
               region,
               credentials,
               jwtToken
-            })
-          );
+            })),
+            ...(await graphql_headers()),
+          });
           const headerQs = Buffer.from(headerString).toString("base64");
 
           const payloadQs = Buffer.from(payloadString).toString("base64");
