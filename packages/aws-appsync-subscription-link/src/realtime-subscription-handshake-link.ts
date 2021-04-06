@@ -79,7 +79,6 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       controlMessages: { [CONTROL_EVENTS_KEY]: controlEvents } = {
         [CONTROL_EVENTS_KEY]: undefined
       },
-      headers
     } = operation.getContext();
     return new Observable<FetchResult>(observer => {
       if (!this.url) {
@@ -101,7 +100,6 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           authenticationType: this.auth.type,
           query: print(query),
           region: this.region,
-          graphql_headers: () => (headers),
           variables,
           apiKey: this.auth.type === AUTH_TYPE.API_KEY ? this.auth.apiKey : "",
           credentials:
@@ -290,8 +288,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
         authenticationType,
         region,
         credentials,
-        jwtToken,
-        graphql_headers
+        jwtToken
       });
     } catch (err) {
       const { message = "" } = err;
@@ -347,8 +344,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     apiKey,
     region,
     credentials,
-    jwtToken,
-    graphql_headers
+    jwtToken
   }): Promise<void> {
     if (this.socketStatus === SOCKET_STATUS.READY) {
       return;
@@ -365,8 +361,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           );
 
           const payloadString = "{}";
-          const headerString = JSON.stringify({
-            ...(await this._awsRealTimeHeaderBasedAuth({
+          const headerString = JSON.stringify(
+            await this._awsRealTimeHeaderBasedAuth({
               authenticationType,
               payload: payloadString,
               canonicalUri: "/connect",
@@ -375,9 +371,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
               region,
               credentials,
               jwtToken
-            })),
-            ...(await graphql_headers()),
-          });
+            })
+          );
           const headerQs = Buffer.from(headerString).toString("base64");
 
           const payloadQs = Buffer.from(payloadString).toString("base64");
