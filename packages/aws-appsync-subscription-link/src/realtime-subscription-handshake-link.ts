@@ -648,6 +648,10 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
 
     logger({ id, observer, query, variables });
 
+    if (!observer) {
+      return;
+    }
+
     if (type === MESSAGE_TYPES.GQL_DATA && payload && payload.data) {
       if (observer) {
         observer.next(payload);
