@@ -26,8 +26,8 @@
     "apollo-link-context": "1.0.11",
     "apollo-link-http": "1.5.8",
     "apollo-link-retry": "2.2.7",
-    "aws-appsync-auth-link": "^2.0.3",
-    "aws-appsync-subscription-link": "^2.2.1",
+    "aws-appsync-auth-link": "^3.0.4",
+    "aws-appsync-subscription-link": "^3.0.6",
     "aws-sdk": "^2.814.0",
     "debug": "2.6.9",
     "graphql": "0.13.0",
@@ -36,6 +36,9 @@
     "setimmediate": "^1.0.5",
     "url": "^0.11.0",
     "uuid": "3.x"
+  },
+  "devDependencies": {
+    "@apollo/client": "^3.2.0"
   },
   "peerDependencies": {
     "@react-native-community/async-storage": "^1.11.0",

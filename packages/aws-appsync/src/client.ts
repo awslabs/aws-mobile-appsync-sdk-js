@@ -8,6 +8,7 @@ import { InMemoryCache, ApolloReducerConfig, NormalizedCacheObject } from 'apoll
 import { ApolloLink, Observable, FetchResult, NextLink } from 'apollo-link';
 import { createHttpLink } from 'apollo-link-http';
 import { getMainDefinition } from 'apollo-utilities';
+import { ApolloLink as ApolloLinkV3 } from "@apollo/client";
 import { Store } from 'redux';
 
 import { OfflineCache, defaultDataIdFromObject } from './cache/index';
@@ -101,8 +102,11 @@ export const createAppSyncLink = ({
         new ConflictResolutionLink(conflictResolver),
         new ComplexObjectLink(complexObjectsCredentials),
         createRetryLink(ApolloLink.from([
-            new CatchErrorLink(() =>new AuthLink({ url, region, auth })),
-            new PermanentErrorLink(createSubscriptionHandshakeLink({ url, region, auth }, resultsFetcherLink))
+            new CatchErrorLink(() =>new AuthLink({ url, region, auth }) as unknown as ApolloLink),
+            new PermanentErrorLink(createSubscriptionHandshakeLink(
+                { url, region, auth }, 
+                resultsFetcherLink  as unknown as ApolloLinkV3)  as unknown as ApolloLink,
+            )
         ]))
     ].filter(Boolean));
 
