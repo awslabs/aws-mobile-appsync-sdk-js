@@ -2,7 +2,7 @@
  * Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import { ApolloLink, Observable, Operation, FetchResult, ApolloError } from "@apollo/client";
+import { ApolloLink, Observable, Operation, FetchResult, ApolloError } from "@apollo/client/core";
 
 import { rootLogger } from "./utils";
 import * as Paho from './vendor/paho-mqtt';

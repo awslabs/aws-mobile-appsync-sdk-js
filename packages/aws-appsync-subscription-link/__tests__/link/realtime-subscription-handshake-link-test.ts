@@ -1,5 +1,5 @@
 import { AUTH_TYPE } from "aws-appsync-auth-link";
-import { execute } from "@apollo/client";
+import { execute } from "@apollo/client/core";
 import gql from 'graphql-tag';
 import { AppSyncRealTimeSubscriptionHandshakeLink } from '../../src/realtime-subscription-handshake-link';
 

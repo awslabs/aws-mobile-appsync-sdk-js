@@ -8,7 +8,7 @@ import { InMemoryCache, ApolloReducerConfig, NormalizedCacheObject } from 'apoll
 import { ApolloLink, Observable, FetchResult, NextLink } from 'apollo-link';
 import { createHttpLink } from 'apollo-link-http';
 import { getMainDefinition } from 'apollo-utilities';
-import type { ApolloLink as ApolloLinkV3 } from "@apollo/client";
+import type { ApolloLink as ApolloLinkV3 } from "@apollo/client/core";
 import { Store } from 'redux';
 
 import { OfflineCache, defaultDataIdFromObject } from './cache/index';
