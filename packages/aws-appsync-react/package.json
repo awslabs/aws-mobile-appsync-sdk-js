@@ -21,7 +21,7 @@
     "prop-types": "^15.6.0"
   },
   "peerDependencies": {
-    "aws-appsync": "3.x.x || 4.x.x",
+    "aws-appsync": "3.x.x",
     "react": "0.14.x || 15.* || ^15.0.0 || ^16.0.0",
     "react-apollo": "2.x"
   },
