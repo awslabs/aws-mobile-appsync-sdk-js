@@ -21,7 +21,8 @@ import {
   SOCKET_STATUS,
   ObserverQuery,
   SUBSCRIPTION_STATUS,
-  MESSAGE_TYPES
+  MESSAGE_TYPES,
+  CONTROL_MSG
 } from "./types";
 import { jitteredExponentialRetry, NonRetryableError } from "./utils/retry";
 
@@ -81,50 +82,63 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       headers
     } = operation.getContext();
     return new Observable<FetchResult>(observer => {
-      const subscriptionId = uuid();
+      if (!this.url) {
+        observer.error({
+          errors: [
+            {
+              ...new GraphQLError(
+                `Subscribe only available for AWS AppSync endpoint`
+              ),
+            },
+          ],
+        });
+        observer.complete();
+      } else {
+        const subscriptionId = uuid();
 
-      const options = {
-        appSyncGraphqlEndpoint: this.url,
-        authenticationType: this.auth.type,
-        query: print(query),
-        region: this.region,
-        graphql_headers: () => ( headers ),
-        variables,
-        apiKey: this.auth.type === AUTH_TYPE.API_KEY ? this.auth.apiKey : "",
-        credentials:
-          this.auth.type === AUTH_TYPE.AWS_IAM ? this.auth.credentials : null,
-        jwtToken:
-          this.auth.type === AUTH_TYPE.AMAZON_COGNITO_USER_POOLS ||
-          this.auth.type === AUTH_TYPE.OPENID_CONNECT
-            ? this.auth.jwtToken
-            : null
-      };
+        const options = {
+          appSyncGraphqlEndpoint: this.url,
+          authenticationType: this.auth.type,
+          query: print(query),
+          region: this.region,
+          graphql_headers: () => (headers),
+          variables,
+          apiKey: this.auth.type === AUTH_TYPE.API_KEY ? this.auth.apiKey : "",
+          credentials:
+            this.auth.type === AUTH_TYPE.AWS_IAM ? this.auth.credentials : null,
+          jwtToken:
+            this.auth.type === AUTH_TYPE.AMAZON_COGNITO_USER_POOLS ||
+              this.auth.type === AUTH_TYPE.OPENID_CONNECT
+              ? this.auth.jwtToken
+              : null
+        };
 
-      this._startSubscriptionWithAWSAppSyncRealTime({
-        options,
-        observer,
-        subscriptionId
-      });
+        this._startSubscriptionWithAWSAppSyncRealTime({
+          options,
+          observer,
+          subscriptionId
+        });
 
-      return async () => {
-        // Cleanup after unsubscribing or observer.complete was called after _startSubscriptionWithAWSAppSyncRealTime
-        try {
-          this._verifySubscriptionAlreadyStarted(subscriptionId);
-          const { subscriptionState } = this.subscriptionObserverMap.get(
-            subscriptionId
-          );
-          if (subscriptionState === SUBSCRIPTION_STATUS.CONNECTED) {
-            this._sendUnsubscriptionMessage(subscriptionId);
-          } else {
-            throw new Error(
-              "Subscription has failed, starting to remove subscription."
+        return async () => {
+          // Cleanup after unsubscribing or observer.complete was called after _startSubscriptionWithAWSAppSyncRealTime
+          try {
+            this._verifySubscriptionAlreadyStarted(subscriptionId);
+            const { subscriptionState } = this.subscriptionObserverMap.get(
+              subscriptionId
             );
+            if (subscriptionState === SUBSCRIPTION_STATUS.CONNECTED) {
+              this._sendUnsubscriptionMessage(subscriptionId);
+            } else {
+              throw new Error(
+                "Subscription has failed, starting to remove subscription."
+              );
+            }
+          } catch (err) {
+            this._removeSubscriptionObserver(subscriptionId);
+            return;
           }
-        } catch (err) {
-          this._removeSubscriptionObserver(subscriptionId);
-          return;
-        }
-      };
+        };
+      }
     }).filter(data => {
       const { extensions: { controlMsgType = undefined } = {} } = data;
       const isControlMsg = typeof controlMsgType !== "undefined";
@@ -232,14 +246,14 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       observer,
       query,
       variables,
-      subscriptionState
+      subscriptionState,
+      startAckTimeoutId: null,
     });
 
     // Preparing payload for subscription message
 
     const dataString = JSON.stringify(data);
     const headerObj = {
-      ...graphql_headers(),
       ...(await this._awsRealTimeHeaderBasedAuth({
         apiKey,
         appSyncGraphqlEndpoint,
@@ -250,6 +264,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
         credentials,
         jwtToken
       })),
+      ...(await graphql_headers()),
       [USER_AGENT_HEADER]: USER_AGENT
     };
 
@@ -288,7 +303,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       });
       observer.complete();
 
-      const { subscriptionFailedCallback = null } =
+      const { subscriptionFailedCallback } =
         this.subscriptionObserverMap.get(subscriptionId) || {};
 
       // Notify concurrent unsubscription
@@ -319,7 +334,10 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
         this._timeoutStartSubscriptionAck.call(this, subscriptionId);
       }, START_ACK_TIMEOUT) as unknown) as number
     });
-    this.awsRealTimeSocket.send(stringToAWSRealTime);
+
+    if (this.awsRealTimeSocket) {
+      this.awsRealTimeSocket.send(stringToAWSRealTime);
+    }
   }
 
   private _initializeWebSocketConnection({
@@ -331,7 +349,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     jwtToken
   }): Promise<void> {
     if (this.socketStatus === SOCKET_STATUS.READY) {
-      return Promise.resolve();
+      return;
     }
     return new Promise(async (res, rej) => {
       this.promiseArray.push({ res, rej });
@@ -412,7 +430,9 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       logger(`Authentication type ${authenticationType} not supported`);
       return {};
     }
+
     const { host } = url.parse(appSyncGraphqlEndpoint);
+
     const result = await handler({
       payload,
       canonicalUri,
@@ -557,6 +577,17 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
               this.awsRealTimeSocket.onmessage = this._handleIncomingSubscriptionMessage.bind(
                 this
               );
+
+              this.awsRealTimeSocket.onerror = err => {
+                logger(err);
+                this._errorDisconnect(CONTROL_MSG.CONNECTION_CLOSED);
+              };
+
+              this.awsRealTimeSocket.onclose = event => {
+                logger(`WebSocket closed ${event.reason}`);
+                this._errorDisconnect(CONTROL_MSG.CONNECTION_CLOSED);
+              };
+
               res("Cool, connected to AWS AppSyncRealTime");
               return;
             }
@@ -660,7 +691,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     if (type === MESSAGE_TYPES.GQL_CONNECTION_KEEP_ALIVE) {
       clearTimeout(this.keepAliveTimeoutId);
       this.keepAliveTimeoutId = setTimeout(
-        this._timeoutDisconnect.bind(this),
+        this._errorDisconnect.bind(this, CONTROL_MSG.TIMEOUT_DISCONNECT),
         this.keepAliveTimeout
       );
       return;
@@ -694,14 +725,16 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     }
   }
 
-  private _timeoutDisconnect() {
+  private _errorDisconnect(msg: string) {
+    logger(`Disconnect error: ${msg}`);
     this.subscriptionObserverMap.forEach(({ observer }) => {
-      observer.error({
-        errors: [{ ...new GraphQLError(`Timeout disconnect`) }]
-      });
-      observer.complete();
+      if (observer && !observer.closed) {
+        observer.error({
+          errors: [{ ...new GraphQLError(msg) }],
+        });
+      }
     });
-    this.subscriptionObserverMap = new Map();
+    this.subscriptionObserverMap.clear();
     if (this.awsRealTimeSocket) {
       this.awsRealTimeSocket.close();
     }
@@ -710,9 +743,13 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   }
 
   private _timeoutStartSubscriptionAck(subscriptionId) {
-    const { observer, query, variables } = this.subscriptionObserverMap.get(
-      subscriptionId
-    );
+    const { observer, query, variables } =
+      this.subscriptionObserverMap.get(subscriptionId) || {};
+
+    if (!observer) {
+      return;
+    }
+
     this.subscriptionObserverMap.set(subscriptionId, {
       observer,
       query,
@@ -720,17 +757,19 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       subscriptionState: SUBSCRIPTION_STATUS.FAILED
     });
 
-    observer.error({
-      errors: [
-        {
-          ...new GraphQLError(
-            `Subscription timeout ${JSON.stringify({ query, variables })}`
-          )
-        }
-      ]
-    });
-    // Cleanup will be automatically executed
-    observer.complete();
+    if (observer && !observer.closed) {
+      observer.error({
+        errors: [
+          {
+            ...new GraphQLError(
+              `Subscription timeout ${JSON.stringify({ query, variables })}`
+            )
+          }
+        ]
+      });
+      // Cleanup will be automatically executed
+      observer.complete();
+    }
     logger("timeoutStartSubscription", JSON.stringify({ query, variables }));
   }
 

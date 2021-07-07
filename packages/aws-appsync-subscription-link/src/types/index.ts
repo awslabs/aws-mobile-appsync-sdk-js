@@ -67,6 +67,12 @@ export enum MESSAGE_TYPES {
   GQL_ERROR = "error" // Server -> Client
 }
 
+export enum CONTROL_MSG {
+  CONNECTION_CLOSED = 'Connection closed',
+  TIMEOUT_DISCONNECT = 'Timeout disconnect',
+  SUBSCRIPTION_ACK = 'Subscription ack',
+}
+
 //#endregion
 
 //#region Subscription link types
