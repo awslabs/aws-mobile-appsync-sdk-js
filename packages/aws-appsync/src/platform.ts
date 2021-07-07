@@ -1,3 +1,0 @@
-const userAgent = '';
-
-export { userAgent };

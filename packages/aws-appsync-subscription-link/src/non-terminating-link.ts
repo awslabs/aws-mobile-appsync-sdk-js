@@ -2,8 +2,8 @@
  * Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import { ApolloLink, NextLink } from 'apollo-link';
-import { setContext } from 'apollo-link-context';
+import { ApolloLink, NextLink } from '@apollo/client/core';
+import { setContext } from '@apollo/client/link/context';
 
 export class NonTerminatingLink extends ApolloLink {
 

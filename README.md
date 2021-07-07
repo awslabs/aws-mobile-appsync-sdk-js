@@ -2,17 +2,26 @@
 
 ## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK
 
- This SDK can be used with the Apollo JavaScript client found [here](https://github.com/apollographql/apollo-client). Please log questions for this client SDK in this repo and questions for the AppSync service in the [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0).
+ This SDK provides Apollo links that can be used with the Apollo JavaScript client version 3 found [here](https://github.com/apollographql/apollo-client). Please log questions for this client SDK in this repo and questions for the AppSync service in the [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0).
 
 [![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
 ![npm](https://img.shields.io/npm/dm/aws-appsync.svg)
 
 
-| package           | version                                                    |
-| ----------------- | ---------------------------------------------------------- |
-| aws-appsync       | ![npm](https://img.shields.io/npm/v/aws-appsync.svg)       |
-| aws-appsync-react | ![npm](https://img.shields.io/npm/v/aws-appsync-react.svg) |
+| package                       | version                                                                |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| aws-appsync-auth-link         | ![npm](https://img.shields.io/npm/v/aws-appsync-auth-link.svg)         |
+| aws-appsync-subscription-link | ![npm](https://img.shields.io/npm/v/aws-appsync-subscription-link.svg) |
 
+---
+**NOTE**
+
+The `aws-appsync` and `aws-appsync-react` packages work with the Apollo client version 2. If you are using the Apollo client version 3, offline functionality is not provided but you can use the following packages with Apollo links to consume AWS AppSync apis:
+
+aws-appsync-auth-link ![npm](https://img.shields.io/npm/v/aws-appsync-auth-link.svg)  
+aws-appsync-subscription-link ![npm](https://img.shields.io/npm/v/aws-appsync-subscription-link.svg)
+
+---
 
 ## Installation    
 #### npm    
@@ -65,7 +74,6 @@ Please visit the [documentation with the Amplify Framework](https://aws-amplify.
   - [Error handling](https://github.com/awslabs/aws-mobile-appsync-sdk-js#error-handling)
   - [Custom storage engine](https://github.com/awslabs/aws-mobile-appsync-sdk-js#custom-storage-engine)
 - [offline helpers](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-helpers)
-- [Tutorial](https://github.com/awslabs/aws-mobile-appsync-sdk-js/tree/master/tutorials/react-offline-realtime-todos)
 
 [Vue](https://github.com/awslabs/aws-mobile-appsync-sdk-js#vue)   
 [Angular](https://github.com/awslabs/aws-mobile-appsync-sdk-js#angular--ionic-examples-coming-soon)   
