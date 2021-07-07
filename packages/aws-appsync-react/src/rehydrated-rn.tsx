@@ -72,7 +72,7 @@ export default class Rehydrated extends React.Component<RehydratedProps, Rehydra
         if (render) return render({ rehydrated });
 
         if (children) {
-            if (loading) return rehydrated ? children : loading;
+            if (loading !== undefined) return rehydrated ? children : loading;
 
             return (
                 <Rehydrate rehydrated={rehydrated} style={style} >
