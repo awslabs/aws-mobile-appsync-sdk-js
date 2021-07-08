@@ -66,11 +66,12 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   private subscriptionObserverMap: Map<string, ObserverQuery> = new Map();
   private promiseArray: Array<{ res: Function; rej: Function }> = [];
 
-  constructor({ url: theUrl, region: theRegion, auth: theAuth }: UrlInfo) {
+  constructor({ url: theUrl, region: theRegion, auth: theAuth, keepAliveTimeout: keepAliveTimeout }: UrlInfo) {
     super();
     this.url = theUrl;
     this.region = theRegion;
     this.auth = theAuth;
+    this.keepAliveTimeout = keepAliveTimeout;
   }
 
   request(operation: Operation) {
