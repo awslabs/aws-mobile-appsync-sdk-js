@@ -62,7 +62,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   private awsRealTimeSocket: WebSocket;
   private socketStatus: SOCKET_STATUS = SOCKET_STATUS.CLOSED;
   private keepAliveTimeoutId;
-  private keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
+  private keepAliveTimeout;
   private subscriptionObserverMap: Map<string, ObserverQuery> = new Map();
   private promiseArray: Array<{ res: Function; rej: Function }> = [];
 
@@ -71,7 +71,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     this.url = theUrl;
     this.region = theRegion;
     this.auth = theAuth;
-    this.keepAliveTimeout = keepAliveTimeout;
+    this.keepAliveTimeout = keepAliveTimeout || DEFAULT_KEEP_ALIVE_TIMEOUT;
   }
 
   request(operation: Operation) {
