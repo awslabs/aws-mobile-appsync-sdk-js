@@ -19,7 +19,6 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "apollo-utilities": "^1.3.4",
     "aws-appsync-auth-link": "^3.0.4",
     "debug": "2.6.9",
     "url": "^0.11.0"
