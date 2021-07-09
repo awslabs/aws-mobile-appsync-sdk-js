@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="3.0.7"></a>
+## [3.0.7](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@3.0.6...aws-appsync-subscription-link@3.0.7) (2021-07-09)
+
+
+
+
+**Note:** Version bump only for package aws-appsync-subscription-link
+
 <a name="3.0.6"></a>
 ## [3.0.6](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@3.0.5...aws-appsync-subscription-link@3.0.6) (2021-02-12)
 
