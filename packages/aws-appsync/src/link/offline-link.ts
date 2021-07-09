@@ -413,7 +413,7 @@ const idsMapReducer = (state = {}, action, dataIdFromObject) => {
     switch (type) {
         case actions.ENQUEUE:
             const ids = getIds(dataIdFromObject, optimisticResponse);
-            const entries = Object.values(ids).reduce((acc: { [key: string]: string }, id: string) => (acc[id] = null, acc), {});
+            const entries = Object.values(ids).reduce((acc: { [key: string]: string }, id: string) => (acc[id] = null, acc), {}) as object;
 
             return {
                 ...state,

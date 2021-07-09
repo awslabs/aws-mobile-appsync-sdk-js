@@ -13,6 +13,15 @@
 | aws-appsync       | ![npm](https://img.shields.io/npm/v/aws-appsync.svg)       |
 | aws-appsync-react | ![npm](https://img.shields.io/npm/v/aws-appsync-react.svg) |
 
+---
+**NOTE**
+
+The `aws-appsync` and `aws-appsync-react` packages work with the Apollo client version 2. If you are using the Apollo client version 3, offline functionality is not provided but you can use the following packages with Apollo links to consume AWS AppSync apis:
+
+aws-appsync-auth-link ![npm](https://img.shields.io/npm/v/aws-appsync-auth-link.svg)  
+aws-appsync-subscription-link ![npm](https://img.shields.io/npm/v/aws-appsync-subscription-link.svg)
+
+---
 
 ## Installation    
 #### npm    
