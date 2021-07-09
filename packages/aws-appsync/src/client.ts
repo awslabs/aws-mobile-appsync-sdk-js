@@ -146,6 +146,7 @@ export interface AWSAppSyncClientOptions {
     cacheOptions?: ApolloReducerConfig,
     disableOffline?: boolean,
     offlineConfig?: OfflineConfig,
+    customHeaders?,
 }
 
 export type OfflineConfig = Pick<Partial<StoreOptions<any>>, 'storage' | 'callback' | 'keyPrefix'> & {
@@ -193,6 +194,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             callback = () => { },
             storeCacheRootMutation = false,
         } = {},
+        customHeaders = {},
     }: AWSAppSyncClientOptions, options?: Partial<ApolloClientOptions<TCacheShape>>) {
         const { cache: customCache = undefined, link: customLink = undefined } = options || {};
 
@@ -237,7 +239,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
                 };
             });
         });
-        const link = waitForRehydrationLink.concat(customLink || createAppSyncLink({ url, region, auth, complexObjectsCredentials, conflictResolver }));
+        const link = waitForRehydrationLink.concat(customLink || createAppSyncLink({ url, region, auth, complexObjectsCredentials, conflictResolver, resultsFetcherLink = createHttpLink({ uri: url, headers: customHeaders }) }));
 
         const newOptions = {
             ...options,
