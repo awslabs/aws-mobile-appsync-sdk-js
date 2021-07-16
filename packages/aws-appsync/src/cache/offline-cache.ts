@@ -56,16 +56,14 @@ function isOfflineCacheOptions(obj: any): obj is OfflineCacheOptions {
 export default class MyCache extends InMemoryCache {
 
     private store: Store<OfflineCache>;
-    private storeCacheRootMutation: boolean = false;
 
     constructor(optionsOrStore: Store<OfflineCache> | OfflineCacheOptions, config: ApolloReducerConfig = {}) {
         super(config);
 
         if (isOfflineCacheOptions(optionsOrStore)) {
-            const { store, storeCacheRootMutation = false } = optionsOrStore;
+            const { store } = optionsOrStore;
 
             this.store = store;
-            this.storeCacheRootMutation = storeCacheRootMutation;
         } else {
             this.store = optionsOrStore;
         }
@@ -92,7 +90,7 @@ export default class MyCache extends InMemoryCache {
     write(write: Cache.WriteOptions) {
         super.write(write);
 
-        if (!this.storeCacheRootMutation && write.dataId === 'ROOT_MUTATION') {
+        if (write.dataId === 'ROOT_MUTATION') {
             this.data.delete('ROOT_MUTATION');
         }
 
