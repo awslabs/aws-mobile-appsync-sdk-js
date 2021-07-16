@@ -46,7 +46,6 @@ export interface OfflineCache extends AppState {
 
 export type OfflineCacheOptions = {
     store: Store<OfflineCache>,
-    storeCacheRootMutation?: boolean,
 }
 
 function isOfflineCacheOptions(obj: any): obj is OfflineCacheOptions {
