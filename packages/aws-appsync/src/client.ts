@@ -148,9 +148,7 @@ export interface AWSAppSyncClientOptions {
     offlineConfig?: OfflineConfig,
 }
 
-export type OfflineConfig = Pick<Partial<StoreOptions<any>>, 'storage' | 'callback' | 'keyPrefix'> & {
-    storeCacheRootMutation?: boolean
-};
+export type OfflineConfig = Pick<Partial<StoreOptions<any>>, 'storage' | 'callback' | 'keyPrefix'>;
 
 // TODO: type defs
 export type OfflineCallback = (err: any, success: any) => void;
@@ -191,7 +189,6 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
             storage = undefined,
             keyPrefix = undefined,
             callback = () => { },
-            storeCacheRootMutation = false,
         } = {},
     }: AWSAppSyncClientOptions, options?: Partial<ApolloClientOptions<TCacheShape>>) {
         const { cache: customCache = undefined, link: customLink = undefined } = options || {};
@@ -220,7 +217,7 @@ class AWSAppSyncClient<TCacheShape extends NormalizedCacheObject> extends Apollo
         });
         const cache: ApolloCache<any> = disableOffline
             ? (customCache || new InMemoryCache(cacheOptions))
-            : new OfflineCache({ store, storeCacheRootMutation }, cacheOptions);
+            : new OfflineCache({ store }, cacheOptions);
 
         const waitForRehydrationLink = new ApolloLink((op, forward) => {
             let handle = null;
