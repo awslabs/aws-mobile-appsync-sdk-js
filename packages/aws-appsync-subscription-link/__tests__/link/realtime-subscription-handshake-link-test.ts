@@ -6,7 +6,7 @@ import { AppSyncRealTimeSubscriptionHandshakeLink } from '../../src/realtime-sub
 const query = gql`subscription { someSubscription { aField } }`
 
 class myWebSocket implements WebSocket {
-    binaryType: BinaryType;    bufferedAmount: number;
+    binaryType: BinaryType; bufferedAmount: number;
     extensions: string;
     onclose: (this: WebSocket, ev: CloseEvent) => any;
     onerror: (this: WebSocket, ev: Event) => any;
@@ -166,5 +166,39 @@ describe("RealTime subscription link", () => {
 
         });
     });
+
+    test('Initialize WebSocket correctly for AWS_LAMBDA', (done) => {
+        expect.assertions(2);
+        jest.spyOn(Date.prototype, 'toISOString').mockImplementation(jest.fn(() => {
+            return "2019-11-13T18:47:04.733Z";
+        }));
+        AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn((url, protocol) => {
+            expect(url).toBe('wss://xxxxx.appsync-realtime-api.amazonaws.com/graphql?header=eyJBdXRob3JpemF0aW9uIjoidG9rZW4iLCJob3N0IjoieHh4eHguYXBwc3luYy1hcGkuYW1hem9uYXdzLmNvbSJ9&payload=e30=');
+            expect(protocol).toBe('graphql-ws');
+            done();
+            return new myWebSocket();
+        });
+        const link = new AppSyncRealTimeSubscriptionHandshakeLink({
+            auth: {
+                type: AUTH_TYPE.AWS_LAMBDA,
+                token: 'token'
+            },
+            region: 'us-east-1',
+            url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
+        });
+
+        execute(link, { query }).subscribe({
+            error: (err) => {
+                fail;
+            },
+            next: (data) => {
+                done();
+            },
+            complete: () => {
+                done();
+            }
+
+        });
+    })
 
 });
