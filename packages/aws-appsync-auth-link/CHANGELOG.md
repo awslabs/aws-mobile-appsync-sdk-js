@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.0.5"></a>
+## [2.0.5](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-auth-link@2.0.4...aws-appsync-auth-link@2.0.5) (2021-07-28)
+
+
+
+
+**Note:** Version bump only for package aws-appsync-auth-link
+
 <a name="2.0.4"></a>
 ## [2.0.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-auth-link@2.0.3...aws-appsync-auth-link@2.0.4) (2021-07-09)
 
