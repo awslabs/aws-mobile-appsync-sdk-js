@@ -25,6 +25,7 @@ export enum AUTH_TYPE {
     AWS_IAM = 'AWS_IAM',
     AMAZON_COGNITO_USER_POOLS = 'AMAZON_COGNITO_USER_POOLS',
     OPENID_CONNECT = 'OPENID_CONNECT',
+    AWS_LAMBDA = 'AWS_LAMBDA',
 }
 
 export class AuthLink extends ApolloLink {
@@ -125,7 +126,12 @@ type AuthOptionsOAuth = {
     type: KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.AMAZON_COGNITO_USER_POOLS> | KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.OPENID_CONNECT>,
     jwtToken: (() => (string | Promise<string>)) | string,
 };
-export type AuthOptions = AuthOptionsNone | AuthOptionsIAM | AuthOptionsApiKey | AuthOptionsOAuth;
+type AuthOptionsLambda = {
+    type: KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.AWS_LAMBDA>,
+    token: (() => (string | Promise<string>)) | string,
+}
+
+export type AuthOptions = AuthOptionsNone | AuthOptionsIAM | AuthOptionsApiKey | AuthOptionsOAuth | AuthOptionsLambda;
 
 export const authLink = ({ url, region, auth: { type } = <AuthOptions>{}, auth }) => {
     return new ApolloLink((operation, forward) => {
@@ -154,6 +160,10 @@ export const authLink = ({ url, region, auth: { type } = <AuthOptions>{}, auth }
                 case AUTH_TYPE.OPENID_CONNECT:
                     const { jwtToken = '' } = auth;
                     promise = headerBasedAuth({ header: 'Authorization', value: jwtToken }, operation, forward);
+                    break;
+                case AUTH_TYPE.AWS_LAMBDA:
+                    const { token = '' } = auth;
+                    promise = headerBasedAuth({ header: 'Authorization', value: token }, operation, forward);
                     break;
                 default:
                     const error = new Error(`Invalid AUTH_TYPE: ${(<AuthOptions>auth).type}`);
