@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "apollo-link": "1.2.5",
-    "aws-sdk": "^2.814.0",
+    "aws-sdk": "^2.961.0",
     "debug": "2.6.9"
   }
 }
