@@ -7,8 +7,9 @@ See the License for the specific language governing permissions and limitations 
 */
 global.Buffer = global.Buffer || require('buffer').Buffer; // Required for aws sigv4 signing
 
-var url = require('url'),
-    crypto = require('aws-sdk/global').util.crypto;
+var url = require('url');
+
+var crypto = require('crypto');
 
 var encrypt = function (key, src, encoding = '') {
     return crypto.lib.createHmac('sha256', key).update(src, 'utf8').digest(encoding);
