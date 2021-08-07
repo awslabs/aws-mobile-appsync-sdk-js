@@ -9,7 +9,7 @@ import { Signer } from './signer';
 import * as Url from 'url';
 
 import { userAgent } from "./platform";
-import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
+import { Credentials, Provider } from '@aws-sdk/types';
 
 const packageInfo = require("../package.json");
 
@@ -114,7 +114,7 @@ type KeysWithType<O, T> = {
 type AuthOptionsNone = { type: AUTH_TYPE.NONE };
 type AuthOptionsIAM = {
     type: KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.AWS_IAM>,
-    credentials: (() => Credentials | CredentialsOptions | Promise<Credentials | CredentialsOptions | null>) | Credentials | CredentialsOptions | null,
+    credentials: (() => Credentials | Provider<Credentials> | Promise<Credentials> | Provider<Credentials> | null) | Credentials | Provider<Credentials> | null,
 };
 type AuthOptionsApiKey = {
     type: KeysWithType<typeof AUTH_TYPE, AUTH_TYPE.API_KEY>,
