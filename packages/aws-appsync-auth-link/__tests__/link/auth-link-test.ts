@@ -55,6 +55,41 @@ describe("Auth link", () => {
         execute(testLink, { query }).subscribe({ })
     });
 
+    test('Test AMAZON_COGNITO_USER_POOLS authorizer uses result of async jwtToken method', (done) => {
+        const query = gql`query { someQuery { aField } }`
+
+        const initialiLink = authLink({
+            auth: {
+                type: AUTH_TYPE.AMAZON_COGNITO_USER_POOLS,
+                jwtToken: 'token'
+            }, 
+            region: 'us-east-1',
+            url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
+        })
+
+        const link = authLink({
+            auth: {
+                type: AUTH_TYPE.AMAZON_COGNITO_USER_POOLS,
+                jwtToken: 'updated-token'
+            }, 
+            region: 'us-east-1',
+            url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
+        })
+
+        
+        const spyLink = new ApolloLink((operation, forward) => {
+            const { headers: { Authorization} } = operation.getContext();
+            expect(Authorization).toBe('updated-token');
+            done();
+
+            return new Observable(() => {});
+        })
+        
+        const testLink = ApolloLink.from([initialiLink, link, spyLink]);
+
+        execute(testLink, { query }).subscribe({ })
+    });
+
     test('Test OPENID_CONNECT authorizer for queries', (done) => {
         const query = gql`query { someQuery { aField } }`
 
