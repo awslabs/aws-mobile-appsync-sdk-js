@@ -5,7 +5,7 @@
 import { DocumentNode, OperationDefinitionNode, FieldNode } from "graphql";
 import { resultKeyNameFromField } from "apollo-utilities";
 import { Observable } from "apollo-link";
-import { createHash } from "crypto"
+import { Sha256 } from '@aws-crypto/sha256-universal';
 
 export const passthroughLink = (op, forward) => (forward ? forward(op) : Observable.of());
 
@@ -15,6 +15,12 @@ export const getOperationFieldName = (operation: DocumentNode): string => result
     (operation.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode
 );
 
-export const hash = (src: any) => createHash('sha256').update(src || {}, 'utf8').digest('hex') as string;
+export const hash = async (src: any) => {
+    src = src || {};
+    const hash = new Sha256();
+    hash.update(src, 'utf8');
+    const result = await hash.digest() as unknown as string;
+    return result;
+};
 
 export { default as rootLogger } from './logger';
