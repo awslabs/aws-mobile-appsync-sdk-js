@@ -15,11 +15,11 @@ export const getOperationFieldName = (operation: DocumentNode): string => result
     (operation.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode
 );
 
-export const hash = async (src: any) => {
+export const hash = (src: any) => {
     src = src || {};
     const hash = new Sha256();
     hash.update(src, 'utf8');
-    const result = await hash.digest() as unknown as string;
+    const result = hash.digestSync() as unknown as string;
     return result;
 };
 
