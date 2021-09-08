@@ -11,18 +11,18 @@ var url = require('url');
 
 var { Sha256 } = require('@aws-crypto/sha256-universal')
 
-var encrypt = async function (key, src) {
+var encrypt = function (key, src) {
     const hash = new Sha256(key);
     hash.update(src, 'utf8');
-    const result = await hash.digest();
+    const result = hash.digestSync();
     return result;
 };
 
-var hash = async function (src) {
+var hash = function (src) {
     src = src || '';
     const hash = new Sha256();
     hash.update(src, 'utf8');
-    const result = await hash.digest();
+    const result = hash.digestSync();
     return result;
 };
 
