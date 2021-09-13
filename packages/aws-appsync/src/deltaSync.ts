@@ -265,7 +265,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
         //#region Subscription
         const subsControlLogger = logger.extend('subsc-control');
 
-        await new Promise(resolve => {
+        await new Promise<void>(resolve => {
             if (subscriptionQuery && subscriptionQuery.query) {
                 const { query, variables } = subscriptionQuery;
 
