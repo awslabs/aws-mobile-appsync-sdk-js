@@ -20,6 +20,6 @@
         "lerna": "^2.9.0",
         "node-fetch": "^2.2.0",
         "ts-jest": "24",
-        "typescript": "~3.7"
+        "typescript": "~3.8"
     }
 }
