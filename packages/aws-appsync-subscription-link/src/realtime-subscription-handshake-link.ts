@@ -537,7 +537,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     // Step 1: connect websocket
     try {
       await (() => {
-        return new Promise((res, rej) => {
+        return new Promise<void>((res, rej) => {
           const newSocket = AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket(awsRealTimeUrl, "graphql-ws");
           newSocket.onerror = () => {
             logger(`WebSocket connection error`);
