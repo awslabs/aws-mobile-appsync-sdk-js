@@ -7,7 +7,7 @@ import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
 import { rootLogger } from "./utils";
 import * as Paho from './vendor/paho-mqtt';
 import { ApolloError } from "apollo-client";
-import { FieldNode } from "graphql";
+import type { FieldNode } from "graphql";
 import { getMainDefinition } from "apollo-utilities";
 
 const logger = rootLogger.extend('subscriptions');

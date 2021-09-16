@@ -6,7 +6,7 @@ import { ApolloLink, Observable } from "apollo-link";
 import { createHttpLink } from "apollo-link-http";
 import { getMainDefinition } from "apollo-utilities";
 import { NonTerminatingLink } from "./non-terminating-link";
-import { OperationDefinitionNode } from "graphql";
+import type { OperationDefinitionNode } from "graphql";
 
 import {
   AppSyncRealTimeSubscriptionHandshakeLink
