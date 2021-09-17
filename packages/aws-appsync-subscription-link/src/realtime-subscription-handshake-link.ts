@@ -264,9 +264,9 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
         canonicalUri: "",
         region,
         credentials,
-        token
+        token,
+        graphql_headers
       })),
-      ...(await graphql_headers()),
       [USER_AGENT_HEADER]: USER_AGENT
     };
 
@@ -374,7 +374,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
               appSyncGraphqlEndpoint,
               region,
               credentials,
-              token
+              token,
+              graphql_headers: () => {}
             })
           );
           const headerQs = Buffer.from(headerString).toString("base64");
@@ -414,7 +415,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     apiKey,
     region,
     credentials,
-    token
+    token,
+    graphql_headers
   }) {
     const headerHandler: Record<
       string,
@@ -444,7 +446,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       region,
       host,
       credentials,
-      token
+      token,
+      graphql_headers
     });
 
     return result;
@@ -452,20 +455,23 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
 
   private async _awsRealTimeAuthorizationHeader({
     host,
-    token
+    token,
+    graphql_headers
   }): Promise<Record<string, string>> {
     return {
       Authorization:
         typeof token === "function"
           ? await token.call(undefined)
           : await token,
-      host
+      host,
+      ...(await graphql_headers())
     };
   }
 
   private async _awsRealTimeApiKeyHeader({
     apiKey,
-    host
+    host,
+    graphql_headers
   }): Promise<Record<string, string>> {
     const dt = new Date();
     const dtStr = dt.toISOString().replace(/[:\-]|\.\d{3}/g, "");
@@ -473,7 +479,8 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     return {
       host,
       "x-amz-date": dtStr,
-      "x-api-key": apiKey
+      "x-api-key": apiKey,
+      ...(await graphql_headers()),
     };
   }
 
