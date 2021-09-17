@@ -11,7 +11,6 @@ var url = require('url');
 
 var { Sha256 } = require('@aws-crypto/sha256-js')
 var { toHex } = require("@aws-sdk/util-hex-encoding");
-var crypto = require('aws-sdk/global').util.crypto;
 
 var encrypt = function(key, src, encoding = '') {
 	const hash = new Sha256(key);
@@ -160,7 +159,7 @@ kService = HMAC(kRegion, Service)
 kSigning = HMAC(kService, "aws4_request")
 </pre>
 */
-var get_signing_key = function (secret_key, d_str, service_info) {
+var get_signing_key = function (secret_key = '', d_str, service_info) {
     var k = ('AWS4' + secret_key),
         k_date = encrypt(k, d_str),
         k_region = encrypt(k_date, service_info.region),
@@ -171,7 +170,6 @@ var get_signing_key = function (secret_key, d_str, service_info) {
 };
 
 var get_signature = function (signing_key, str_to_sign) {
-    debugger;
     return encrypt(signing_key, str_to_sign, 'hex');
 };
 

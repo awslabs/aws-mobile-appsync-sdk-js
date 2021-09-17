@@ -22,7 +22,6 @@
     "@aws-crypto/sha256-js": "^1.2.0",
     "@aws-sdk/types": "^3.25.0",
     "@aws-sdk/util-hex-encoding": "^3.29.0",
-    "aws-sdk": "^2.814.0",
     "debug": "2.6.9"
   },
   "devDependencies": {
