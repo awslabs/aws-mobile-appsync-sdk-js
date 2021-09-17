@@ -19,6 +19,7 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
+    "@aws-crypto/sha256-js": "^1.2.0",
     "aws-appsync-auth-link": "^3.0.6",
     "debug": "2.6.9",
     "url": "^0.11.0"

@@ -9,7 +9,7 @@ global.Buffer = global.Buffer || require('buffer').Buffer; // Required for aws s
 
 var url = require('url');
 
-var { Sha256 } = require('@aws-crypto/sha256-universal')
+var { Sha256 } = require('@aws-crypto/sha256-js')
 
 var encrypt = function (key, src) {
     const hash = new Sha256(key);

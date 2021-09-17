@@ -19,7 +19,6 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "@aws-crypto/sha256-universal": "^1.1.1",
     "@aws-sdk/types": "^3.25.0",
     "debug": "2.6.9"
   },
