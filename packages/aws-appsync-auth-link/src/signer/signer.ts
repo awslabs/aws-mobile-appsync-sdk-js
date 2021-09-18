@@ -11,48 +11,23 @@ var url = require('url');
 
 var { Sha256 } = require('@aws-crypto/sha256-js')
 var { toHex } = require("@aws-sdk/util-hex-encoding");
-var crypto = require('aws-sdk/global').util.crypto;
 
-var encrypt2 = function(key, src, encoding = '') {
+var encrypt = function(key, src, encoding = '') {
 	const hash = new Sha256(key);
 	hash.update(src);
-	let result = hash.digestSync();
+	const result = hash.digestSync();
 	if (encoding === 'hex') {
-		result = toHex(result)
+		return toHex(result)
 	}
     return result;
 };
 
-var hash2 = function(src) {
+var hash = function(src) {
 	const arg = src || '';
 	const hash = new Sha256();
 	hash.update(arg);
-	const result = toHex(hash.digestSync());
-    return result;
+	return toHex(hash.digestSync());
 };
-
-var encrypt1 = function (key, src, encoding = '') {
-    const test1 = crypto.lib.createHmac('sha256', key).update(src, 'utf8').digest(encoding);
-    return test1;
-};
-
-var hash1 = function (src) {
-    src = src || '';
-    const test1 = crypto.createHash('sha256').update(src, 'utf8').digest('hex');
-	return test1;
-};
-
-var hash = function(src) {
-	const hash1result = hash1(src);
-	const hash2result = hash2(src);
-	return hash1result;
-}
-
-var encrypt = function (key, src, encoding = '') {
-	const encrypt1result = encrypt1(key, src, encoding);
-	const encrypt2result = encrypt2(key, src, encoding);
-	return encrypt1result;
-}
 
 /**
 * @private

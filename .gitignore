@@ -4,3 +4,4 @@ lib
 lerna-debug.log
 yarn.lock
 .npmrc
+.DS_Store
