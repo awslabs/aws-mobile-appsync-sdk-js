@@ -36,9 +36,5 @@
     "setimmediate": "^1.0.5",
     "url": "^0.11.0",
     "uuid": "3.x"
-  },
-  "peerDependencies": {
-    "@react-native-community/async-storage": "^1.11.0",
-    "@react-native-community/netinfo": "^5.0.0"
   }
 }
