@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="4.1.2"></a>
+## [4.1.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@4.1.1...aws-appsync@4.1.2) (2021-09-24)
+
+
+### Bug Fixes
+
+* **aws-appsync:** Upgrade to [@react-native-async-storage](https://github.com/react-native-async-storage)/async-storage ([#673](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/673)) ([8f33fb8](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/8f33fb8))
+* add type fixes to fix 'prepare' scripts ([#670](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/670)) ([bf5676a](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/bf5676a))
+* redux-persist constants dependency resolution path ([c259bfc](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/c259bfc))
+
+
+
+
 <a name="4.1.1"></a>
 ## [4.1.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@4.1.0...aws-appsync@4.1.1) (2021-07-28)
 

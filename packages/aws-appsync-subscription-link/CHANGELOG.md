@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.2.4"></a>
+## [2.2.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.2.3...aws-appsync-subscription-link@2.2.4) (2021-09-24)
+
+
+### Bug Fixes
+
+* add type fixes to fix 'prepare' scripts ([#670](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/670)) ([bf5676a](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/bf5676a))
+
+
+
+
 <a name="2.2.3"></a>
 ## [2.2.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.2.2...aws-appsync-subscription-link@2.2.3) (2021-07-28)
 
