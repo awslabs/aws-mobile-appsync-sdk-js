@@ -5,7 +5,7 @@
 import { v4 as uuid } from 'uuid';
 import { cloneDeep } from 'apollo-utilities';
 import { ApolloClient, MutationOptions, SubscribeToMoreOptions, OperationVariables } from 'apollo-client';
-import { DocumentNode, InputObjectTypeDefinitionNode, NamedTypeNode } from 'graphql';
+import type { DocumentNode, InputObjectTypeDefinitionNode, NamedTypeNode } from 'graphql';
 import AWSAppSyncClient from '../client';
 import { replaceUsingMap } from '../link';
 import { getOperationFieldName, rootLogger } from '../utils';

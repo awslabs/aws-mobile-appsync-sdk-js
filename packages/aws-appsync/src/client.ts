@@ -21,7 +21,7 @@ import { ApolloCache } from 'apollo-cache';
 import { AuthOptions, AuthLink, AUTH_TYPE } from 'aws-appsync-auth-link';
 import { createSubscriptionHandshakeLink } from 'aws-appsync-subscription-link';
 import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
-import { OperationDefinitionNode, DocumentNode } from 'graphql';
+import type { DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
 import { createRetryLink } from './link/retry-link';

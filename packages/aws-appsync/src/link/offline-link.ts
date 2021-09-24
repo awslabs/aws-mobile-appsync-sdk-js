@@ -7,7 +7,7 @@ import { ApolloLink, Observable, Operation, execute, GraphQLRequest, NextLink, F
 import { getOperationDefinition, getMutationDefinition, resultKeyNameFromField, tryFunctionOrLogError } from "apollo-utilities";
 import { PERSIST_REHYDRATE } from "@redux-offline/redux-offline/lib/constants";
 import { OfflineAction } from "@redux-offline/redux-offline/lib/types";
-import { FieldNode, ExecutionResult } from "graphql";
+import type { FieldNode, ExecutionResult } from "graphql";
 
 import { NORMALIZED_CACHE_KEY, METADATA_KEY } from "../cache";
 import { AWSAppsyncGraphQLError } from "../types";
