@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="4.1.3"></a>
+## [4.1.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@4.1.2...aws-appsync@4.1.3) (2021-09-24)
+
+
+
+
+**Note:** Version bump only for package aws-appsync
+
 <a name="4.1.2"></a>
 ## [4.1.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@4.1.1...aws-appsync@4.1.2) (2021-09-24)
 
