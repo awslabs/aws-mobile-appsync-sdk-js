@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "main": "lib/index.js",
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync SDK for JavaScript",
@@ -27,7 +27,7 @@
     "apollo-link-http": "1.5.8",
     "apollo-link-retry": "2.2.7",
     "aws-appsync-auth-link": "^2.0.5",
-    "aws-appsync-subscription-link": "^2.2.3",
+    "aws-appsync-subscription-link": "^2.2.4",
     "aws-sdk": "^2.814.0",
     "debug": "2.6.9",
     "graphql": "0.13.0",
