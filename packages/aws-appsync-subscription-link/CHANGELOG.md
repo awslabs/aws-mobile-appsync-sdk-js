@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="3.0.9"></a>
+## [3.0.9](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@3.0.8...aws-appsync-subscription-link@3.0.9) (2021-09-24)
+
+
+### Bug Fixes
+
+* add type fix to subscription link to fix 'prepare' script ([#669](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/669)) ([c5202dc](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/c5202dc))
+* **aws-appsync-subscription-link:** graphql header refactor to fix IAM-based auth ([#619](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/619)) ([#671](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/671)) ([dbf4959](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/dbf4959))
+* remove aws-sdk V2; import aws-sdk V3 packages ([#637](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/637)); refactor auth-link, signer, and types ([0996740](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/0996740))
+
+
+
+
 <a name="3.0.8"></a>
 ## [3.0.8](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@3.0.7...aws-appsync-subscription-link@3.0.8) (2021-07-28)
 
