@@ -9,21 +9,24 @@ global.Buffer = global.Buffer || require('buffer').Buffer; // Required for aws s
 
 var url = require('url');
 
-var { Sha256 } = require('@aws-crypto/sha256-universal')
+var { Sha256 } = require('@aws-crypto/sha256-js')
+var { toHex } = require("@aws-sdk/util-hex-encoding");
 
-var encrypt = function (key, src) {
-    const hash = new Sha256(key);
-    hash.update(src, 'utf8');
-    const result = hash.digestSync();
+var encrypt = function(key, src, encoding = '') {
+	const hash = new Sha256(key);
+	hash.update(src);
+	const result = hash.digestSync();
+	if (encoding === 'hex') {
+		return toHex(result)
+	}
     return result;
 };
 
-var hash = function (src) {
-    src = src || '';
-    const hash = new Sha256();
-    hash.update(src, 'utf8');
-    const result = hash.digestSync();
-    return result;
+var hash = function(src) {
+	const arg = src || '';
+	const hash = new Sha256();
+	hash.update(arg);
+	return toHex(hash.digestSync());
 };
 
 /**
