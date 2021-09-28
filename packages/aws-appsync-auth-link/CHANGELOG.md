@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="3.0.7"></a>
+## [3.0.7](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-auth-link@3.0.6...aws-appsync-auth-link@3.0.7) (2021-09-24)
+
+
+### Bug Fixes
+
+* remove aws-sdk V2; import aws-sdk V3 packages ([#637](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/637)); refactor auth-link, signer, and types ([0996740](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/0996740))
+
+
+
+
 <a name="3.0.6"></a>
 ## [3.0.6](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-auth-link@3.0.5...aws-appsync-auth-link@3.0.6) (2021-07-28)
 
