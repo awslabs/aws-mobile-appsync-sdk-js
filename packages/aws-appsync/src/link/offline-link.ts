@@ -314,7 +314,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
                             mutation: mutationName,
                             variables: newVars,
                             error: new ApolloError({
-                                graphQLErrors: data.errors,
+                                graphQLErrors: [...data.errors],
                             }),
                             notified: !!observer.next,
                         } : null;
