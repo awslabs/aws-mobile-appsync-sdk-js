@@ -170,7 +170,7 @@ var get_signing_key = function (secret_key = '', d_str, service_info) {
 };
 
 var get_signature = function (signing_key, str_to_sign) {
-    return encrypt(signing_key, str_to_sign);
+    return encrypt(signing_key, str_to_sign, 'hex');
 };
 
 /**
