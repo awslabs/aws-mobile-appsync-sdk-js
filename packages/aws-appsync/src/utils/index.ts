@@ -5,7 +5,7 @@
 import { DocumentNode, OperationDefinitionNode, FieldNode } from "graphql";
 import { resultKeyNameFromField } from "apollo-utilities";
 import { Observable } from "apollo-link";
-import { Sha256 } from '@aws-crypto/sha256-universal';
+import { Sha256 } from '@aws-crypto/sha256-js';
 import { toHex } from "@aws-sdk/util-hex-encoding";
 
 export const passthroughLink = (op, forward) => (forward ? forward(op) : Observable.of());
@@ -30,7 +30,7 @@ export const hash = (src: any) => {
     debugger;
 	const arg = src || {};
 	const hash = new Sha256();
-	hash.update(arg, 'utf8');
+	hash.update(arg);
 	return toHex(hash.digestSync());
 };
 
