@@ -15,7 +15,8 @@ import { Observable, FetchResult } from "apollo-link";
 import { Subscription } from "apollo-client/util/Observable";
 import { DataProxy } from "apollo-cache";
 import { SKIP_RETRY_KEY } from "./link/retry-link";
-import { DocumentNode, print, OperationDefinitionNode, FieldNode, ExecutionResult } from "graphql";
+import { print } from "graphql";
+import type { DocumentNode, OperationDefinitionNode, FieldNode, ExecutionResult } from "graphql";
 import { getOpTypeFromOperationName, CacheOperationTypes, getUpdater, QueryWithVariables } from "./helpers/offline";
 import { boundSaveSnapshot, replaceUsingMap, EnqueuedMutationEffect, offlineEffectConfig as mutationsConfig } from "./link/offline-link";
 import { CONTROL_EVENTS_KEY } from "aws-appsync-subscription-link";
@@ -265,7 +266,7 @@ const effect = async <TCache extends NormalizedCacheObject>(
         //#region Subscription
         const subsControlLogger = logger.extend('subsc-control');
 
-        await new Promise(resolve => {
+        await new Promise<void>(resolve => {
             if (subscriptionQuery && subscriptionQuery.query) {
                 const { query, variables } = subscriptionQuery;
 

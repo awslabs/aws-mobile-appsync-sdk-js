@@ -5,7 +5,7 @@ import { AWSAppSyncClientOptions, AWSAppSyncClient, AUTH_TYPE, ConflictResolutio
 import { Store } from "redux";
 import { OfflineCache } from "../src/cache/offline-cache";
 import { NormalizedCacheObject } from "apollo-cache-inmemory";
-import { GraphQLError } from "graphql";
+import type { GraphQLError } from "graphql";
 import { ApolloError } from "apollo-client";
 import { AWSAppsyncGraphQLError } from "../src/types";
 import { DEFAULT_KEY_PREFIX } from "../src/store";
