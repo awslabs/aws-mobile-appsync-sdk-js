@@ -494,7 +494,7 @@ new Vue({
   el: '#app',
   router,
   components: { App },
-  provide: appsyncProvider.provide(),
+  apolloProvider:   appsyncProvider,
   template: '<App/>'
 })
 ```
