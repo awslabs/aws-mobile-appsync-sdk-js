@@ -15,17 +15,6 @@ export const isUuid = val => typeof val === 'string' && val.match(/[0-9a-f]{8}-[
 export const getOperationFieldName = (operation: DocumentNode): string => resultKeyNameFromField(
     (operation.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode
 );
-
-// export const hash = (src: any) => crypto.createHash('sha256').update(src || {}, 'utf8').digest('hex') as string;
-// export const hash = (src: any) => {
-//     src = src || {};
-//     const hash = new Sha256();
-//     hash.update(src, 'utf8');
-//     const result = hash.digestSync() as unknown as string;
-//     return result;
-// };
-
-// TODO: Used by delta sync
 export const hash = (src: any) => {
     debugger;
 	const arg = src || {};
