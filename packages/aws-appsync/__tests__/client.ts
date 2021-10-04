@@ -66,8 +66,6 @@ beforeEach(() => {
 
 const getStoreState = <T extends NormalizedCacheObject>(client: AWSAppSyncClient<T>) => ((client as any)._store as Store<OfflineCache>).getState();
 
-const isNetworkOnline = <T extends NormalizedCacheObject>(client: AWSAppSyncClient<T>) => getStoreState(client).offline.online;
-
 const getOutbox = <T extends NormalizedCacheObject>(client: AWSAppSyncClient<T>) => getStoreState(client).offline.outbox;
 
 class MemoryStorage {

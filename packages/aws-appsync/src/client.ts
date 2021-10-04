@@ -1,5 +1,5 @@
 /*!
- * Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2017-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 import 'setimmediate';
@@ -7,7 +7,6 @@ import ApolloClient, { ApolloClientOptions, MutationOptions, OperationVariables,
 import { InMemoryCache, ApolloReducerConfig, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloLink, Observable, FetchResult, NextLink } from 'apollo-link';
 import { createHttpLink } from 'apollo-link-http';
-import { getMainDefinition } from 'apollo-utilities';
 import { Store } from 'redux';
 
 import { OfflineCache, defaultDataIdFromObject } from './cache/index';
@@ -20,7 +19,7 @@ import { createStore, StoreOptions, DEFAULT_KEY_PREFIX } from './store';
 import { ApolloCache } from 'apollo-cache';
 import { AuthOptions, AuthLink, AUTH_TYPE } from 'aws-appsync-auth-link';
 import { createSubscriptionHandshakeLink } from 'aws-appsync-subscription-link';
-import { Credentials, CredentialsOptions } from 'aws-sdk/lib/credentials';
+import { Credentials, CredentialProvider } from '@aws-sdk/types';
 import type { DocumentNode } from 'graphql';
 import { passthroughLink } from './utils';
 import ConflictResolutionLink from './link/conflict-resolution-link';
@@ -135,7 +134,7 @@ const createLinkWithStore = (createLinkFunc = (store: Store<OfflineCacheType>) =
     });
 }
 
-type CredentialsGetter = () => (Credentials | CredentialsOptions | Promise<Credentials> | Promise<CredentialsOptions> | null) | Credentials | CredentialsOptions | Promise<Credentials> | Promise<CredentialsOptions> | null;
+type CredentialsGetter = () => (Credentials | CredentialProvider | Promise<Credentials> | Promise<Credentials> | null) | Credentials | CredentialProvider | Promise<Credentials> | Promise<Credentials> | null;
 
 export interface AWSAppSyncClientOptions {
     url: string,
