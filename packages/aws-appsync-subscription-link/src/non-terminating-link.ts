@@ -17,7 +17,7 @@ export class NonTerminatingLink extends ApolloLink {
         this.link = link;
     }
 
-    request(operation, forward?: NextLink) {
+    request(operation, forward?: NextLink): ReturnType<ApolloLink['request']> {
         return setContext(async (_request, prevContext) => {
             const result = await new Promise((resolve, reject) => {
                 this.link.request(operation).subscribe({

@@ -32,9 +32,9 @@ import { PERMANENT_ERROR_KEY } from './link/retry-link';
 export { defaultDataIdFromObject };
 
 class CatchErrorLink extends ApolloLink {
-    
+
     private link: ApolloLink;
-    
+
     constructor(linkGenerator: () => ApolloLink) {
         try {
             super();
@@ -100,7 +100,7 @@ export const createAppSyncLink = ({
         new ConflictResolutionLink(conflictResolver),
         new ComplexObjectLink(complexObjectsCredentials),
         createRetryLink(ApolloLink.from([
-            new CatchErrorLink(() =>new AuthLink({ url, region, auth })),
+            new CatchErrorLink(() => new AuthLink({ url, region, auth })),
             new PermanentErrorLink(createSubscriptionHandshakeLink({ url, region, auth }, resultsFetcherLink))
         ]))
     ].filter(Boolean));
