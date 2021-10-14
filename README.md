@@ -83,34 +83,25 @@ npx pod-install
 
 Please visit the [documentation with the Amplify Framework](https://aws-amplify.github.io/docs/js/api) for detailed instructions.
 
-[React / React Native](https://github.com/awslabs/aws-mobile-appsync-sdk-js#react--react-native)
-
-- [Creating an AppSync client](https://github.com/awslabs/aws-mobile-appsync-sdk-js#creating-a-client-apollo-v2)
-- [Queries](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries)
-- [Mutations](https://github.com/awslabs/aws-mobile-appsync-sdk-js#mutations--optimistic-ui-with-graphqlmutation-helper)
-- [Subscriptions](https://github.com/awslabs/aws-mobile-appsync-sdk-js#subscriptions-with-buildsubscription-helper)
-- [Offline configuration](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-configuration-apollo-v2)
-  - [Error handling](https://github.com/awslabs/aws-mobile-appsync-sdk-js#error-handling)
-  - [Custom storage engine](https://github.com/awslabs/aws-mobile-appsync-sdk-js#custom-storage-engine)
-  - [Offline helpers](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-helpers)
-
-[Vue](https://github.com/awslabs/aws-mobile-appsync-sdk-js#vue)
-
-[Angular](https://github.com/awslabs/aws-mobile-appsync-sdk-js#angular--ionic-examples-coming-soon)
-
-[Node](https://github.com/awslabs/aws-mobile-appsync-sdk-js#node)
-
-[Using Authorization and Subscription links with Apollo Client V3 (No offline support)](https://github.com/awslabs/aws-mobile-appsync-sdk-js#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
-
-[Queries and Subscriptions using Apollo V3](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries-and-subscriptions-using-apollo-v3)
-
-[Creating a new AWS AppSync API](https://github.com/awslabs/aws-mobile-appsync-sdk-js#creating-an-appsync-project)
-
-[License](https://github.com/awslabs/aws-mobile-appsync-sdk-js#license)
+- [React / React Native](https://github.com/awslabs/aws-mobile-appsync-sdk-js#react--react-native)
+  - [Creating an AppSync client](https://github.com/awslabs/aws-mobile-appsync-sdk-js#creating-a-client-apollo-v2)
+  - [Queries](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries)
+  - [Mutations](https://github.com/awslabs/aws-mobile-appsync-sdk-js#mutations--optimistic-ui-with-graphqlmutation-helper)
+  - [Subscriptions](https://github.com/awslabs/aws-mobile-appsync-sdk-js#subscriptions-with-buildsubscription-helper)
+  - [Offline configuration](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-configuration-apollo-v2)
+    - [Error handling](https://github.com/awslabs/aws-mobile-appsync-sdk-js#error-handling)
+    - [Custom storage engine](https://github.com/awslabs/aws-mobile-appsync-sdk-js#custom-storage-engine)
+    - [Offline helpers](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-helpers)
+- [Vue](https://github.com/awslabs/aws-mobile-appsync-sdk-js#vue)
+- [Node](https://github.com/awslabs/aws-mobile-appsync-sdk-js#node)
+- [Using Authorization and Subscription links with Apollo Client V3 (No offline support)](https://github.com/awslabs/aws-mobile-appsync-sdk-js#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
+- [Queries and Subscriptions using Apollo V3](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries-and-subscriptions-using-apollo-v3)
+- [Creating a new AWS AppSync API](https://github.com/awslabs/aws-mobile-appsync-sdk-js#creating-an-appsync-project)
+- [License](https://github.com/awslabs/aws-mobile-appsync-sdk-js#license)
 
 ### React / React Native
 
-For more documentation on `graphql` operations performed by React Apollo click [here](https://www.apollographql.com/docs/react/api/react-apollo.html#graphql).
+For more documentation on `graphql` operations performed by React Apollo [click here](https://www.apollographql.com/docs/react/api/react-apollo.html#graphql).
 
 #### Creating a client (Apollo V2)
 
@@ -709,7 +700,7 @@ export default {
 
 ### Node
 
-*Note: If using Cognito or IAM, the session (or credentials for IAM) must first be obtained prior to instantiang the client*
+*Note: If using Cognito or IAM, the session (or credentials for IAM) must first be obtained prior to instantiating the client*
 
 ```js
 "use strict";
@@ -735,26 +726,26 @@ const type = aws_exports.aws_appsync_authenticationType;
 
 const gql = require("graphql-tag");
 const query = gql(`
-	query listTodo {
-		listTodos {
-			items {
-				id
-				name
-				description
-			}
-			nextToken
-		}
-	}
+ query listTodo {
+  listTodos {
+	 items {
+    id
+    name
+    description
+   }
+   nextToken
+  }
+ }
 `);
 
 const subquery = gql(`
-	subscription OnCreateTodo {
-		onCreateTodo {
-			id
-			name
-			description
-		}
-	}
+ subscription OnCreateTodo {
+  onCreateTodo {
+   id
+   name
+   description
+  }
+ }
 `);
 
 Auth.currentCredentials().then((credentials) => {
@@ -815,7 +806,7 @@ const region = appSyncConfig.aws_appsync_region;
 const auth = {
   type: appSyncConfig.aws_appsync_authenticationType,
   apiKey: appSyncConfig.aws_appsync_apiKey,
-  // jwtToken: async () => token, // Required when you use Cognito UserPools OR OpenID Connect. token object is obtained previously
+  // jwtToken: async () => token, // Required when you use Cognito UserPools OR OpenID Connect. Token object is obtained previously
   // credentials: async () => credentials, // Required when you use IAM-based auth.
 };
 
@@ -832,7 +823,7 @@ const client = new ApolloClient({
 });
 ```
 
-For version 3+, the `createSubscriptionHandshakeLink` can also be configured the same as `createAuthLink`. [This will have the same behavior as mentioned here for version 3+](#aws-appsync-compatibility) Please see the example below:
+For version 3+, the `createSubscriptionHandshakeLink` can also be configured the same as `createAuthLink`. [This will have the same behavior as mentioned here for version 3+](#aws-appsync-compatibility). Please see the example below:
 
 ```javascript
 // Previous code snippets above work the same.
