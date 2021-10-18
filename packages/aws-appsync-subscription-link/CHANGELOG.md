@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.2.6"></a>
+## [2.2.6](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.2.5...aws-appsync-subscription-link@2.2.6) (2021-10-18)
+
+
+### Bug Fixes
+
+* **aws-appsync-subscription-link:** graphql header refactor to fix IAM-based auth for Apollo V2 packages ([#679](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/679)) ([09fc430](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/09fc430))
+
+
+
+
 <a name="2.2.5"></a>
 ## [2.2.5](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.2.4...aws-appsync-subscription-link@2.2.5) (2021-09-24)
 
