@@ -11,5 +11,6 @@
         "**/node_modules": true,
         "**/bower_components": true,
         "**/lib": true
-    }
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
 }
