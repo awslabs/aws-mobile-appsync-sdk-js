@@ -1,12 +1,16 @@
+# AWS AppSync
+
 ![AWS AppSync](https://s3.amazonaws.com/aws-mobile-hub-images/awsappsyncgithub.png)
 
 [AWS AppSync](https://aws.amazon.com/appsync/) is a fully managed service that makes it easy to develop GraphQL APIs by handling the heavy lifting of securely connecting to data sources like AWS DynamoDB, Lambda, and more.
 
-You can use any HTTP or GraphQL client to connect to a GraphQL API on AppSync. 
+You can use any HTTP or GraphQL client to connect to a GraphQL API on AppSync.
 
-For front-end web and mobile development, we recommend using the  [Amplify](https://aws-amplify.github.io/)  clients which are optimized to connect to the AppSync backend. 
+For front-end web and mobile development, we recommend using the  [Amplify](https://aws-amplify.github.io/)  clients which are optimized to connect to the AppSync backend.
+
 * For DynamoDB data sources, use the DataStore category in the Amplify client. It provides the best developer experience and built-in conflict detection and resolution.
 * For non-DynamoDB data sources in scenarios where you have no offline requirements, use the API (GraphQL) category in the Amplify client.
+* For use cases where you are utilizing the Apollo V3 client, use the Apollo Links in this repository to help with authorization and subscriptions.
 
 ## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3
 
@@ -39,20 +43,17 @@ The `aws-appsync` and `aws-appsync-react` packages work with the [Apollo client 
 | aws-appsync       | ![npm](https://img.shields.io/npm/v/aws-appsync.svg)       |
 | aws-appsync-react | ![npm](https://img.shields.io/npm/v/aws-appsync-react.svg) |
 
-
-
-
 ### Installation
 
 #### npm
 
-```
+```sh
 npm install --save aws-appsync
 ```
 
 #### yarn
 
-```
+```sh
 yarn add aws-appsync
 ```
 
@@ -67,21 +68,22 @@ When using this library with React Native, you need to ensure you are using the 
 
 If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo` and `@react-native-community/async-storage`:
 
-```
+```sh
 npm install --save @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
 ```
 
 or
 
-```
+```sh
 yarn add @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
 ```
 
 If you are using React Native `0.60+` for iOS, run the following command as an additional step:
 
-```
+```sh
 npx pod-install
 ```
+
 ---
 
 ## Usage
@@ -90,14 +92,14 @@ Please visit the [documentation with the Amplify Framework](https://aws-amplify.
 
 [React / React Native](#react--react-native)
 
-- [Creating an AppSync client](#creating-a-client-apollo-v2)
-- [Queries](#queries)
-- [Mutations](#mutations--optimistic-ui-with-graphqlmutation-helper)
-- [Subscriptions](#subscriptions-with-buildsubscription-helper)
-- [Offline configuration](#offline-configuration-apollo-v2)
-  - [Error handling](#error-handling)
-  - [Custom storage engine](#custom-storage-engine)
-  - [Offline helpers](#offline-helpers)
+* [Creating an AppSync client](#creating-a-client-apollo-v2)
+* [Queries](#queries)
+* [Mutations](#mutations--optimistic-ui-with-graphqlmutation-helper)
+* [Subscriptions](#subscriptions-with-buildsubscription-helper)
+* [Offline configuration](#offline-configuration-apollo-v2)
+  * [Error handling](#error-handling)
+  * [Custom storage engine](#custom-storage-engine)
+  * [Offline helpers](#offline-helpers)
 
 [Vue](#vue)
 
@@ -430,8 +432,8 @@ export default graphql(listPosts, {
 
 When using the AWS AppSync SDK offline capabilities (e.g. `disableOffline: false`), you can provide configurations for the following:
 
-- Error handling
-- Custom storage engine
+* Error handling
+* Custom storage engine
 
 #### Error handling
 
@@ -844,7 +846,7 @@ export default App;
 
 ## Creating an AppSync Project
 
-To create a new AppSync project, go to https://aws.amazon.com/appsync/.
+To create a new AppSync project, go to <https://aws.amazon.com/appsync/>.
 
 ## License
 
