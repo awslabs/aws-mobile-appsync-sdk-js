@@ -108,7 +108,7 @@ Please visit the [documentation with the Amplify Framework](https://aws-amplify.
 
 ### React / React Native
 
-For more documentation on `graphql` operations performed by React Apollo click [here](https://www.apollographql.com/docs/react/api/react-apollo.html#graphql).
+For more documentation on `graphql` operations performed by React Apollo see their [documentation](https://www.apollographql.com/docs/react/).
 
 ### Using Authorization and Subscription links with Apollo Client V3 (No offline support)
 
