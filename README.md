@@ -101,10 +101,6 @@ Please visit the [documentation with the Amplify Framework](https://aws-amplify.
 
 [Vue](#vue)
 
-[Angular](#angular--ionic-examples-coming-soon)
-
-[Node](#node)
-
 [Using Authorization and Subscription links with Apollo Client V3 (No offline support)](#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
 
 [Queries and Subscriptions using Apollo V3](#queries-and-subscriptions-using-apollo-v3)
