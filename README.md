@@ -1,4 +1,4 @@
-# AWS AppSync
+# AWS AppSync SDK for JavaScript &middot; [![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
 
 ![AWS AppSync](https://s3.amazonaws.com/aws-mobile-hub-images/awsappsyncgithub.png)
 
@@ -16,7 +16,6 @@ For front-end web and mobile development, we recommend using the  [Amplify](http
 
 If you would like to use the [Apollo JavaScript client version 3](https://www.apollographql.com/docs/react/) to connect to your AppSync GraphQL API, this repository (on the current stable branch) provides Apollo links to use the different AppSync authorization modes, and to setup subscriptions over web sockets. Please log questions for this client SDK in this repo and questions for the AppSync service in the  [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0) .
 
-[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
 ![npm](https://img.shields.io/npm/dm/aws-appsync-auth-link.svg)
 ![npm](https://img.shields.io/npm/dm/aws-appsync-subscription-link.svg)
 
@@ -35,7 +34,6 @@ The `aws-appsync` and `aws-appsync-react` packages work with the [Apollo client 
 
 **Note:** if you do not have any offline requirements in your app, we recommend using the [Amplify libraries](https://aws-amplify.github.io/).
 
-[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
 ![npm](https://img.shields.io/npm/dm/aws-appsync.svg)
 
 | package           | version                                                    |
