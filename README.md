@@ -1,56 +1,59 @@
+# AWS AppSync JavaScript SDK &middot; [![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
+
 ![AWS AppSync](https://s3.amazonaws.com/aws-mobile-hub-images/awsappsyncgithub.png)
 
-## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK
+[AWS AppSync](https://aws.amazon.com/appsync/) is a fully managed service that makes it easy to develop GraphQL APIs by handling the heavy lifting of securely connecting to data sources like AWS DynamoDB, Lambda, and more.
 
-This SDK provides Apollo links that can be used with the [Apollo JavaScript client version 3](https://www.apollographql.com/docs/react/). Please log questions for this client SDK in this repo and questions for the AppSync service in the [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0).
+You can use any HTTP or GraphQL client to connect to a GraphQL API on AppSync.
 
-[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
-![npm](https://img.shields.io/npm/dm/aws-appsync.svg)
+For front-end web and mobile development, we recommend using the  [Amplify](https://aws-amplify.github.io/)  clients which are optimized to connect to the AppSync backend.
+
+* For DynamoDB data sources, use the DataStore category in the Amplify client. It provides the best developer experience and built-in conflict detection and resolution.
+* For non-DynamoDB data sources in scenarios where you have no offline requirements, use the API (GraphQL) category in the Amplify client.
+* For use cases where you are utilizing the Apollo V3 client, use the Apollo Links in this repository to help with authorization and subscriptions.
+
+## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3
+
+If you would like to use the [Apollo JavaScript client version 3](https://www.apollographql.com/docs/react/) to connect to your AppSync GraphQL API, this repository (on the current stable branch) provides Apollo links to use the different AppSync authorization modes, and to setup subscriptions over web sockets. Please log questions for this client SDK in this repo and questions for the AppSync service in the  [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0) .
+
+![npm](https://img.shields.io/npm/dm/aws-appsync-auth-link.svg)
+![npm](https://img.shields.io/npm/dm/aws-appsync-subscription-link.svg)
 
 | package                       | version                                                                |
 | ----------------------------- | ---------------------------------------------------------------------- |
 | aws-appsync-auth-link         | ![npm](https://img.shields.io/npm/v/aws-appsync-auth-link.svg)         |
 | aws-appsync-subscription-link | ![npm](https://img.shields.io/npm/v/aws-appsync-subscription-link.svg) |
 
+[Example usage of Apollo V3 links](#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
+
 ---
 
-**NOTE**
+## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK
 
-The `aws-appsync` and `aws-appsync-react` packages work with the [Apollo client version 2](https://www.apollographql.com/docs/react/v2):
+The `aws-appsync` and `aws-appsync-react` packages work with the [Apollo client version 2](https://www.apollographql.com/docs/react/v2) and provide offline capabilities.
+
+**Note:** if you do not have any offline requirements in your app, we recommend using the [Amplify libraries](https://aws-amplify.github.io/).
+
+![npm](https://img.shields.io/npm/dm/aws-appsync.svg)
 
 | package           | version                                                    |
 | ----------------- | ---------------------------------------------------------- |
 | aws-appsync       | ![npm](https://img.shields.io/npm/v/aws-appsync.svg)       |
 | aws-appsync-react | ![npm](https://img.shields.io/npm/v/aws-appsync-react.svg) |
 
-If you are using the [Apollo JavaScript client version 3](https://www.apollographql.com/docs/react/), offline functionality is not provided but you can use the following packages with Apollo links to consume AWS AppSync apis:
-
-| package                       | version                                                                |
-| ----------------------------- | ---------------------------------------------------------------------- |
-| aws-appsync-auth-link         | ![npm](https://img.shields.io/npm/v/aws-appsync-auth-link.svg)         |
-| aws-appsync-subscription-link | ![npm](https://img.shields.io/npm/v/aws-appsync-subscription-link.svg) |
-
-[Example usage of Apollo V3 links](https://github.com/awslabs/aws-mobile-appsync-sdk-js#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
-
----
-
-## Installation
+### Installation
 
 #### npm
 
-```
+```sh
 npm install --save aws-appsync
 ```
 
 #### yarn
 
-```
+```sh
 yarn add aws-appsync
 ```
-
-### AWS AppSync Compatibility
-
-For version <= 2.x.x, the selection set for the subscription will be the mutation selection set. For version >= 3.x.x, the subscription selection set will be the intersection between mutation and subscription selection sets. More info [here](https://docs.aws.amazon.com/appsync/latest/devguide/real-time-data.html)
 
 #### React Native Compatibility
 
@@ -63,56 +66,185 @@ When using this library with React Native, you need to ensure you are using the 
 
 If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo` and `@react-native-community/async-storage`:
 
-```
+```sh
 npm install --save @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
 ```
 
 or
 
-```
+```sh
 yarn add @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
 ```
 
 If you are using React Native `0.60+` for iOS, run the following command as an additional step:
 
-```
+```sh
 npx pod-install
 ```
+
+---
 
 ## Usage
 
 Please visit the [documentation with the Amplify Framework](https://aws-amplify.github.io/docs/js/api) for detailed instructions.
 
-[React / React Native](https://github.com/awslabs/aws-mobile-appsync-sdk-js#react--react-native)
-
-- [Creating an AppSync client](https://github.com/awslabs/aws-mobile-appsync-sdk-js#creating-a-client-apollo-v2)
-- [Queries](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries)
-- [Mutations](https://github.com/awslabs/aws-mobile-appsync-sdk-js#mutations--optimistic-ui-with-graphqlmutation-helper)
-- [Subscriptions](https://github.com/awslabs/aws-mobile-appsync-sdk-js#subscriptions-with-buildsubscription-helper)
-- [Offline configuration](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-configuration-apollo-v2)
-  - [Error handling](https://github.com/awslabs/aws-mobile-appsync-sdk-js#error-handling)
-  - [Custom storage engine](https://github.com/awslabs/aws-mobile-appsync-sdk-js#custom-storage-engine)
-  - [Offline helpers](https://github.com/awslabs/aws-mobile-appsync-sdk-js#offline-helpers)
-
-[Vue](https://github.com/awslabs/aws-mobile-appsync-sdk-js#vue)
-
-[Angular](https://github.com/awslabs/aws-mobile-appsync-sdk-js#angular--ionic-examples-coming-soon)
-
-[Node](https://github.com/awslabs/aws-mobile-appsync-sdk-js#node)
-
-[Using Authorization and Subscription links with Apollo Client V3 (No offline support)](https://github.com/awslabs/aws-mobile-appsync-sdk-js#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
-
-[Queries and Subscriptions using Apollo V3](https://github.com/awslabs/aws-mobile-appsync-sdk-js#queries-and-subscriptions-using-apollo-v3)
-
-[Creating a new AWS AppSync API](https://github.com/awslabs/aws-mobile-appsync-sdk-js#creating-an-appsync-project)
-
-[License](https://github.com/awslabs/aws-mobile-appsync-sdk-js#license)
+* [React / React Native](#react--react-native)
+* [Using Authorization and Subscription links with Apollo Client V3 (No offline support)](#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
+  * [Queries and Subscriptions using Apollo V3](#queries-and-subscriptions-using-apollo-v3)
+* [Creating a client (Apollo V2)](#creating-a-client-apollo-v2)
+  * [Queries](#queries)
+  * [Mutations & optimistic UI (with graphqlMutation helper)](#mutations--optimistic-ui-with-graphqlmutation-helper)
+  * [Mutations & optimistic UI (without graphqlMutation helper)](#mutations--optimistic-ui-without-graphqlmutation-helper)
+  * [Subscriptions (with buildSubscription helper)](#subscriptions-with-buildsubscription-helper)
+  * [Subscriptions (without buildSubscription helper)](#subscriptions-without-buildsubscription-helper)
+* [Offline configuration (Apollo V2)](#offline-configuration-apollo-v2)
+  * [Error handling](#error-handling)
+  * [Custom storage engine](#custom-storage-engine)
+  * [Offline helpers](#offline-helpers)
+* [Vue](#vue)
+  * [main.js](#mainjs)
+  * [App.vue](#appvue)
+  * [connected component](#connected-component)
 
 ### React / React Native
 
-For more documentation on `graphql` operations performed by React Apollo click [here](https://www.apollographql.com/docs/react/api/react-apollo.html#graphql).
+For more documentation on `graphql` operations performed by React Apollo see their [documentation](https://www.apollographql.com/docs/react/).
 
-#### Creating a client (Apollo V2)
+### Using Authorization and Subscription links with Apollo Client V3 (No offline support)
+
+For versions of the Apollo client newer than 2.4.6 you can use custom links for Authorization and Subscriptions. Offline support is not available for these newer versions. The packages available are
+`aws-appsync-auth-link` and `aws-appsync-subscription-link`. Below is a sample code snippet that shows how to use it.
+
+```javascript
+import { createAuthLink } from "aws-appsync-auth-link";
+import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
+
+import { ApolloLink } from "apollo-link";
+import { createHttpLink } from "apollo-link-http";
+import ApolloClient from "apollo-client";
+import { InMemoryCache } from "apollo-cache-inmemory";
+
+import appSyncConfig from "./aws-exports";
+
+const url = appSyncConfig.aws_appsync_graphqlEndpoint;
+const region = appSyncConfig.aws_appsync_region;
+const auth = {
+  type: appSyncConfig.aws_appsync_authenticationType,
+  apiKey: appSyncConfig.aws_appsync_apiKey,
+  // jwtToken: async () => token, // Required when you use Cognito UserPools OR OpenID Connect. token object is obtained previously
+  // credentials: async () => credentials, // Required when you use IAM-based auth.
+};
+
+const httpLink = createHttpLink({ uri: url });
+
+const link = ApolloLink.from([
+  createAuthLink({ url, region, auth }),
+  createSubscriptionHandshakeLink({ url, region, auth }, httpLink),
+]);
+
+const client = new ApolloClient({
+  link,
+  cache: new InMemoryCache(),
+});
+```
+
+#### Queries and Subscriptions using Apollo V3
+
+```js
+import React, { useState, useEffect } from "react";
+import { gql, useSubscription } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
+import { v4 as uuidv4 } from "uuid";
+
+const initialState = { name: "", description: "" };
+
+const App = () => {
+
+  const LIST_TODOS = gql`
+    query listTodos {
+      listTodos {
+        items {
+          id
+          name
+          description
+        }
+      }
+    }
+  `;
+
+  const {
+    loading: listLoading,
+    data: listData,
+    error: listError,
+  } = useQuery(LIST_TODOS);
+
+  const CREATE_TODO = gql`
+    mutation createTodo($input: CreateTodoInput!) {
+      createTodo(input: $input) {
+        id
+        name
+        description
+      }
+    }
+  `;
+
+  // https://www.apollographql.com/docs/react/data/mutations/
+  const [addTodoMutateFunction, { error: createError }] =
+    useMutation(CREATE_TODO);
+
+  async function addTodo() {
+    try {
+      addTodoMutateFunction({ variables: { input: { todo } } });
+    } catch (err) {
+      console.log("error creating todo:", err);
+    }
+  }
+
+  const DELETE_TODO = gql`
+    mutation deleteTodo($input: DeleteTodoInput!) {
+      deleteTodo(input: $input) {
+        id
+        name
+        description
+      }
+    }
+  `;
+
+  const [deleteTodoMutateFunction] = useMutation(DELETE_TODO, {
+    refetchQueries: [LIST_TODOS, "listTodos"],
+  });
+
+  async function removeTodo(id) {
+    try {
+      deleteTodoMutateFunction({ variables: { input: { id } } });
+    } catch (err) {
+      console.log("error deleting todo:", err);
+    }
+  }
+
+  const CREATE_TODO_SUBSCRIPTION = gql`
+    subscription OnCreateTodo {
+      onCreateTodo {
+        id
+        name
+        description
+      }
+    }
+  `;
+
+  const { data: createSubData, error: createSubError } = useSubscription(
+    CREATE_TODO_SUBSCRIPTION
+  );
+
+  return (
+    // Render TODOs
+  );
+};
+
+export default App;
+```
+
+### Creating a client (Apollo V2)
 
 ```js
 import AWSAppSyncClient from "aws-appsync";
@@ -429,8 +561,8 @@ export default graphql(listPosts, {
 
 When using the AWS AppSync SDK offline capabilities (e.g. `disableOffline: false`), you can provide configurations for the following:
 
-- Error handling
-- Custom storage engine
+* Error handling
+* Custom storage engine
 
 #### Error handling
 
@@ -490,7 +622,7 @@ For detailed documentation about the offline helpers, look at the [API Definitio
 
 For more documentation on Vue Apollo click [here](https://github.com/Akryum/vue-apollo).
 
-**main.js**
+#### main.js
 
 ```js
 import Vue from "vue";
@@ -534,7 +666,7 @@ new Vue({
 });
 ```
 
-**App.vue**
+#### App.vue
 
 ```js
 <template>
@@ -555,7 +687,7 @@ export default {
 </script>
 ```
 
-**connected component**
+#### connected component
 
 ```js
 import gql from "graphql-tag";
@@ -707,242 +839,9 @@ export default {
 };
 ```
 
-### Node
-
-*Note: If using Cognito or IAM, the session (or credentials for IAM) must first be obtained prior to instantiang the client*
-
-```js
-"use strict";
-
-const Auth = require("aws-amplify").Auth;
-const Amplify = require("aws-amplify").Amplify;
-const aws_exports = require("./aws-exports").default;
-
-Amplify.configure(aws_exports);
-
-const Hermes = require("apollo-cache-hermes").Hermes;
-const cache = new Hermes({ verbose: true });
-
-global.WebSocket = require("ws");
-require("es6-promise").polyfill();
-require("isomorphic-fetch");
-
-const AWSAppSyncClient = require("aws-appsync").default;
-
-const url = aws_exports.aws_appsync_graphqlEndpoint;
-const region = aws_exports.aws_appsync_region;
-const type = aws_exports.aws_appsync_authenticationType;
-
-const gql = require("graphql-tag");
-const query = gql(`
-	query listTodo {
-		listTodos {
-			items {
-				id
-				name
-				description
-			}
-			nextToken
-		}
-	}
-`);
-
-const subquery = gql(`
-	subscription OnCreateTodo {
-		onCreateTodo {
-			id
-			name
-			description
-		}
-	}
-`);
-
-Auth.currentCredentials().then((credentials) => {
-  console.log("TODOs using Apollo V2 / IAM 🚀");
-
-  const client = new AWSAppSyncClient(
-    {
-      url: url,
-      region: region,
-      auth: {
-        type: type,
-        credentials: () => credentials,
-      },
-      disableOffline: true,
-    },
-    { cache }
-  );
-  client
-    .query({ query })
-    .then(function logData(data) {
-      console.log("results of query: ", data);
-      console.log("stringified data: ", JSON.stringify(data));
-    })
-    .catch(console.error);
-
-  const observable = client.subscribe({ query: subquery });
-
-  const realtimeResults = function realtimeResults(data) {
-    console.log("realtime data: ", data);
-  };
-
-  observable.subscribe({
-    next: realtimeResults,
-    complete: console.log,
-    error: console.log,
-  });
-});
-```
-
-### Using Authorization and Subscription links with Apollo Client V3 (No offline support)
-
-For versions of the Apollo client newer than 2.4.6 you can use custom links for Authorization and Subscriptions. Offline support is not available for these newer versions. The packages available are
-`aws-appsync-auth-link` and `aws-appsync-subscription-link`. Below is a sample code snippet that shows how to use it.
-
-```javascript
-import { createAuthLink } from "aws-appsync-auth-link";
-import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
-
-import { ApolloLink } from "apollo-link";
-import { createHttpLink } from "apollo-link-http";
-import ApolloClient from "apollo-client";
-import { InMemoryCache } from "apollo-cache-inmemory";
-
-import appSyncConfig from "./aws-exports";
-
-const url = appSyncConfig.aws_appsync_graphqlEndpoint;
-const region = appSyncConfig.aws_appsync_region;
-const auth = {
-  type: appSyncConfig.aws_appsync_authenticationType,
-  apiKey: appSyncConfig.aws_appsync_apiKey,
-  // jwtToken: async () => token, // Required when you use Cognito UserPools OR OpenID Connect. token object is obtained previously
-  // credentials: async () => credentials, // Required when you use IAM-based auth.
-};
-
-const httpLink = createHttpLink({ uri: url });
-
-const link = ApolloLink.from([
-  createAuthLink({ url, region, auth }),
-  createSubscriptionHandshakeLink(url, httpLink),
-]);
-
-const client = new ApolloClient({
-  link,
-  cache: new InMemoryCache(),
-});
-```
-
-For version 3+, the `createSubscriptionHandshakeLink` can also be configured the same as `createAuthLink`. [This will have the same behavior as mentioned here for version 3+](#aws-appsync-compatibility) Please see the example below:
-
-```javascript
-// Previous code snippets above work the same.
-// ...
-const link = ApolloLink.from([
-  createAuthLink({ url, region, auth }),
-  createSubscriptionHandshakeLink({ url, region, auth }),
-]);
-// ...
-```
-
-### Queries and Subscriptions using Apollo V3
-
-```js
-import React, { useState, useEffect } from "react";
-import { gql, useSubscription } from "@apollo/client";
-import { useMutation, useQuery } from "@apollo/client";
-import { v4 as uuidv4 } from "uuid";
-
-const initialState = { name: "", description: "" };
-
-const App = () => {
-
-  const LIST_TODOS = gql`
-    query listTodos {
-      listTodos {
-        items {
-          id
-          name
-          description
-        }
-      }
-    }
-  `;
-
-  const {
-    loading: listLoading,
-    data: listData,
-    error: listError,
-  } = useQuery(LIST_TODOS);
-
-  const CREATE_TODO = gql`
-    mutation createTodo($input: CreateTodoInput!) {
-      createTodo(input: $input) {
-        id
-        name
-        description
-      }
-    }
-  `;
-
-  // https://www.apollographql.com/docs/react/data/mutations/
-  const [addTodoMutateFunction, { error: createError }] =
-    useMutation(CREATE_TODO);
-
-  async function addTodo() {
-    try {
-      addTodoMutateFunction({ variables: { input: { todo } } });
-    } catch (err) {
-      console.log("error creating todo:", err);
-    }
-  }
-
-  const DELETE_TODO = gql`
-    mutation deleteTodo($input: DeleteTodoInput!) {
-      deleteTodo(input: $input) {
-        id
-        name
-        description
-      }
-    }
-  `;
-
-  const [deleteTodoMutateFunction] = useMutation(DELETE_TODO, {
-    refetchQueries: [LIST_TODOS, "listTodos"],
-  });
-
-  async function removeTodo(id) {
-    try {
-      deleteTodoMutateFunction({ variables: { input: { id } } });
-    } catch (err) {
-      console.log("error deleting todo:", err);
-    }
-  }
-
-  const CREATE_TODO_SUBSCRIPTION = gql`
-    subscription OnCreateTodo {
-      onCreateTodo {
-        id
-        name
-        description
-      }
-    }
-  `;
-
-  const { data: createSubData, error: createSubError } = useSubscription(
-    CREATE_TODO_SUBSCRIPTION
-  );
-
-  return (
-    // Render TODOs
-  );
-};
-
-export default App;
-```
-
 ## Creating an AppSync Project
 
-To create a new AppSync project, go to https://aws.amazon.com/appsync/.
+To create a new AppSync project, go to <https://aws.amazon.com/appsync/>.
 
 ## License
 
