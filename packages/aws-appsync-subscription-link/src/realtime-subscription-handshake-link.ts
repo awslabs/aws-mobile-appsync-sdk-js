@@ -1,5 +1,5 @@
 /*!
- * Copyright 2017-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2017-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
@@ -55,6 +55,10 @@ const START_ACK_TIMEOUT = 15000;
  */
 const DEFAULT_KEEP_ALIVE_TIMEOUT = 5 * 60 * 1000;
 
+const standardDomainPattern = /^https:\/\/\w{26}\.appsync\-api\.\w{2}(?:(?:\-\w{2,})+)\-\d\.amazonaws.com\/graphql$/i;
+
+const customDomainPath = '/realtime';
+
 export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   private url: string;
   private region: string;
@@ -72,6 +76,11 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     this.region = theRegion;
     this.auth = theAuth;
   }
+
+  // Check if url matches standard domain pattern
+	private isCustomDomain(url: string): boolean {
+		return url.match(standardDomainPattern) === null;
+	}
 
   request(operation: Operation) {
     const { query, variables } = operation;
@@ -354,11 +363,6 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       if (this.socketStatus === SOCKET_STATUS.CLOSED) {
         try {
           this.socketStatus = SOCKET_STATUS.CONNECTING;
-          // Creating websocket url with required query strings
-          const discoverableEndpoint =
-            AppSyncRealTimeSubscriptionHandshakeLink._discoverAppSyncRealTimeEndpoint(
-              this.url
-            );
 
           const payloadString = "{}";
           const headerString = JSON.stringify(
@@ -377,6 +381,21 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           const headerQs = Buffer.from(headerString).toString("base64");
 
           const payloadQs = Buffer.from(payloadString).toString("base64");
+
+          let discoverableEndpoint = appSyncGraphqlEndpoint;
+
+          if (this.isCustomDomain(discoverableEndpoint)) {
+					    discoverableEndpoint = discoverableEndpoint.concat(
+							    customDomainPath
+              );
+					} else {
+						  discoverableEndpoint = discoverableEndpoint.replace('appsync-api', 'appsync-realtime-api').replace('gogi-beta', 'grt-beta');
+					}
+
+          discoverableEndpoint = discoverableEndpoint
+              .replace("https://", "wss://")
+              .replace('http://', 'ws://')
+
           const awsRealTimeUrl = `${discoverableEndpoint}?header=${headerQs}&payload=${payloadQs}`;
 
           await this._initializeRetryableHandshake({ awsRealTimeUrl });
@@ -786,13 +805,5 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
 
   static createWebSocket(awsRealTimeUrl: string, protocol: string): WebSocket {
     return new WebSocket(awsRealTimeUrl, protocol);
-  }
-
-  private static _discoverAppSyncRealTimeEndpoint(url: string): string {
-    return url
-      .replace("https://", "wss://")
-      .replace("http://", "ws://")
-      .replace("appsync-api", "appsync-realtime-api")
-      .replace("gogi-beta", "grt-beta");
   }
 }
