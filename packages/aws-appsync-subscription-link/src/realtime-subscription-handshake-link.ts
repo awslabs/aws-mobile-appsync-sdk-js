@@ -792,6 +792,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       .replace("https://", "wss://")
       .replace('http://', 'ws://')
       .replace("appsync-api", "appsync-realtime-api")
-      .replace("gogi-beta", "grt-beta");
+      .replace("gogi-beta", "grt-beta")
+      .replace(/(?<!\.amazonaws\.com)\/graphql$/, s => `${s}/realtime`);
   }
 }
