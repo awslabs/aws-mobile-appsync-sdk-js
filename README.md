@@ -64,16 +64,16 @@ When using this library with React Native, you need to ensure you are using the 
 | `2.x.x`               | `>= 0.60`                     |
 | `1.x.x`               | `<= 0.59`                     |
 
-If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo` and `@react-native-community/async-storage`:
+If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo` and `@react-native-async-storage/async-storage`:
 
 ```sh
-npm install --save @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
+npm install --save @react-native-community/netinfo@5.9.4 @react-native-async-storage/async-storage
 ```
 
 or
 
 ```sh
-yarn add @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
+yarn add @react-native-community/netinfo@5.9.4 @react-native-async-storage/async-storage
 ```
 
 If you are using React Native `0.60+` for iOS, run the following command as an additional step:
