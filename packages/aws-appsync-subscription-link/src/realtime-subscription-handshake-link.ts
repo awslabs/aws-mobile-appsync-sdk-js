@@ -199,22 +199,26 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
 
   private _removeSubscriptionObserver(subscriptionId) {
     this.subscriptionObserverMap.delete(subscriptionId);
-    if (this.subscriptionObserverMap.size === 0) {
-      // Socket could be sending data to unsubscribe so is required to wait until is flushed
-      this._closeSocketWhenFlushed();
-    }
+    // Verifying for 1000ms after removing subscription in case there are new subscriptions on mount / unmount
+    setTimeout(this._closeSocketIfRequired.bind(this), 1000);
   }
 
-  private _closeSocketWhenFlushed() {
-    logger("closing WebSocket...");
-    clearTimeout(this.keepAliveTimeoutId);
+  private _closeSocketIfRequired() {
+    if (this.subscriptionObserverMap.size > 0) {
+      // There are active subscriptions on the WebSocket
+      return;
+    }
+
     if (!this.awsRealTimeSocket) {
       this.socketStatus = SOCKET_STATUS.CLOSED;
       return;
     }
     if (this.awsRealTimeSocket.bufferedAmount > 0) {
-      setTimeout(this._closeSocketWhenFlushed.bind(this), 1000);
+      // There is still data on the WebSocket
+      setTimeout(this._closeSocketIfRequired.bind(this), 1000);
     } else {
+      logger("closing WebSocket...");
+      clearTimeout(this.keepAliveTimeoutId);
       const tempSocket = this.awsRealTimeSocket;
       tempSocket.close(1000);
       this.awsRealTimeSocket = null;
