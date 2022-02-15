@@ -38,7 +38,7 @@
     "uuid": "3.x"
   },
   "peerDependencies": {
-    "@react-native-community/async-storage": "^1.11.0",
-    "@react-native-community/netinfo": "^5.0.0"
+    "@react-native-community/async-storage": "^1.12.1",
+    "@react-native-community/netinfo": "^8.0.0"
   }
 }
