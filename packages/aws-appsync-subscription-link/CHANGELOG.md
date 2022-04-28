@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="3.0.10"></a>
+## [3.0.10](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@3.0.9...aws-appsync-subscription-link@3.0.10) (2022-03-04)
+
+
+### Bug Fixes
+
+* Port over Amplify fix for subscription race conditions ([#509](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/509)) ([#704](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/704)) ([92b50c4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/92b50c4))
+
+
+
+
 <a name="3.0.9"></a>
 ## [3.0.9](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@3.0.8...aws-appsync-subscription-link@3.0.9) (2021-09-24)
 
