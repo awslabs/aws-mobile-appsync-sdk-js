@@ -129,8 +129,16 @@ import {
 
 import appSyncConfig from "./aws-exports";
 
+/* The HTTPS endpoint of the AWS AppSync API 
+(e.g. *https://aaaaaaaaaaaaaaaaaaaaaaaaaa.appsync-api.us-east-1.amazonaws.com/graphql*). 
+[Custom domain names](https://docs.aws.amazon.com/appsync/latest/devguide/custom-domain-name.html) can also be supplied here (e.g. *https://api.yourdomain.com/graphql*). 
+Custom domain names can have any format, but must end with `/graphql` 
+(see https://graphql.org/learn/serving-over-http/#uris-routes). */
 const url = appSyncConfig.aws_appsync_graphqlEndpoint;
+
+
 const region = appSyncConfig.aws_appsync_region;
+
 const auth = {
   type: appSyncConfig.aws_appsync_authenticationType,
   apiKey: appSyncConfig.aws_appsync_apiKey,
@@ -258,10 +266,14 @@ import AWSAppSyncClient from "aws-appsync";
 import AppSyncConfig from "./aws-exports";
 import { ApolloProvider } from "react-apollo";
 import { Rehydrated } from "aws-appsync-react"; // this needs to also be installed when working with React
-
 import App from "./App";
 
 const client = new AWSAppSyncClient({
+  /* The HTTPS endpoint of the AWS AppSync API 
+  (e.g. *https://aaaaaaaaaaaaaaaaaaaaaaaaaa.appsync-api.us-east-1.amazonaws.com/graphql*). 
+  [Custom domain names](https://docs.aws.amazon.com/appsync/latest/devguide/custom-domain-name.html) can also be supplied here (e.g. *https://api.yourdomain.com/graphql*). 
+  Custom domain names can have any format, but must end with `/graphql` 
+  (see https://graphql.org/learn/serving-over-http/#uris-routes). */
   url: AppSyncConfig.aws_appsync_graphqlEndpoint,
   region: AppSyncConfig.aws_appsync_region,
   auth: {
