@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.3.0"></a>
+# [2.3.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.2.7...aws-appsync-subscription-link@2.3.0) (2022-05-02)
+
+
+### Features
+
+* add custom domain support for Apollo V2 ([#698](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/698)) ([42db16d](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/42db16d))
+
+
+
+
 <a name="2.2.7"></a>
 ## [2.2.7](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.2.5...aws-appsync-subscription-link@2.2.7) (2022-03-04)
 
