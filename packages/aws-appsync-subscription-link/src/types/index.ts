@@ -81,6 +81,7 @@ export type UrlInfo = {
   url: string;
   auth: AuthOptions;
   region: string;
+  keepAliveTimeout?: number;
 };
 
 export type ObserverQuery = {
