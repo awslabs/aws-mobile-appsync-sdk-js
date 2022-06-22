@@ -9,12 +9,12 @@ import { NonTerminatingLink } from "./non-terminating-link";
 import type { OperationDefinitionNode } from "graphql";
 
 import {
-  AppSyncRealTimeSubscriptionHandshakeLink
+  AppSyncRealTimeSubscriptionHandshakeLink,
 } from "./realtime-subscription-handshake-link";
-import { UrlInfo } from "./types";
+import { AppSyncRealTimeSubscriptionConfig } from "./types";
 
 function createSubscriptionHandshakeLink(
-  args: UrlInfo,
+  args: AppSyncRealTimeSubscriptionConfig,
   resultsFetcherLink?: ApolloLink
 ): ApolloLink;
 function createSubscriptionHandshakeLink(
@@ -22,7 +22,7 @@ function createSubscriptionHandshakeLink(
   resultsFetcherLink?: ApolloLink
 ): ApolloLink;
 function createSubscriptionHandshakeLink(
-  infoOrUrl: UrlInfo | string,
+  infoOrUrl: AppSyncRealTimeSubscriptionConfig | string,
   theResultsFetcherLink?: ApolloLink
 ) {
   let resultsFetcherLink: ApolloLink, subscriptionLinks: ApolloLink;
@@ -45,7 +45,7 @@ function createSubscriptionHandshakeLink(
 
               observer.next({ [CONTROL_EVENTS_KEY]: controlEvents });
 
-              return () => {};
+              return () => { };
             })
         )
       }),

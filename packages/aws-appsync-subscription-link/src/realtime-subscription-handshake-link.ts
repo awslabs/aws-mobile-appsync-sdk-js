@@ -17,7 +17,7 @@ import { GraphQLError, print } from "graphql";
 import * as url from "url";
 import { v4 as uuid } from "uuid";
 import {
-  UrlInfo,
+  AppSyncRealTimeSubscriptionConfig,
   SOCKET_STATUS,
   ObserverQuery,
   SUBSCRIPTION_STATUS,
@@ -66,15 +66,16 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   private awsRealTimeSocket: WebSocket;
   private socketStatus: SOCKET_STATUS = SOCKET_STATUS.CLOSED;
   private keepAliveTimeoutId;
-  private keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
+  private keepAliveTimeout?: number = undefined;
   private subscriptionObserverMap: Map<string, ObserverQuery> = new Map();
   private promiseArray: Array<{ res: Function; rej: Function }> = [];
 
-  constructor({ url: theUrl, region: theRegion, auth: theAuth }: UrlInfo) {
+  constructor({ url: theUrl, region: theRegion, auth: theAuth, keepAliveTimeoutMs }: AppSyncRealTimeSubscriptionConfig) {
     super();
     this.url = theUrl;
     this.region = theRegion;
     this.auth = theAuth;
+    this.keepAliveTimeout = keepAliveTimeoutMs;
   }
 
   // Check if url matches standard domain pattern
@@ -384,7 +385,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
               region,
               credentials,
               token,
-              graphql_headers: () => {}
+              graphql_headers: () => { }
             })
           );
           const headerQs = Buffer.from(headerString).toString("base64");
@@ -607,7 +608,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
             } = data;
             if (type === MESSAGE_TYPES.GQL_CONNECTION_ACK) {
               ackOk = true;
-              this.keepAliveTimeout = connectionTimeoutMs;
+            this.keepAliveTimeout = this.keepAliveTimeout ?? connectionTimeoutMs;
               this.awsRealTimeSocket.onmessage = this._handleIncomingSubscriptionMessage.bind(
                 this
               );
