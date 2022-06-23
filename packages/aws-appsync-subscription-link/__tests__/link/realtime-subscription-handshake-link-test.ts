@@ -443,7 +443,7 @@ describe("RealTime subscription link", () => {
         });
     });
 
-    test("Uses service-rovided timeout when no custom keepAliveTimeoutMs is configured", (done) => {
+    test("Uses service-provided timeout when no custom keepAliveTimeoutMs is configured", (done) => {
         const id = "abcd-efgh-ijkl-mnop";
         uuid.mockImplementationOnce(() => id);
 
