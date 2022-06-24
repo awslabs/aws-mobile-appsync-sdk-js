@@ -2,11 +2,14 @@ import { AUTH_TYPE } from "aws-appsync-auth-link";
 import { execute } from "@apollo/client/core";
 import gql from 'graphql-tag';
 import { AppSyncRealTimeSubscriptionHandshakeLink } from '../../src/realtime-subscription-handshake-link';
+import { MESSAGE_TYPES } from "../../src/types";
+import { v4 as uuid } from "uuid";
+jest.mock('uuid', () => ({ v4: jest.fn() }));
 
 const query = gql`subscription { someSubscription { aField } }`
 
 class myWebSocket implements WebSocket {
-    binaryType: BinaryType; 
+    binaryType: BinaryType;
     bufferedAmount: number;
     extensions: string;
     onclose: (this: WebSocket, ev: CloseEvent) => any;
@@ -359,6 +362,164 @@ describe("RealTime subscription link", () => {
             }
 
         });
-    })
+    });
+
+    test("Can use a custom keepAliveTimeoutMs", (done) => {
+        const id = "abcd-efgh-ijkl-mnop";
+        uuid.mockImplementationOnce(() => id);
+
+        expect.assertions(5);
+        jest.spyOn(Date.prototype, 'toISOString').mockImplementation(jest.fn(() => {
+            return "2019-11-13T18:47:04.733Z";
+        }));
+        AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn((url, protocol) => {
+            expect(url).toBe('wss://apikeytest.testcustomdomain.com/graphql/realtime?header=eyJob3N0IjoiYXBpa2V5dGVzdC50ZXN0Y3VzdG9tZG9tYWluLmNvbSIsIngtYW16LWRhdGUiOiIyMDE5MTExM1QxODQ3MDRaIiwieC1hcGkta2V5IjoieHh4eHgifQ==&payload=e30=');
+            expect(protocol).toBe('graphql-ws');
+            const socket = new myWebSocket();
+
+            setTimeout(() => {
+                socket.close = () => {};
+                socket.onopen.call(socket, (undefined as unknown as Event));
+                socket.send = (msg: string) => {
+                    const { type } = JSON.parse(msg);
+
+                    switch (type) {
+                        case MESSAGE_TYPES.GQL_CONNECTION_INIT:
+                            socket.onmessage.call(socket, {
+                                data: JSON.stringify({
+                                    type: MESSAGE_TYPES.GQL_CONNECTION_ACK,
+                                    payload: {
+                                        connectionTimeoutMs: 99999,
+                                    },
+                                })
+                            } as MessageEvent);
+                            setTimeout(() => {
+                                socket.onmessage.call(socket, {
+                                    data: JSON.stringify({
+                                        id,
+                                        type: MESSAGE_TYPES.GQL_DATA,
+                                        payload: {
+                                            data: { something: 123 },
+                                        },
+                                    })
+                                } as MessageEvent);
+
+                            }, 100);
+                            break;
+                    }
+                };
+            }, 100);
+
+            return socket;
+        });
+        const link = new AppSyncRealTimeSubscriptionHandshakeLink({
+            auth: {
+                type: AUTH_TYPE.API_KEY,
+                apiKey: 'xxxxx'
+            },
+            region: 'us-west-2',
+            url: 'https://apikeytest.testcustomdomain.com/graphql',
+            keepAliveTimeoutMs: 123456,
+        });
+
+        expect(link).toBeInstanceOf(AppSyncRealTimeSubscriptionHandshakeLink);
+        expect((link as any).keepAliveTimeout).toBe(123456);
+
+        const sub = execute(link, { query }).subscribe({
+            error: (err) => {
+                console.log(JSON.stringify(err));
+                fail();
+            },
+            next: (data) => {
+                expect((link as any).keepAliveTimeout).toBe(123456);
+                done();
+                sub.unsubscribe();
+            },
+            complete: () => {
+                console.log('done with this');
+                fail();
+            }
+
+        });
+    });
+
+    test("Uses service-provided timeout when no custom keepAliveTimeoutMs is configured", (done) => {
+        const id = "abcd-efgh-ijkl-mnop";
+        uuid.mockImplementationOnce(() => id);
+
+        expect.assertions(5);
+        jest.spyOn(Date.prototype, 'toISOString').mockImplementation(jest.fn(() => {
+            return "2019-11-13T18:47:04.733Z";
+        }));
+        AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn((url, protocol) => {
+            expect(url).toBe('wss://apikeytest.testcustomdomain.com/graphql/realtime?header=eyJob3N0IjoiYXBpa2V5dGVzdC50ZXN0Y3VzdG9tZG9tYWluLmNvbSIsIngtYW16LWRhdGUiOiIyMDE5MTExM1QxODQ3MDRaIiwieC1hcGkta2V5IjoieHh4eHgifQ==&payload=e30=');
+            expect(protocol).toBe('graphql-ws');
+            const socket = new myWebSocket();
+
+            setTimeout(() => {
+                socket.close = () => {};
+                socket.onopen.call(socket, (undefined as unknown as Event));
+                socket.send = (msg: string) => {
+                    const { type } = JSON.parse(msg);
+
+                    switch (type) {
+                        case MESSAGE_TYPES.GQL_CONNECTION_INIT:
+                            socket.onmessage.call(socket, {
+                                data: JSON.stringify({
+                                    type: MESSAGE_TYPES.GQL_CONNECTION_ACK,
+                                    payload: {
+                                        connectionTimeoutMs: 99999,
+                                    },
+                                })
+                            } as MessageEvent);
+                            setTimeout(() => {
+                                socket.onmessage.call(socket, {
+                                    data: JSON.stringify({
+                                        id,
+                                        type: MESSAGE_TYPES.GQL_DATA,
+                                        payload: {
+                                            data: { something: 123 },
+                                        },
+                                    })
+                                } as MessageEvent);
+
+                            }, 100);
+                            break;
+                    }
+                };
+            }, 100);
+
+            return socket;
+        });
+        const link = new AppSyncRealTimeSubscriptionHandshakeLink({
+            auth: {
+                type: AUTH_TYPE.API_KEY,
+                apiKey: 'xxxxx'
+            },
+            region: 'us-west-2',
+            url: 'https://apikeytest.testcustomdomain.com/graphql',
+        });
+
+        expect(link).toBeInstanceOf(AppSyncRealTimeSubscriptionHandshakeLink);
+        expect((link as any).keepAliveTimeout).toBeUndefined();
+
+        const sub = execute(link, { query }).subscribe({
+            error: (err) => {
+                console.log(JSON.stringify(err));
+                fail();
+            },
+            next: (data) => {
+                expect((link as any).keepAliveTimeout).toBe(99999);
+                done();
+                sub.unsubscribe();
+            },
+            complete: () => {
+                console.log('done with this');
+                fail();
+            }
+
+        });
+    });
+
 
 });
