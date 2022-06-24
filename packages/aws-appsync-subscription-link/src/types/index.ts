@@ -83,6 +83,10 @@ export type UrlInfo = {
   region: string;
 };
 
+export type AppSyncRealTimeSubscriptionConfig = UrlInfo & {
+  keepAliveTimeoutMs?: number;
+};
+
 export type ObserverQuery = {
   observer: ZenObservable.SubscriptionObserver<any>;
   query: string;
