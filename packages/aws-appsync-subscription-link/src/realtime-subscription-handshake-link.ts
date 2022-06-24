@@ -51,6 +51,11 @@ const CONNECTION_INIT_TIMEOUT = 15000;
 const START_ACK_TIMEOUT = 15000;
 
 /**
+ * Frequency in milliseconds in which the server sends GQL_CONNECTION_KEEP_ALIVE messages
+ */
+const SERVER_KEEP_ALIVE_TIMEOUT = 1 * 60 * 1000;
+
+/**
  * Default Time in milliseconds to wait for GQL_CONNECTION_KEEP_ALIVE message
  */
 const DEFAULT_KEEP_ALIVE_TIMEOUT = 5 * 60 * 1000;
@@ -76,12 +81,18 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     this.region = theRegion;
     this.auth = theAuth;
     this.keepAliveTimeout = keepAliveTimeoutMs;
+
+    if (this.keepAliveTimeout < SERVER_KEEP_ALIVE_TIMEOUT) {
+      let configName: keyof AppSyncRealTimeSubscriptionConfig = 'keepAliveTimeoutMs';
+
+      throw new Error(`${configName} must be greater than or equal to ${SERVER_KEEP_ALIVE_TIMEOUT} (${this.keepAliveTimeout} used).`);
+    }
   }
 
   // Check if url matches standard domain pattern
-	private isCustomDomain(url: string): boolean {
-		return url.match(standardDomainPattern) === null;
-	}
+  private isCustomDomain(url: string): boolean {
+    return url.match(standardDomainPattern) === null;
+  }
 
   request(operation: Operation) {
     const { query, variables } = operation;
@@ -395,16 +406,16 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           let discoverableEndpoint = appSyncGraphqlEndpoint;
 
           if (this.isCustomDomain(discoverableEndpoint)) {
-					    discoverableEndpoint = discoverableEndpoint.concat(
-							    customDomainPath
-              );
-					} else {
-						  discoverableEndpoint = discoverableEndpoint.replace('appsync-api', 'appsync-realtime-api').replace('gogi-beta', 'grt-beta');
-					}
+            discoverableEndpoint = discoverableEndpoint.concat(
+              customDomainPath
+            );
+          } else {
+            discoverableEndpoint = discoverableEndpoint.replace('appsync-api', 'appsync-realtime-api').replace('gogi-beta', 'grt-beta');
+          }
 
           discoverableEndpoint = discoverableEndpoint
-              .replace("https://", "wss://")
-              .replace('http://', 'ws://')
+            .replace("https://", "wss://")
+            .replace('http://', 'ws://')
 
           const awsRealTimeUrl = `${discoverableEndpoint}?header=${headerQs}&payload=${payloadQs}`;
 
@@ -608,7 +619,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
             } = data;
             if (type === MESSAGE_TYPES.GQL_CONNECTION_ACK) {
               ackOk = true;
-            this.keepAliveTimeout = this.keepAliveTimeout ?? connectionTimeoutMs;
+              this.keepAliveTimeout = this.keepAliveTimeout ?? connectionTimeoutMs;
               this.awsRealTimeSocket.onmessage = this._handleIncomingSubscriptionMessage.bind(
                 this
               );
