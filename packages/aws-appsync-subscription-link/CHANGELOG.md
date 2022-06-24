@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.4.0"></a>
+# [2.4.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.3.0...aws-appsync-subscription-link@2.4.0) (2022-06-24)
+
+
+### Features
+
+* Add keepAliveTimeoutMs config for AppSync WebSocket link ([#725](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/725)) ([c91e507](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/c91e507))
+
+
+
+
 <a name="2.3.0"></a>
 # [2.3.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.2.7...aws-appsync-subscription-link@2.3.0) (2022-05-02)
 

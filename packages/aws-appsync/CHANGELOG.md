@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="4.1.7"></a>
+## [4.1.7](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@4.1.6...aws-appsync@4.1.7) (2022-06-24)
+
+
+### Bug Fixes
+
+* peer dependency syntaxt [#699](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/699) ([#710](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/710)) ([9e98b59](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/9e98b59))
+
+
+
+
 <a name="4.1.6"></a>
 ## [4.1.6](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync@4.1.5...aws-appsync@4.1.6) (2022-05-02)
 
