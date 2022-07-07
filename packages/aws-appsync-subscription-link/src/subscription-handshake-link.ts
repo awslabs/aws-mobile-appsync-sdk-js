@@ -50,7 +50,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         this.subsInfoContextKey = subsInfoContextKey;
     }
 
-    request(operation: Operation): Observable<FetchResult> | null {
+    request(operation: Operation): Observable<FetchResult> {
         const {
             [this.subsInfoContextKey]: subsInfo,
             controlMessages: { [CONTROL_EVENTS_KEY]: controlEvents } = { [CONTROL_EVENTS_KEY]: undefined }
@@ -68,7 +68,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         } = subsInfo;
 
         if (errors && errors.length) {
-            return new Observable(observer => {
+            return new Observable<FetchResult>(observer => {
                 observer.error(new ApolloError({
                     errorMessage: 'Error during subscription handshake',
                     extraInfo: { errors },
