@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { ApolloLink, Observable, Operation, FetchResult } from "apollo-link";
+import * as ZenObservable from 'zen-observable-ts';
 
 import { rootLogger } from "./utils";
 import * as Paho from './vendor/paho-mqtt';
@@ -51,7 +52,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
         this.subsInfoContextKey = subsInfoContextKey;
     }
 
-    request(operation: Operation) {
+    request(operation: Operation): Observable<FetchResult> | null  {
         const {
             [this.subsInfoContextKey]: subsInfo,
             controlMessages: { [CONTROL_EVENTS_KEY]: controlEvents } = { [CONTROL_EVENTS_KEY]: undefined }
