@@ -21,7 +21,8 @@
   "dependencies": {
     "aws-appsync-auth-link": "^3.0.7",
     "debug": "2.6.9",
-    "url": "^0.11.0"
+    "url": "^0.11.0",
+    "zen-observable-ts": "^1.2.5"
   },
   "devDependencies": {
     "@apollo/client": "^3.2.0",
