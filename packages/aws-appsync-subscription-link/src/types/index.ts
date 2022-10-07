@@ -1,4 +1,5 @@
 import { AuthOptions } from "aws-appsync-auth-link";
+import * as ZenObservable from 'zen-observable-ts';
 
 //#region Subscription link enums
 
