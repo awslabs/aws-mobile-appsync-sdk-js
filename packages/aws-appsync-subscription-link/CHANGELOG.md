@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.4.1"></a>
+## [2.4.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.4.0...aws-appsync-subscription-link@2.4.1) (2022-10-07)
+
+
+### Bug Fixes
+
+* **data:** port over Angular fix from master ([#733](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/733)) ([0a38f28](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/0a38f28))
+
+
+
+
 <a name="2.4.0"></a>
 # [2.4.0](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.3.0...aws-appsync-subscription-link@2.4.0) (2022-06-24)
 
