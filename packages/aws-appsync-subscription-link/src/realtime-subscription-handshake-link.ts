@@ -764,7 +764,19 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       });
       clearTimeout(startAckTimeoutId);
 
-      observer.complete();
+      if (observer) {
+        observer.error({
+          errors: [
+            {
+              ...new GraphQLError(`Connection failed: ${JSON.stringify(payload)}`)
+            }
+          ]
+        });
+        observer.complete();
+      } else {
+        logger(`observer not found for id: ${id}`);
+      }
+
       if (typeof subscriptionFailedCallback === "function") {
         subscriptionFailedCallback();
       }
