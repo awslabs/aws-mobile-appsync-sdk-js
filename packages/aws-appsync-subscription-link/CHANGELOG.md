@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.4.2"></a>
+## [2.4.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.4.1...aws-appsync-subscription-link@2.4.2) (2022-11-17)
+
+
+### Bug Fixes
+
+* added check for observer ([#736](https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/736)) ([758a55e](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/758a55e))
+
+
+
+
 <a name="2.4.1"></a>
 ## [2.4.1](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.4.0...aws-appsync-subscription-link@2.4.1) (2022-10-07)
 
