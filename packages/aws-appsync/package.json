@@ -40,6 +40,6 @@
     "uuid": "3.x"
   },
   "peerDependencies": {
-    "graphql": "0.13.0 || 14.x || 15.x"
+    "graphql": "0.13.0 || 14.x || 15.0.0 - 15.3.0"
   }
 }
