@@ -6,10 +6,12 @@
 
 You can use any HTTP or GraphQL client to connect to a GraphQL API on AppSync.
 
+## Recommendation: Use [Amplify](https://aws-amplify.github.io/) clients to connect to AppSync
+
 For front-end web and mobile development, we recommend using the [Amplify](https://aws-amplify.github.io/) clients which are optimized to connect to the AppSync backend.
 
-- For DynamoDB data sources, use the DataStore category in the Amplify client. It provides the best developer experience and built-in conflict detection and resolution.
-- For non-DynamoDB data sources in scenarios where you have no offline requirements, use the API (GraphQL) category in the Amplify client.
+- For DynamoDB data sources, use the [DataStore](https://docs.amplify.aws/lib/datastore/getting-started/q/platform/js/) category in the Amplify client. It provides the best developer experience and built-in conflict detection and resolution.
+- For non-DynamoDB data sources in scenarios where you have no offline requirements, use the [API (GraphQL)](https://docs.amplify.aws/lib/graphqlapi/getting-started/q/platform/js/) category in the Amplify client.
 - For use cases where you are utilizing the Apollo V3 client, use the Apollo Links in this repository to help with authorization and subscriptions.
 
 ## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3
