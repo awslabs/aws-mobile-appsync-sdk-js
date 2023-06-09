@@ -576,6 +576,86 @@ export default graphql(listPosts, {
 })(App);
 ```
 
+### Complex objects (Apollo V2)
+
+Many times you might want to create logical objects that have more complex data, such as images or videos, as part of their structure. For example, you might create a Person type with a profile picture or a Post type that has an associated image. With AWS AppSync, you can model these as GraphQL types, referred to as complex objects. If any of your mutations have a variable with bucket, key, region, mimeType and localUri fields, the SDK uploads the file to Amazon S3 for you.
+
+For a complete working example of this feature, see [aws-amplify-graphql](https://github.com/aws-samples/aws-amplify-graphql) on GitHub.
+
+If you're using AWS Amplify's GraphQL transformer, then configure your resolvers to write to DynamoDB and point at S3 objects when using the `S3Object` type. For example, run the following in an Amplify project:
+
+```bash
+amplify add auth        #Select default configuration
+amplify add storage     #Select S3 with read/write access
+amplify add api         #Select Cognito User Pool for authorization type
+```
+
+When prompted, use the following schema:
+
+```graphql
+type Todo @model {
+  id: ID!
+  name: String!
+  description: String!
+  file: S3Object
+}
+type S3Object {
+  bucket: String!
+  key: String!
+  region: String!
+}
+input CreateTodoInput {
+  id: ID
+  name: String!
+  description: String
+  file: S3ObjectInput # This input type will be generated for you
+}
+```
+
+Save and run `amplify push` to deploy changes.
+
+To use complex objects you need AWS Identity and Access Management credentials for reading and writing to Amazon S3 which `amplify add auth` configures in the default setting along with a Cognito user pool. These can be separate from the other auth credentials you use in your AWS AppSync client. Credentials for complex objects are set using the `complexObjectsCredentials` parameter, which you can use with AWS Amplify and the complex objects feature like so:
+
+```javascript
+const client = new AWSAppSyncClient({
+    url: ENDPOINT,
+    region: REGION,
+    auth: { ... },   //Can be User Pools or API Key
+    complexObjectsCredentials: () => Auth.currentCredentials(),
+});
+(async () => {
+  let file;
+  if (selectedFile) { // selectedFile is the file to be uploaded, typically comes from an <input type="file" />
+    const { name, type: mimeType } = selectedFile;
+    const [, , , extension] = /([^.]+)(\.(\w+))?$/.exec(name);
+    const bucket = aws_config.aws_user_files_s3_bucket;
+    const region = aws_config.aws_user_files_s3_bucket_region;
+    const visibility = 'private';
+    const { identityId } = await Auth.currentCredentials();
+    const key = `${visibility}/${identityId}/${uuid()}${extension && '.'}${extension}`;
+    file = {
+      bucket,
+      key,
+      region,
+      mimeType,
+      localUri: selectedFile,
+    };
+  }
+  const result = await client.mutate({
+    mutation: gql(createTodo),
+    variables: {
+      input: {
+        name: 'Upload file',
+        description: 'Uses complex objects to upload',
+        file: file,
+      }
+    }
+  });
+})();
+```
+
+When you run the above mutation, a record will be in a DynamoDB table for your AppSync API as well as the corresponding file in an S3 bucket.
+
 ### Offline configuration (Apollo V2)
 
 When using the AWS AppSync SDK offline capabilities (e.g. `disableOffline: false`), you can provide configurations for the following:
