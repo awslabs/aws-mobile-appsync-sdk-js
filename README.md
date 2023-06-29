@@ -6,13 +6,13 @@
 
 You can use any HTTP or GraphQL client to connect to a GraphQL API on AppSync.
 
-For front-end web and mobile development, we recommend using the [AWS Amplify library](https://docs.amplify.aws/lib/graphql) which are optimized to connect to the AppSync backend.
+For front-end web and mobile development, we recommend using the [AWS Amplify library](https://docs.amplify.aws/lib/graphqlapi/getting-started/q/platform/js/) which is optimized to connect to the AppSync backend.
 
-- For DynamoDB data sources where conflict detection and resolution is enabled on AppSync, use the [DataStore category in the Amplify library](https://docs.amplify.aws/lib/datastore/getting-started/q/platform/js/).
-- For non-DynamoDB data sources in scenarios where you have no offline requirements, use the [API (GraphQL) category in the Amplify library](https://docs.amplify.aws/lib/graphql).
+- For DynamoDB data sources where conflict detection and resolution are enabled on AppSync, use the [DataStore category in the Amplify library](https://docs.amplify.aws/lib/datastore/getting-started/q/platform/js/).
+- For non-DynamoDB data sources in scenarios where you have no offline requirements, use the [API (GraphQL) category in the Amplify library](https://docs.amplify.aws/lib/graphqlapi/getting-started/q/platform/js/).
 - If you want to use the Apollo V3 client, use the Apollo Links in this repository to help with authorization and subscriptions.
 
-**Looking for the AWS AppSync SDK for JavaScript (built on Apollo v2)?** The AWS AppSync SDK for JavaScript is now in maintenance mode. Please review the [upgrade guide](docs.amplify.aws/lib/graphqlapi/upgrade-guide/q/platform/js) for recommended next steps.
+**Looking for the AWS AppSync SDK for JavaScript (built on Apollo v2)?** The AWS AppSync SDK for JavaScript is now in maintenance mode. Please review the [upgrade guide](https://docs.amplify.aws/lib/graphqlapi/upgrade-guide/q/platform/js) for recommended next steps.
 
 ## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3
 
