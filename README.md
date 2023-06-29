@@ -12,7 +12,7 @@ For front-end web and mobile development, we recommend using the [AWS Amplify li
 - For non-DynamoDB data sources in scenarios where you have no offline requirements, use the [API (GraphQL) category in the Amplify library](https://docs.amplify.aws/lib/graphqlapi/getting-started/q/platform/js/).
 - If you want to use the Apollo V3 client, use the Apollo Links in this repository to help with authorization and subscriptions.
 
-**Looking for the AWS AppSync SDK for JavaScript (built on Apollo v2)?** The AWS AppSync SDK for JavaScript is now in maintenance mode. Please review the [upgrade guide](https://docs.amplify.aws/lib/graphqlapi/upgrade-guide/q/platform/js) for recommended next steps.
+**Looking for the AWS AppSync SDK for JavaScript (built on Apollo v2)?** AWS AppSync SDK for JavaScript (V2) is now in Maintenance Mode until June 30th, 2024. This means that we will continue to include updates to ensure compatibility with backend services and security. No new features will be introduced in the AWS AppSync SDK for JavaScript (V2). Please review the [upgrade guide](https://docs.amplify.aws/lib/graphqlapi/upgrade-guide/q/platform/js) for recommended next steps.
 
 ## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3
 
