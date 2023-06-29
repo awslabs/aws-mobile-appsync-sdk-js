@@ -1,4 +1,4 @@
-# AWS AppSync JavaScript SDK &middot; [![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
+# Use AWS AppSync with JavaScript apps &middot; [![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
 
 ![AWS AppSync](https://s3.amazonaws.com/aws-mobile-hub-images/awsappsyncgithub.png)
 
@@ -6,11 +6,13 @@
 
 You can use any HTTP or GraphQL client to connect to a GraphQL API on AppSync.
 
-For front-end web and mobile development, we recommend using the [Amplify](https://aws-amplify.github.io/) clients which are optimized to connect to the AppSync backend.
+For front-end web and mobile development, we recommend using the [AWS Amplify library](https://docs.amplify.aws/lib/graphqlapi/getting-started/q/platform/js/) which is optimized to connect to the AppSync backend.
 
-- For DynamoDB data sources, use the DataStore category in the Amplify client. It provides the best developer experience and built-in conflict detection and resolution.
-- For non-DynamoDB data sources in scenarios where you have no offline requirements, use the API (GraphQL) category in the Amplify client.
-- For use cases where you are utilizing the Apollo V3 client, use the Apollo Links in this repository to help with authorization and subscriptions.
+- For DynamoDB data sources where conflict detection and resolution are enabled on AppSync, use the [DataStore category in the Amplify library](https://docs.amplify.aws/lib/datastore/getting-started/q/platform/js/).
+- For non-DynamoDB data sources in scenarios where you have no offline requirements, use the [API (GraphQL) category in the Amplify library](https://docs.amplify.aws/lib/graphqlapi/getting-started/q/platform/js/).
+- If you want to use the Apollo V3 client, use the Apollo Links in this repository to help with authorization and subscriptions.
+
+**Looking for the AWS AppSync SDK for JavaScript (built on Apollo v2)?** AWS AppSync SDK for JavaScript (V2) is now in Maintenance Mode until June 30th, 2024. This means that we will continue to include updates to ensure compatibility with backend services and security. No new features will be introduced in the AWS AppSync SDK for JavaScript (V2). Please review the [upgrade guide](https://docs.amplify.aws/lib/graphqlapi/upgrade-guide/q/platform/js) for recommended next steps.
 
 ## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3
 
@@ -25,86 +27,6 @@ If you would like to use the [Apollo JavaScript client version 3](https://www.ap
 | aws-appsync-subscription-link | ![npm](https://img.shields.io/npm/v/aws-appsync-subscription-link.svg) |
 
 [Example usage of Apollo V3 links](#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
-
----
-
-## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK
-
-The `aws-appsync` and `aws-appsync-react` packages work with the [Apollo client version 2](https://www.apollographql.com/docs/react/v2) and provide offline capabilities.
-
-**Note:** if you do not have any offline requirements in your app, we recommend using the [Amplify libraries](https://aws-amplify.github.io/).
-
-![npm](https://img.shields.io/npm/dm/aws-appsync.svg)
-
-| package           | version                                                    |
-| ----------------- | ---------------------------------------------------------- |
-| aws-appsync       | ![npm](https://img.shields.io/npm/v/aws-appsync.svg)       |
-| aws-appsync-react | ![npm](https://img.shields.io/npm/v/aws-appsync-react.svg) |
-
-### Installation
-
-#### npm
-
-```sh
-npm install --save aws-appsync
-```
-
-#### yarn
-
-```sh
-yarn add aws-appsync
-```
-
-#### React Native Compatibility
-
-When using this library with React Native, you need to ensure you are using the correct version of the library based on your version of React Native. Take a look at the table below to determine what version to use.
-
-| `aws-appsync` version | Required React Native Version |
-| --------------------- | ----------------------------- |
-| `2.x.x`               | `>= 0.60`                     |
-| `1.x.x`               | `<= 0.59`                     |
-
-If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo` and `@react-native-community/async-storage`:
-
-```sh
-npm install --save @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
-```
-
-or
-
-```sh
-yarn add @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
-```
-
-If you are using React Native `0.60+` for iOS, run the following command as an additional step:
-
-```sh
-npx pod-install
-```
-
----
-
-## Usage
-
-Please visit the [documentation with the Amplify Framework](https://aws-amplify.github.io/docs/js/api) for detailed instructions.
-
-- [React / React Native](#react--react-native)
-- [Using Authorization and Subscription links with Apollo Client V3 (No offline support)](#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
-  - [Queries and Subscriptions using Apollo V3](#queries-and-subscriptions-using-apollo-v3)
-- [Creating a client (Apollo V2)](#creating-a-client-apollo-v2)
-  - [Queries](#queries)
-  - [Mutations & optimistic UI (with graphqlMutation helper)](#mutations--optimistic-ui-with-graphqlmutation-helper)
-  - [Mutations & optimistic UI (without graphqlMutation helper)](#mutations--optimistic-ui-without-graphqlmutation-helper)
-  - [Subscriptions (with buildSubscription helper)](#subscriptions-with-buildsubscription-helper)
-  - [Subscriptions (without buildSubscription helper)](#subscriptions-without-buildsubscription-helper)
-- [Offline configuration (Apollo V2)](#offline-configuration-apollo-v2)
-  - [Error handling](#error-handling)
-  - [Custom storage engine](#custom-storage-engine)
-  - [Offline helpers](#offline-helpers)
-- [Vue](#vue)
-  - [main.js](#mainjs)
-  - [App.vue](#appvue)
-  - [connected component](#connected-component)
 
 ### React / React Native
 
@@ -163,7 +85,7 @@ const ApolloWrapper = ({ children }) => {
 };
 ```
 
-#### Queries and Subscriptions using Apollo V3
+### Queries and Subscriptions using Apollo V3
 
 ```js
 import React, { useState, useEffect } from "react";
@@ -259,7 +181,64 @@ const App = () => {
 export default App;
 ```
 
-### Creating a client (Apollo V2)
+
+---
+
+## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK based on Apollo V2 (Maintenance mode)
+
+The `aws-appsync` and `aws-appsync-react` packages work with the [Apollo client version 2](https://www.apollographql.com/docs/react/v2) and provide offline capabilities.
+
+**Note:** if you do not have any offline requirements in your app, we recommend using the [Amplify libraries](https://aws-amplify.github.io/).
+
+![npm](https://img.shields.io/npm/dm/aws-appsync.svg)
+
+| package           | version                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| aws-appsync       | ![npm](https://img.shields.io/npm/v/aws-appsync.svg)       |
+| aws-appsync-react | ![npm](https://img.shields.io/npm/v/aws-appsync-react.svg) |
+
+### Installation
+
+#### npm
+
+```sh
+npm install --save aws-appsync
+```
+
+#### yarn
+
+```sh
+yarn add aws-appsync
+```
+
+#### React Native Compatibility
+
+When using this library with React Native, you need to ensure you are using the correct version of the library based on your version of React Native. Take a look at the table below to determine what version to use.
+
+| `aws-appsync` version | Required React Native Version |
+| --------------------- | ----------------------------- |
+| `2.x.x`               | `>= 0.60`                     |
+| `1.x.x`               | `<= 0.59`                     |
+
+If you are using React Native `0.60` and above, you also need to install `@react-native-community/netinfo` and `@react-native-community/async-storage`:
+
+```sh
+npm install --save @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
+```
+
+or
+
+```sh
+yarn add @react-native-community/netinfo@5.9.4 @react-native-community/async-storage
+```
+
+If you are using React Native `0.60+` for iOS, run the following command as an additional step:
+
+```sh
+npx pod-install
+```  
+
+### Creating a client with AppSync SDK for JavaScript V2 (Maintenance mode)
 
 ```js
 import AWSAppSyncClient from "aws-appsync";
@@ -576,7 +555,7 @@ export default graphql(listPosts, {
 })(App);
 ```
 
-### Complex objects (Apollo V2)
+### Complex objects with AWS AppSync SDK for JavaScript (Maintenance mode)
 
 Many times you might want to create logical objects that have more complex data, such as images or videos, as part of their structure. For example, you might create a Person type with a profile picture or a Post type that has an associated image. With AWS AppSync, you can model these as GraphQL types, referred to as complex objects. If any of your mutations have a variable with bucket, key, region, mimeType and localUri fields, the SDK uploads the file to Amazon S3 for you.
 
@@ -656,7 +635,7 @@ const client = new AWSAppSyncClient({
 
 When you run the above mutation, a record will be in a DynamoDB table for your AppSync API as well as the corresponding file in an S3 bucket.
 
-### Offline configuration (Apollo V2)
+### Offline configuration with AWS AppSync SDK for JavaScript (Maintenance mode)
 
 When using the AWS AppSync SDK offline capabilities (e.g. `disableOffline: false`), you can provide configurations for the following:
 
@@ -717,7 +696,7 @@ const client = new AWSAppSyncClient({
 
 For detailed documentation about the offline helpers, look at the [API Definition](OFFLINE_HELPERS.md).
 
-### Vue
+### Vue sample with AWS AppSync SDK for JavaScript (Maintenance mode)
 
 For more documentation on Vue Apollo click [here](https://github.com/Akryum/vue-apollo).
 
