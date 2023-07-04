@@ -106,7 +106,7 @@ function onMessageArrived(message) {
 	/**
 	 * @private
 	 */
-	var localStorage = global.localStorage || (function () {
+	var localStorage = (function () {
 		var data = {};
 
 		return {
