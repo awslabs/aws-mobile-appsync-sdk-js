@@ -3,6 +3,11 @@
   "packages": [
     "packages/*"
   ],
+  "command": {
+    "publish": {
+      "registry": "https://npm.pkg.github.com"
+    }
+  },
   "version": "independent",
   "npmClient": "yarn",
   "useWorkspaces": true
