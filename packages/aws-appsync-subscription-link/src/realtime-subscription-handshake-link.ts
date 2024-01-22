@@ -347,7 +347,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     const {
       subscriptionFailedCallback,
       subscriptionReadyCallback
-    } = this.subscriptionObserverMap.get(subscriptionId);
+    } = this.subscriptionObserverMap.get(subscriptionId) || {};
 
     // This must be done before sending the message in order to be listening immediately
     this.subscriptionObserverMap.set(subscriptionId, {
