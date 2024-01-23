@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="2.4.3"></a>
+## [2.4.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.4.2...aws-appsync-subscription-link@2.4.3) (2024-01-23)
+
+
+### Bug Fixes
+
+* exception due to illegal access to item in an empty map ([ba45213](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/ba45213))
+
+
+
+
 <a name="2.4.2"></a>
 ## [2.4.2](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@2.4.1...aws-appsync-subscription-link@2.4.2) (2022-11-17)
 
