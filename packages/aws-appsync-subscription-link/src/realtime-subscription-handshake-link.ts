@@ -26,6 +26,8 @@ import {
 } from "./types";
 import { jitteredExponentialRetry, NonRetryableError } from "./utils/retry";
 
+var Buffer = require('buffer/').Buffer
+
 const logger = rootLogger.extend("subscriptions");
 
 export const CONTROL_EVENTS_KEY = "@@controlEvents";
