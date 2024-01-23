@@ -61,8 +61,8 @@ const headerBasedAuth = async ({ header, value }: Headers = { header: '', value:
         const headerValue = typeof value === 'function' ? await value.call(undefined) : await value;
 
         headers = {
+            ...headers,
             ...{ [header]: headerValue },
-            ...headers
         };
     }
 
