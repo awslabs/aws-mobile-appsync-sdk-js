@@ -605,7 +605,16 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           };
           this.awsRealTimeSocket.onclose = event => {
             logger(`WebSocket closed ${event.reason}`);
-            rej(new Error(JSON.stringify(event)));
+            // Error code 1000 means that the connection was closed normally.
+            if (event.code === 1000 || navigator.onLine) {
+                rej(new Error(JSON.stringify(event)));
+            } else {
+                logger("You are offline. Reconnecting once online");
+                // Initialize handshake once online again
+                window.addEventListener('online', () => {
+                    this._initializeHandshake({ awsRealTimeUrl });
+                });
+             }
           };
 
           this.awsRealTimeSocket.onmessage = (message: MessageEvent) => {
