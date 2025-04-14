@@ -280,37 +280,39 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     // Preparing payload for subscription message
 
     const dataString = JSON.stringify(data);
-    const headerObj = {
-      ...(await this._awsRealTimeHeaderBasedAuth({
-        apiKey,
-        appSyncGraphqlEndpoint,
-        authenticationType,
-        payload: dataString,
-        canonicalUri: "",
-        region,
-        credentials,
-        token,
-        graphql_headers
-      })),
-      [USER_AGENT_HEADER]: USER_AGENT
-    };
-
-    const subscriptionMessage = {
-      id: subscriptionId,
-      payload: {
-        data: dataString,
-        extensions: {
-          authorization: {
-            ...headerObj
-          }
-        }
-      },
-      type: MESSAGE_TYPES.GQL_START
-    };
-
-    const stringToAWSRealTime = JSON.stringify(subscriptionMessage);
+    let stringToAWSRealTime: string;
 
     try {
+      const headerObj = {
+        ...(await this._awsRealTimeHeaderBasedAuth({
+          apiKey,
+          appSyncGraphqlEndpoint,
+          authenticationType,
+          payload: dataString,
+          canonicalUri: "",
+          region,
+          credentials,
+          token,
+          graphql_headers
+        })),
+        [USER_AGENT_HEADER]: USER_AGENT
+      };
+
+      const subscriptionMessage = {
+        id: subscriptionId,
+        payload: {
+          data: dataString,
+          extensions: {
+            authorization: {
+              ...headerObj
+            }
+          }
+        },
+        type: MESSAGE_TYPES.GQL_START
+      };
+
+      stringToAWSRealTime = JSON.stringify(subscriptionMessage);
+
       await this._initializeWebSocketConnection({
         apiKey,
         appSyncGraphqlEndpoint,
