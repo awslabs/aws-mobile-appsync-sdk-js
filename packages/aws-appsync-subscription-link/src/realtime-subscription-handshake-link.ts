@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { ApolloLink, Observable, Operation, FetchResult } from "@apollo/client/core";
+import { filter } from 'rxjs/operators';
 
 import { rootLogger } from "./utils";
 
@@ -162,12 +163,12 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           }
         };
       }
-    }).filter(data => {
+    }).pipe(filter(data => {
       const { extensions: { controlMsgType = undefined } = {} } = data;
       const isControlMsg = typeof controlMsgType !== "undefined";
 
       return controlEvents === true || !isControlMsg;
-    });
+    }));
   }
 
   private async _verifySubscriptionAlreadyStarted(subscriptionId) {

@@ -1,110 +1,148 @@
 import { authLink, AUTH_TYPE } from "../../src/auth-link";
-import { execute, ApolloLink, Observable } from "@apollo/client/core";
-import gql from 'graphql-tag';
+import {
+  execute,
+  ApolloLink,
+  Observable,
+  ApolloClient,
+  InMemoryCache,
+} from "@apollo/client/core";
+import gql from "graphql-tag";
 
-describe("Auth link", () => { 
-    test('Test AWS_LAMBDA authorizer for queries', (done) => {
-        const query = gql`query { someQuery { aField } }`
+// Mock client for testing
+const mockClient = new ApolloClient({
+  cache: new InMemoryCache(),
+  link: ApolloLink.empty(),
+});
 
-        const link = authLink({
-            auth: {
-                type: AUTH_TYPE.AWS_LAMBDA,
-                token: 'token'
-            }, 
-            region: 'us-east-1',
-            url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
-        })
+describe("Auth link", () => {
+  test("Test AWS_LAMBDA authorizer for queries", (done) => {
+    const query = gql`
+      query {
+        someQuery {
+          aField
+        }
+      }
+    `;
 
-        
-        const spyLink = new ApolloLink((operation, forward) => {
-            const { headers: { Authorization} } = operation.getContext();
-            expect(Authorization).toBe('token');
-            done();
-
-            return new Observable(() => {});
-        })
-        
-        const testLink = ApolloLink.from([link, spyLink]);
-
-        execute(testLink, { query }).subscribe({ })
+    const link = authLink({
+      auth: {
+        type: AUTH_TYPE.AWS_LAMBDA,
+        token: "token",
+      },
+      region: "us-east-1",
+      url: "https://xxxxx.appsync-api.amazonaws.com/graphql",
     });
 
-    test('Test AMAZON_COGNITO_USER_POOLS authorizer for queries', (done) => {
-        const query = gql`query { someQuery { aField } }`
+    const spyLink = new ApolloLink((operation, forward) => {
+      const {
+        headers: { Authorization },
+      } = operation.getContext();
+      expect(Authorization).toBe("token");
+      done();
 
-        const link = authLink({
-            auth: {
-                type: AUTH_TYPE.AMAZON_COGNITO_USER_POOLS,
-                jwtToken: 'token'
-            }, 
-            region: 'us-east-1',
-            url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
-        })
-
-        
-        const spyLink = new ApolloLink((operation, forward) => {
-            const { headers: { Authorization} } = operation.getContext();
-            expect(Authorization).toBe('token');
-            done();
-
-            return new Observable(() => {});
-        })
-        
-        const testLink = ApolloLink.from([link, spyLink]);
-
-        execute(testLink, { query }).subscribe({ })
+      return new Observable(() => {});
     });
 
-    test('Test OPENID_CONNECT authorizer for queries', (done) => {
-        const query = gql`query { someQuery { aField } }`
+    const testLink = ApolloLink.from([link, spyLink]);
 
-        const link = authLink({
-            auth: {
-                type: AUTH_TYPE.OPENID_CONNECT,
-                jwtToken: 'token'
-            }, 
-            region: 'us-east-1',
-            url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
-        })
+    execute(testLink, { query }, { client: mockClient }).subscribe({});
+  });
 
-        
-        const spyLink = new ApolloLink((operation, forward) => {
-            const { headers: { Authorization} } = operation.getContext();
-            expect(Authorization).toBe('token');
-            done();
+  test("Test AMAZON_COGNITO_USER_POOLS authorizer for queries", (done) => {
+    const query = gql`
+      query {
+        someQuery {
+          aField
+        }
+      }
+    `;
 
-            return new Observable(() => {});
-        })
-        
-        const testLink = ApolloLink.from([link, spyLink]);
-
-        execute(testLink, { query }).subscribe({ })
+    const link = authLink({
+      auth: {
+        type: AUTH_TYPE.AMAZON_COGNITO_USER_POOLS,
+        jwtToken: "token",
+      },
+      region: "us-east-1",
+      url: "https://xxxxx.appsync-api.amazonaws.com/graphql",
     });
 
-    test('Test API_KEY authorizer for queries', (done) => {
-        const query = gql`query { someQuery { aField } }`
+    const spyLink = new ApolloLink((operation, forward) => {
+      const {
+        headers: { Authorization },
+      } = operation.getContext();
+      expect(Authorization).toBe("token");
+      done();
 
-        const link = authLink({
-            auth: {
-                type: AUTH_TYPE.API_KEY,
-                apiKey: 'token'
-            }, 
-            region: 'us-east-1',
-            url: 'https://xxxxx.appsync-api.amazonaws.com/graphql'
-        })
-
-        
-        const spyLink = new ApolloLink((operation, forward) => {
-            const { headers } = operation.getContext();
-
-            expect(headers["X-Api-Key"]).toBe('token');
-            done();
-
-            return new Observable(() => {});
-        })
-        
-        const testLink = ApolloLink.from([link, spyLink]);
-
-        execute(testLink, { query }).subscribe({ })
+      return new Observable(() => {});
     });
+
+    const testLink = ApolloLink.from([link, spyLink]);
+
+    execute(testLink, { query }, { client: mockClient }).subscribe({});
+  });
+
+  test("Test OPENID_CONNECT authorizer for queries", (done) => {
+    const query = gql`
+      query {
+        someQuery {
+          aField
+        }
+      }
+    `;
+
+    const link = authLink({
+      auth: {
+        type: AUTH_TYPE.OPENID_CONNECT,
+        jwtToken: "token",
+      },
+      region: "us-east-1",
+      url: "https://xxxxx.appsync-api.amazonaws.com/graphql",
+    });
+
+    const spyLink = new ApolloLink((operation, forward) => {
+      const {
+        headers: { Authorization },
+      } = operation.getContext();
+      expect(Authorization).toBe("token");
+      done();
+
+      return new Observable(() => {});
+    });
+
+    const testLink = ApolloLink.from([link, spyLink]);
+
+    execute(testLink, { query }, { client: mockClient }).subscribe({});
+  });
+
+  test("Test API_KEY authorizer for queries", (done) => {
+    const query = gql`
+      query {
+        someQuery {
+          aField
+        }
+      }
+    `;
+
+    const link = authLink({
+      auth: {
+        type: AUTH_TYPE.API_KEY,
+        apiKey: "token",
+      },
+      region: "us-east-1",
+      url: "https://xxxxx.appsync-api.amazonaws.com/graphql",
+    });
+
+    const spyLink = new ApolloLink((operation, forward) => {
+      const { headers } = operation.getContext();
+
+      expect(headers["X-Api-Key"]).toBe("token");
+      done();
+
+      return new Observable(() => {});
+    });
+
+    const testLink = ApolloLink.from([link, spyLink]);
+
+    execute(testLink, { query }, { client: mockClient }).subscribe({});
+  });
 });

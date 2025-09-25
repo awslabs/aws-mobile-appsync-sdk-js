@@ -25,9 +25,10 @@
     "debug": "2.6.9"
   },
   "devDependencies": {
-    "@apollo/client": "^3.2.0"
+    "@apollo/client": "^4.0.0"
   },
   "peerDependencies": {
-    "@apollo/client": "3.x"
+    "@apollo/client": "4.x",
+    "rxjs": "^7.0.0"
   }
 }
