@@ -1,6 +1,10 @@
 module.exports = {
     transform: {
-        "^.+\\.tsx?$": "ts-jest"
+        "^.+\\.tsx?$": ["ts-jest", {
+            tsconfig: {
+                target: "es2017"
+            }
+        }]
     },
     testRegex: "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
     collectCoverageFrom: [
