@@ -1,22 +1,16 @@
 {
-    "compilerOptions": {
-        "outDir": "lib",
-        "rootDir": "src",
-        "module": "commonjs",
-        "target": "es5",
-        "moduleResolution": "node",
-        "declaration": true,
-        "lib": [
-            "dom",
-            "es6",
-            "esnext.asynciterable",
-            "es2017.object"
-        ],
-        "skipLibCheck": true
-    },
-    "exclude": [
-        "lib",
-        "__tests__"
-    ],
-    "compileOnSave": true
+  "compilerOptions": {
+    "outDir": "lib",
+    "rootDir": "src",
+    "module": "commonjs",
+    "target": "es5",
+    "moduleResolution": "node",
+    "declaration": true,
+    "lib": ["dom", "es6", "esnext.asynciterable", "es2017.object"],
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
+  "exclude": ["lib", "__tests__", "tsup.config.ts"],
+  "compileOnSave": true
 }

@@ -2,6 +2,15 @@
   "name": "aws-appsync-auth-link",
   "version": "3.0.7",
   "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.mjs",
+      "require": "./lib/index.js"
+    }
+  },
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync Auth Link for JavaScript",
   "author": {
@@ -14,7 +23,9 @@
     "url": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git"
   },
   "scripts": {
-    "prepare": "tsc",
+    "build": "tsup",
+    "prepare": "npm run build",
+    "clean": "rm -rf lib",
     "test": "jest --coverage --coverageReporters=text --passWithNoTests",
     "test-watch": "jest --watch"
   },
@@ -25,7 +36,8 @@
     "debug": "2.6.9"
   },
   "devDependencies": {
-    "@apollo/client": "^4.0.0"
+    "@apollo/client": "^4.0.0",
+    "rxjs": "^7.0.0"
   },
   "peerDependencies": {
     "@apollo/client": "4.x",
