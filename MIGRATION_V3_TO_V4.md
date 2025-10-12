@@ -11,6 +11,7 @@ Version 4 of the AWS AppSync Apollo links brings compatibility with **Apollo Cli
 - ✅ Dual module format (ESM + CommonJS)
 - ✅ Browser environment compatibility improvements
 - ✅ RxJS v7+ peer dependency
+- ✅ UUID peer dependency (for subscription-link)
 
 ## Breaking Changes
 
@@ -57,7 +58,19 @@ npm install rxjs@^7.0.0
 yarn add rxjs@^7.0.0
 ```
 
-### 4. Minimum Node.js Version
+### 4. UUID Peer Dependency Added (subscription-link only)
+
+The `aws-appsync-subscription-link` package now requires UUID as a peer dependency. If you don't already have it installed:
+
+```bash
+npm install uuid@^8.0.0
+# or
+yarn add uuid@^8.0.0
+```
+
+**Note:** UUID v9 and v10 are also supported if you prefer newer versions.
+
+### 5. Minimum Node.js Version
 
 Due to Apollo Client v4 requirements, ensure you're using:
 - **Node.js 14.16+** or higher
@@ -75,10 +88,13 @@ Update your `package.json`:
     "aws-appsync-auth-link": "^4.0.0",
     "aws-appsync-subscription-link": "^4.0.0",
     "graphql": "^16.0.0",
-    "rxjs": "^7.0.0"
+    "rxjs": "^7.0.0",
+    "uuid": "^8.0.0"
   }
 }
 ```
+
+**Note:** If you're only using `aws-appsync-auth-link` (queries/mutations without subscriptions), you don't need to install `uuid`.
 
 Then install:
 
@@ -169,6 +185,17 @@ const client = new ApolloClient({
   }
 }
 ```
+
+### Issue: "Cannot find module 'uuid'" or "Module not found: uuid"
+
+**Solution:** The uuid package is now a peer dependency for `aws-appsync-subscription-link`. Install it:
+```bash
+npm install uuid@^8.0.0
+# or
+yarn add uuid@^8.0.0
+```
+
+If you're only using `aws-appsync-auth-link` for queries/mutations, you don't need uuid.
 
 ## Apollo Client v4 Specific Changes
 
@@ -326,6 +353,8 @@ npm install @apollo/client@^3.2.0 aws-appsync-auth-link@^3.0.0 aws-appsync-subsc
 yarn add @apollo/client@^3.2.0 aws-appsync-auth-link@^3.0.0 aws-appsync-subscription-link@^3.0.0 graphql@^15.0.0
 ```
 
+**Note:** In v3, `uuid` was bundled with `aws-appsync-subscription-link`, so you can uninstall it if you added it for v4.
+
 ## Additional Resources
 
 - [Apollo Client v4 Migration Guide](https://www.apollographql.com/docs/react/migrating/apollo-client-4-migration)
@@ -348,10 +377,11 @@ If you encounter issues during migration:
 
 Beyond the breaking changes, v4 includes:
 
-- **Better Bundle Size**: Proper externalization of dependencies reduces bundle size
+- **Better Bundle Size**: Proper externalization of dependencies (including uuid) reduces bundle size
 - **Improved Browser Compatibility**: No more Node.js polyfills in browser bundles
 - **Modern Module Format**: Full ESM support with backwards-compatible CommonJS
 - **Updated Dependencies**: Latest security patches and improvements
+- **Optimized Peer Dependencies**: Common packages like uuid are now peer dependencies to avoid duplication
 
 ---
 

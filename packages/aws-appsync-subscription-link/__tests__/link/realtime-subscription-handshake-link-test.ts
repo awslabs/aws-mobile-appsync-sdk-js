@@ -430,7 +430,7 @@ describe("RealTime subscription link", () => {
 
   test("Can use a custom keepAliveTimeoutMs", (done) => {
     const id = "abcd-efgh-ijkl-mnop";
-    uuid.mockImplementationOnce(() => id);
+    jest.mocked(uuid).mockImplementationOnce(() => id);
 
     expect.assertions(5);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(
@@ -513,7 +513,7 @@ describe("RealTime subscription link", () => {
 
   test("Uses service-provided timeout when no custom keepAliveTimeoutMs is configured", (done) => {
     const id = "abcd-efgh-ijkl-mnop";
-    uuid.mockImplementationOnce(() => id);
+    jest.mocked(uuid).mockImplementationOnce(() => id);
 
     expect.assertions(5);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(

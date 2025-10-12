@@ -15,6 +15,7 @@ export default defineConfig({
     "url",
     "zen-observable-ts",
     "graphql",
+    "uuid",
   ],
   onSuccess: "cp -r src/vendor lib/vendor",
 });
