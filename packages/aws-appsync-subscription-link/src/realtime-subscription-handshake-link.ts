@@ -14,7 +14,7 @@ import {
   USER_AGENT_HEADER,
   USER_AGENT
 } from "aws-appsync-auth-link";
-import { GraphQLError, print } from "graphql";
+import { GraphQLError, print } from "graphql/index.js";
 import * as url from "url";
 import { v4 as uuid } from "uuid";
 import {

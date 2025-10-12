@@ -12,6 +12,7 @@ export default defineConfig({
     '@aws-sdk/types',
     '@aws-sdk/util-hex-encoding',
     'debug',
-    'rxjs'
+    'rxjs',
+    'graphql'
   ]
 })

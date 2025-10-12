@@ -14,6 +14,7 @@ export default defineConfig({
     "rxjs",
     "url",
     "zen-observable-ts",
+    "graphql",
   ],
   onSuccess: "cp -r src/vendor lib/vendor",
 });
