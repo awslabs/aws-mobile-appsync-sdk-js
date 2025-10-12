@@ -1,0 +1,19 @@
+{
+  "name": "vite-integration-test",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@apollo/client": "^4.0.0",
+    "aws-appsync-auth-link": "file:../../packages/aws-appsync-auth-link",
+    "aws-appsync-subscription-link": "file:../../packages/aws-appsync-subscription-link",
+    "graphql": "^16.0.0",
+    "rxjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "webpack-integration-test",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "webpack --mode production"
+  },
+  "dependencies": {
+    "@apollo/client": "^4.0.0",
+    "aws-appsync-auth-link": "file:../../packages/aws-appsync-auth-link",
+    "aws-appsync-subscription-link": "file:../../packages/aws-appsync-subscription-link",
+    "graphql": "^16.0.0",
+    "rxjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
