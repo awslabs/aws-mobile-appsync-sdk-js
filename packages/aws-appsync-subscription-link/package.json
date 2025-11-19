@@ -1,6 +1,6 @@
 {
   "name": "aws-appsync-subscription-link",
-  "version": "4.0.0-next.1",
+  "version": "4.0.0",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "types": "lib/index.d.ts",
@@ -30,7 +30,7 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "aws-appsync-auth-link": "^4.0.0-next.1",
+    "aws-appsync-auth-link": "^4.0.0",
     "debug": "2.6.9",
     "url": "^0.11.0",
     "zen-observable-ts": "^1.2.5"
