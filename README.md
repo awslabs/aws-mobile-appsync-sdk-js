@@ -126,6 +126,8 @@ const client = new ApolloClient({
 
 This routes both HTTP queries and WebSocket subscriptions through CloudFront, while keeping the correct AppSync host in authentication headers so that AppSync can validate the requests.
 
+> **Note on IAM auth with CloudFront:** If you're using `AUTH_TYPE.AWS_IAM`, the auth-link computes a SigV4 signature using the AppSync host from the `url` you pass to `createAuthLink`. For this to work through CloudFront, your CloudFront distribution must be configured to forward the `Host` header to the AppSync origin (or use an origin custom header to set it). Otherwise AppSync will reject the request due to a signature mismatch. This is a CloudFront origin configuration concern — the library signs against the correct AppSync host, but CloudFront needs to pass that through. API Key, Cognito, OIDC, and Lambda auth types are not affected.
+
 ### Queries and Subscriptions using Apollo V3/V4
 
 ```js
