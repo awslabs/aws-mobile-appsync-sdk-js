@@ -428,6 +428,120 @@ describe("RealTime subscription link", () => {
     });
   });
 
+  test("Can instantiate link with proxy config", () => {
+    expect.assertions(1);
+    const link = new AppSyncRealTimeSubscriptionHandshakeLink({
+      auth: {
+        type: AUTH_TYPE.API_KEY,
+        apiKey: "xxxxx",
+      },
+      region: "us-west-2",
+      url: "https://firsttesturl12345678901234.appsync-api.us-west-2.amazonaws.com/graphql",
+      proxy: {
+        url: "https://d111111abcdef8.cloudfront.net/graphql",
+      },
+    });
+
+    expect(link).toBeInstanceOf(AppSyncRealTimeSubscriptionHandshakeLink);
+  });
+
+  test("Initialize WebSocket through proxy for API KEY - routes to proxy URL with AppSync host in auth", (done) => {
+    expect.assertions(2);
+    jest.spyOn(Date.prototype, "toISOString").mockImplementation(
+      jest.fn(() => {
+        return "2019-11-13T18:47:04.733Z";
+      })
+    );
+    AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
+      (url, protocol) => {
+        // WebSocket should connect to the proxy, not directly to AppSync
+        // The header should contain the original AppSync host for auth
+        const urlObj = new URL(url);
+        expect(urlObj.origin + urlObj.pathname).toBe(
+          "wss://d111111abcdef8.cloudfront.net/realtime"
+        );
+        // Decode the header to verify the host is the AppSync endpoint, not CloudFront
+        const headerB64 = urlObj.searchParams.get("header");
+        const header = JSON.parse(Buffer.from(headerB64, "base64").toString());
+        expect(header.host).toBe(
+          "proxytesturl12345678901234567.appsync-api.us-west-2.amazonaws.com"
+        );
+        done();
+        return new myWebSocket();
+      }
+    );
+    const link = new AppSyncRealTimeSubscriptionHandshakeLink({
+      auth: {
+        type: AUTH_TYPE.API_KEY,
+        apiKey: "xxxxx",
+      },
+      region: "us-west-2",
+      url: "https://proxytesturl12345678901234567.appsync-api.us-west-2.amazonaws.com/graphql",
+      proxy: {
+        url: "https://d111111abcdef8.cloudfront.net/graphql",
+      },
+    });
+
+    execute(link, { query }, { client: mockClient }).subscribe({
+      error: (err) => {
+        fail;
+      },
+      next: (data) => {
+        done();
+      },
+      complete: () => {
+        done();
+      },
+    });
+  });
+
+  test("Initialize WebSocket through proxy for COGNITO USER POOLS - host in auth is AppSync not proxy", (done) => {
+    expect.assertions(2);
+    jest.spyOn(Date.prototype, "toISOString").mockImplementation(
+      jest.fn(() => {
+        return "2019-11-13T18:47:04.733Z";
+      })
+    );
+    AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
+      (url, protocol) => {
+        const urlObj = new URL(url);
+        expect(urlObj.origin + urlObj.pathname).toBe(
+          "wss://mycdn.example.com/realtime"
+        );
+        const headerB64 = urlObj.searchParams.get("header");
+        const header = JSON.parse(Buffer.from(headerB64, "base64").toString());
+        expect(header.host).toBe(
+          "cognitoproxytesturl123456789.appsync-api.us-west-2.amazonaws.com"
+        );
+        done();
+        return new myWebSocket();
+      }
+    );
+    const link = new AppSyncRealTimeSubscriptionHandshakeLink({
+      auth: {
+        type: AUTH_TYPE.AMAZON_COGNITO_USER_POOLS,
+        jwtToken: "token",
+      },
+      region: "us-west-2",
+      url: "https://cognitoproxytesturl123456789.appsync-api.us-west-2.amazonaws.com/graphql",
+      proxy: {
+        url: "https://mycdn.example.com/graphql",
+      },
+    });
+
+    execute(link, { query }, { client: mockClient }).subscribe({
+      error: (err) => {
+        fail;
+      },
+      next: (data) => {
+        done();
+      },
+      complete: () => {
+        done();
+      },
+    });
+  });
+
   test("Can use a custom keepAliveTimeoutMs", (done) => {
     const id = "abcd-efgh-ijkl-mnop";
     jest.mocked(uuid).mockImplementationOnce(() => id);

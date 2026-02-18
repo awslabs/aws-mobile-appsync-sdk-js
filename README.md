@@ -2,6 +2,8 @@
 
 ![AWS AppSync](https://s3.amazonaws.com/aws-mobile-hub-images/awsappsyncgithub.png)
 
+> **🎉 New: Apollo Client v4 Support!** Version 4.0 of the AWS AppSync Apollo links now supports Apollo Client v4 with improved performance, better bundle sizes, and full GraphQL v16 compatibility. [See migration guide →](MIGRATION_V3_TO_V4.md)
+
 [AWS AppSync](https://aws.amazon.com/appsync/) is a fully managed service that makes it easy to develop GraphQL APIs by handling the heavy lifting of securely connecting to data sources like AWS DynamoDB, Lambda, and more.
 
 You can use any HTTP or GraphQL client to connect to a GraphQL API on AppSync.
@@ -14,9 +16,11 @@ For front-end web and mobile development, we recommend using the [AWS Amplify li
 
 **Looking for the AWS AppSync SDK for JavaScript (built on Apollo v2)?** AWS AppSync SDK for JavaScript (V2) is now in Maintenance Mode until June 30th, 2024. This means that we will continue to include updates to ensure compatibility with backend services and security. No new features will be introduced in the AWS AppSync SDK for JavaScript (V2). Please review the [upgrade guide](https://docs.amplify.aws/lib/graphqlapi/upgrade-guide/q/platform/js) for recommended next steps.
 
-## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3 (Maintenance mode)
+## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3 and V4
 
-If you would like to use the [Apollo JavaScript client version 3](https://www.apollographql.com/docs/react/) to connect to your AppSync GraphQL API, this repository (on the current stable branch) provides Apollo links to use the different AppSync authorization modes, and to setup subscriptions over web sockets. Please log questions for this client SDK in this repo and questions for the AppSync service in the [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0) .
+**🎉 Now with Apollo Client v4 support!** Version 4.0 of the AWS AppSync Apollo links brings full compatibility with Apollo Client v4, along with GraphQL v16 support, improved bundle sizes, and better browser compatibility. See the [migration guide](MIGRATION_V3_TO_V4.md) for upgrade instructions.
+
+If you would like to use the [Apollo JavaScript client](https://www.apollographql.com/docs/react/) (version 3 or 4) to connect to your AppSync GraphQL API, this repository provides Apollo links to use the different AppSync authorization modes, and to setup subscriptions over web sockets. Please log questions for this client SDK in this repo and questions for the AppSync service in the [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0) .
 
 ![npm](https://img.shields.io/npm/dm/aws-appsync-auth-link.svg)
 ![npm](https://img.shields.io/npm/dm/aws-appsync-subscription-link.svg)
@@ -26,16 +30,19 @@ If you would like to use the [Apollo JavaScript client version 3](https://www.ap
 | aws-appsync-auth-link         | ![npm](https://img.shields.io/npm/v/aws-appsync-auth-link.svg)         |
 | aws-appsync-subscription-link | ![npm](https://img.shields.io/npm/v/aws-appsync-subscription-link.svg) |
 
-[Example usage of Apollo V3 links](#using-authorization-and-subscription-links-with-apollo-client-v3-no-offline-support)
+[Example usage of Apollo V3/V4 links](#using-authorization-and-subscription-links-with-apollo-client-v3--v4-no-offline-support)
 
 ### React / React Native
 
 For more documentation on `graphql` operations performed by React Apollo see their [documentation](https://www.apollographql.com/docs/react/).
 
-### Using Authorization and Subscription links with Apollo Client V3 (No offline support)
+### Using Authorization and Subscription links with Apollo Client V3 & V4 (No offline support)
 
-For versions of the Apollo client newer than 2.4.6 you can use custom links for Authorization and Subscriptions. Offline support is not available for these newer versions. The packages available are
-`aws-appsync-auth-link` and `aws-appsync-subscription-link`. Below is a sample code snippet that shows how to use it.
+For Apollo Client v3 and v4, you can use custom links for Authorization and Subscriptions. Offline support is not available for these versions. The packages available are `aws-appsync-auth-link` and `aws-appsync-subscription-link`.
+
+**Apollo Client v4 users:** Version 4.0+ of these packages supports Apollo Client v4 with GraphQL v16. See the [migration guide](MIGRATION_V3_TO_V4.md) for upgrade instructions from v3.
+
+Below is a sample code snippet that shows how to use it with both Apollo Client v3 and v4:
 
 ```javascript
 import { createAuthLink } from "aws-appsync-auth-link";
@@ -57,7 +64,6 @@ import appSyncConfig from "./aws-exports";
 Custom domain names can have any format, but must end with `/graphql` 
 (see https://graphql.org/learn/serving-over-http/#uris-routes). */
 const url = appSyncConfig.aws_appsync_graphqlEndpoint;
-
 
 const region = appSyncConfig.aws_appsync_region;
 
@@ -85,7 +91,42 @@ const ApolloWrapper = ({ children }) => {
 };
 ```
 
-### Queries and Subscriptions using Apollo V3
+### Using with CloudFront or a Proxy
+
+If you need to route AppSync traffic through CloudFront (e.g. for custom CORS headers), use the `proxy` option on the subscription link. The `url` stays as your AppSync endpoint (used for authentication), and `proxy.url` is where traffic actually goes:
+
+```javascript
+import { createAuthLink, AUTH_TYPE } from "aws-appsync-auth-link";
+import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
+import { ApolloClient, InMemoryCache, HttpLink, ApolloLink } from "@apollo/client";
+
+const appSyncUrl = "https://xxxxx.appsync-api.us-east-1.amazonaws.com/graphql";
+const cloudFrontUrl = "https://d111111abcdef8.cloudfront.net/graphql";
+const region = "us-east-1";
+const auth = {
+  type: AUTH_TYPE.API_KEY,
+  apiKey: "da2-xxxxx",
+};
+
+const httpLink = new HttpLink({ uri: cloudFrontUrl });
+
+const link = ApolloLink.from([
+  createAuthLink({ url: appSyncUrl, region, auth }),
+  createSubscriptionHandshakeLink(
+    { url: appSyncUrl, region, auth, proxy: { url: cloudFrontUrl } },
+    httpLink
+  ),
+]);
+
+const client = new ApolloClient({
+  link,
+  cache: new InMemoryCache(),
+});
+```
+
+This routes both HTTP queries and WebSocket subscriptions through CloudFront, while keeping the correct AppSync host in authentication headers so that AppSync can validate the requests.
+
+### Queries and Subscriptions using Apollo V3/V4
 
 ```js
 import React, { useState, useEffect } from "react";
@@ -181,7 +222,6 @@ const App = () => {
 export default App;
 ```
 
-
 ---
 
 ## [AWS AppSync](https://aws.amazon.com/appsync/) JavaScript SDK based on Apollo V2 (Maintenance mode)
@@ -236,7 +276,7 @@ If you are using React Native `0.60+` for iOS, run the following command as an a
 
 ```sh
 npx pod-install
-```  
+```
 
 ### Creating a client with AppSync SDK for JavaScript V2 (Maintenance mode)
 

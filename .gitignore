@@ -4,7 +4,7 @@ lib
 lerna-debug.log
 yarn.lock
 .npmrc
-.DS_Store
+**/.DS_Store
 
 # Integration test artifacts
 integration-tests/node_modules/
