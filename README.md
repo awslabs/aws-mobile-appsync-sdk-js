@@ -2,7 +2,7 @@
 
 ![AWS AppSync](https://s3.amazonaws.com/aws-mobile-hub-images/awsappsyncgithub.png)
 
-> **🎉 New: Apollo Client v4 Support!** Version 4.0 of the AWS AppSync Apollo links now supports Apollo Client v4 with improved performance, better bundle sizes, and full GraphQL v16 compatibility. [See migration guide →](MIGRATION_V3_TO_V4.md)
+> **⚠️ Maintenance Mode:** The AWS AppSync Apollo links (V3 and V4) are in Maintenance Mode. This means we will continue to include updates to ensure compatibility with backend services and security. No new features will be introduced.
 
 [AWS AppSync](https://aws.amazon.com/appsync/) is a fully managed service that makes it easy to develop GraphQL APIs by handling the heavy lifting of securely connecting to data sources like AWS DynamoDB, Lambda, and more.
 
@@ -16,9 +16,9 @@ For front-end web and mobile development, we recommend using the [AWS Amplify li
 
 **Looking for the AWS AppSync SDK for JavaScript (built on Apollo v2)?** AWS AppSync SDK for JavaScript (V2) is now in Maintenance Mode until June 30th, 2024. This means that we will continue to include updates to ensure compatibility with backend services and security. No new features will be introduced in the AWS AppSync SDK for JavaScript (V2). Please review the [upgrade guide](https://docs.amplify.aws/lib/graphqlapi/upgrade-guide/q/platform/js) for recommended next steps.
 
-## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3 and V4
+## [AWS AppSync](https://aws.amazon.com/appsync/) Links for Apollo V3 and V4 (Maintenance mode)
 
-**🎉 Now with Apollo Client v4 support!** Version 4.0 of the AWS AppSync Apollo links brings full compatibility with Apollo Client v4, along with GraphQL v16 support, improved bundle sizes, and better browser compatibility. See the [migration guide](MIGRATION_V3_TO_V4.md) for upgrade instructions.
+**Note:** The AWS AppSync Apollo links for V3 and V4 are in Maintenance Mode. This means we will continue to include updates to ensure compatibility with backend services and security. No new features will be introduced.
 
 If you would like to use the [Apollo JavaScript client](https://www.apollographql.com/docs/react/) (version 3 or 4) to connect to your AppSync GraphQL API, this repository provides Apollo links to use the different AppSync authorization modes, and to setup subscriptions over web sockets. Please log questions for this client SDK in this repo and questions for the AppSync service in the [official AWS AppSync forum](https://forums.aws.amazon.com/forum.jspa?forumID=280&start=0) .
 
@@ -30,17 +30,17 @@ If you would like to use the [Apollo JavaScript client](https://www.apollographq
 | aws-appsync-auth-link         | ![npm](https://img.shields.io/npm/v/aws-appsync-auth-link.svg)         |
 | aws-appsync-subscription-link | ![npm](https://img.shields.io/npm/v/aws-appsync-subscription-link.svg) |
 
-[Example usage of Apollo V3/V4 links](#using-authorization-and-subscription-links-with-apollo-client-v3--v4-no-offline-support)
+[Example usage of Apollo V3/V4 links](#using-authorization-and-subscription-links-with-apollo-client-v3--v4-maintenance-mode-no-offline-support)
 
 ### React / React Native
 
 For more documentation on `graphql` operations performed by React Apollo see their [documentation](https://www.apollographql.com/docs/react/).
 
-### Using Authorization and Subscription links with Apollo Client V3 & V4 (No offline support)
+### Using Authorization and Subscription links with Apollo Client V3 & V4 (Maintenance mode, no offline support)
 
 For Apollo Client v3 and v4, you can use custom links for Authorization and Subscriptions. Offline support is not available for these versions. The packages available are `aws-appsync-auth-link` and `aws-appsync-subscription-link`.
 
-**Apollo Client v4 users:** Version 4.0+ of these packages supports Apollo Client v4 with GraphQL v16. See the [migration guide](MIGRATION_V3_TO_V4.md) for upgrade instructions from v3.
+**Apollo Client v4 users:** Version 4.0+ of these packages supports Apollo Client v4 with GraphQL v16.
 
 Below is a sample code snippet that shows how to use it with both Apollo Client v3 and v4:
 
