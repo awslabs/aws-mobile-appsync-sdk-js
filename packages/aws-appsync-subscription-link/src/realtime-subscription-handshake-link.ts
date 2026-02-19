@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { ApolloLink, Observable, Operation, FetchResult } from "@apollo/client/core";
+import { filter } from 'rxjs/operators';
 
 import { rootLogger } from "./utils";
 
@@ -13,7 +14,7 @@ import {
   USER_AGENT_HEADER,
   USER_AGENT
 } from "aws-appsync-auth-link";
-import { GraphQLError, print } from "graphql";
+import { GraphQLError, print } from "graphql/index.js";
 import * as url from "url";
 import { v4 as uuid } from "uuid";
 import {
@@ -68,6 +69,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   private url: string;
   private region: string;
   private auth: AuthOptions;
+  private proxyUrl?: string;
   private awsRealTimeSocket: WebSocket;
   private socketStatus: SOCKET_STATUS = SOCKET_STATUS.CLOSED;
   private keepAliveTimeoutId;
@@ -75,11 +77,12 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   private subscriptionObserverMap: Map<string, ObserverQuery> = new Map();
   private promiseArray: Array<{ res: Function; rej: Function }> = [];
 
-  constructor({ url: theUrl, region: theRegion, auth: theAuth, keepAliveTimeoutMs }: AppSyncRealTimeSubscriptionConfig) {
+  constructor({ url: theUrl, region: theRegion, auth: theAuth, keepAliveTimeoutMs, proxy }: AppSyncRealTimeSubscriptionConfig) {
     super();
     this.url = theUrl;
     this.region = theRegion;
     this.auth = theAuth;
+    this.proxyUrl = proxy?.url;
     this.keepAliveTimeout = keepAliveTimeoutMs;
 
     if (this.keepAliveTimeout < SERVER_KEEP_ALIVE_TIMEOUT) {
@@ -162,12 +165,12 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           }
         };
       }
-    }).filter(data => {
+    }).pipe(filter(data => {
       const { extensions: { controlMsgType = undefined } = {} } = data;
       const isControlMsg = typeof controlMsgType !== "undefined";
 
       return controlEvents === true || !isControlMsg;
-    });
+    }));
   }
 
   private async _verifySubscriptionAlreadyStarted(subscriptionId) {
@@ -403,19 +406,29 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
 
           const payloadQs = Buffer.from(payloadString).toString("base64");
 
-          let discoverableEndpoint = appSyncGraphqlEndpoint;
+          let discoverableEndpoint: string;
 
-          if (this.isCustomDomain(discoverableEndpoint)) {
-            discoverableEndpoint = discoverableEndpoint.concat(
+          if (this.proxyUrl) {
+            // When proxying, derive the WebSocket URL from the proxy URL
+            // using the custom domain path logic (append /realtime)
+            discoverableEndpoint = this.proxyUrl
+              .replace(/\/graphql$/, '')
+              .concat(customDomainPath)
+              .replace("https://", "wss://")
+              .replace('http://', 'ws://');
+          } else if (this.isCustomDomain(appSyncGraphqlEndpoint)) {
+            discoverableEndpoint = appSyncGraphqlEndpoint.concat(
               customDomainPath
             );
+            discoverableEndpoint = discoverableEndpoint
+              .replace("https://", "wss://")
+              .replace('http://', 'ws://');
           } else {
-            discoverableEndpoint = discoverableEndpoint.replace('appsync-api', 'appsync-realtime-api').replace('gogi-beta', 'grt-beta');
+            discoverableEndpoint = appSyncGraphqlEndpoint.replace('appsync-api', 'appsync-realtime-api').replace('gogi-beta', 'grt-beta');
+            discoverableEndpoint = discoverableEndpoint
+              .replace("https://", "wss://")
+              .replace('http://', 'ws://');
           }
-
-          discoverableEndpoint = discoverableEndpoint
-            .replace("https://", "wss://")
-            .replace('http://', 'ws://')
 
           const awsRealTimeUrl = `${discoverableEndpoint}?header=${headerQs}&payload=${payloadQs}`;
 
@@ -472,7 +485,9 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
       return {};
     }
 
-    const { host } = url.parse(appSyncGraphqlEndpoint);
+    // Always use the original AppSync endpoint for the host in auth headers,
+    // even when connecting through a proxy
+    const { host } = url.parse(this.url);
 
     const result = await handler({
       payload,

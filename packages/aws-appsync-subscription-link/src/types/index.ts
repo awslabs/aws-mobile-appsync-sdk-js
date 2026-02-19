@@ -84,8 +84,30 @@ export type UrlInfo = {
   region: string;
 };
 
+/**
+ * Route connections through a proxy (e.g. CloudFront) instead of connecting
+ * directly to AppSync. The library will send traffic to the proxy URL while
+ * using the original AppSync host for authentication.
+ *
+ * @example
+ * ```ts
+ * {
+ *   url: 'https://xxx.appsync-api.us-east-1.amazonaws.com/graphql',
+ *   region: 'us-east-1',
+ *   auth: { type: AUTH_TYPE.API_KEY, apiKey: 'da2-xxx' },
+ *   proxy: { url: 'https://d111111abcdef8.cloudfront.net/graphql' }
+ * }
+ * ```
+ */
+export type ProxyConfig = {
+  /** The proxy endpoint that sits in front of AppSync (e.g. a CloudFront distribution URL). */
+  url: string;
+};
+
 export type AppSyncRealTimeSubscriptionConfig = UrlInfo & {
   keepAliveTimeoutMs?: number;
+  /** Optional proxy configuration for routing through CloudFront or another CDN. */
+  proxy?: ProxyConfig;
 };
 
 export type ObserverQuery = {

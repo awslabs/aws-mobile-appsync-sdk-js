@@ -2,7 +2,9 @@
  * Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import { ApolloLink, Observable, Operation, FetchResult, ApolloError } from "@apollo/client/core";
+import { ApolloLink, Observable, Operation, FetchResult } from "@apollo/client/core";
+import { CombinedGraphQLErrors } from "@apollo/client/errors";
+import { filter } from 'rxjs/operators';
 import * as ZenObservable from 'zen-observable-ts';
 
 import { rootLogger } from "./utils";
@@ -70,11 +72,7 @@ export class SubscriptionHandshakeLink extends ApolloLink {
 
         if (errors && errors.length) {
             return new Observable(observer => {
-                observer.error(new ApolloError({
-                    errorMessage: 'Error during subscription handshake',
-                    extraInfo: { errors },
-                    graphQLErrors: errors
-                }));
+                observer.error(new CombinedGraphQLErrors({ errors: errors, data: null }));
 
                 return () => { };
             });
@@ -125,12 +123,12 @@ export class SubscriptionHandshakeLink extends ApolloLink {
                         .filter(([, observers]) => observers.size > 0)
                 );
             };
-        }).filter(data => {
+        }).pipe(filter(data => {
             const { extensions: { controlMsgType = undefined } = {} } = data;
             const isControlMsg = typeof controlMsgType !== 'undefined';
 
             return controlEvents === true || !isControlMsg;
-        });
+        }));
     }
 
     async connectNewClients(connectionInfo: MqttConnectionInfo[], observer: ZenObservable.Observer<FetchResult>, operation: Operation) {

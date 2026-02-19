@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { ApolloLink, Observable } from '@apollo/client/core';
-import { print } from 'graphql/language/printer';
+import { print } from 'graphql/language/printer.js';
 
 import { Signer } from './signer';
 import * as Url from 'url';

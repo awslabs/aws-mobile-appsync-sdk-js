@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { ApolloLink } from '@apollo/client/core';
-import type { NextLink, FetchResult } from '@apollo/client/core';
+import type { FetchResult } from '@apollo/client/core';
 import { setContext } from '@apollo/client/link/context';
-import type { Observable } from 'zen-observable-ts';
+import type { Observable } from 'rxjs';
 
 export class NonTerminatingLink extends ApolloLink {
 
@@ -19,10 +19,10 @@ export class NonTerminatingLink extends ApolloLink {
         this.link = link;
     }
 
-    request(operation, forward?: NextLink): Observable<FetchResult> {
+    request(operation, forward?: ApolloLink.ForwardFunction): Observable<FetchResult> {
         return (setContext(async (_request, prevContext) => {
             const result = await new Promise((resolve, reject) => {
-                this.link.request(operation).subscribe({
+                this.link.request(operation, forward).subscribe({
                     next: resolve,
                     error: reject,
                 });
