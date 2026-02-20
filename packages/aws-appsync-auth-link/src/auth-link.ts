@@ -90,7 +90,7 @@ const iamBasedAuth = async ({ credentials, region, url }, operation, forward) =>
     const { host, path } = Url.parse(url);
 
     const formatted = {
-        ...formatAsRequest(operation, {}),
+        ...formatAsRequest(operation, origContext),
         service, region, url, host, path
     };
 
