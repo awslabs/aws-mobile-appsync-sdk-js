@@ -69,6 +69,20 @@ class myWebSocket implements WebSocket {
   }
 }
 
+/**
+ * Helper to decode a base64url-encoded header from the Sec-WebSocket-Protocol value.
+ * The protocol value is prefixed with "header-".
+ */
+function decodeProtocolHeader(protocols: string | string[]): Record<string, string> {
+  const arr = Array.isArray(protocols) ? protocols : [protocols];
+  const headerProtocol = arr.find(p => p.startsWith("header-"));
+  if (!headerProtocol) throw new Error("No header- protocol found");
+  const base64url = headerProtocol.slice("header-".length);
+  // Convert base64url back to standard base64
+  const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+  return JSON.parse(Buffer.from(base64, "base64").toString());
+}
+
 describe("RealTime subscription link", () => {
   test("Can instantiate link", () => {
     expect.assertions(1);
@@ -99,7 +113,7 @@ describe("RealTime subscription link", () => {
   });
 
   test("Initialize WebSocket correctly for API KEY", (done) => {
-    expect.assertions(2);
+    expect.assertions(3);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(
       jest.fn(() => {
         return "2019-11-13T18:47:04.733Z";
@@ -107,10 +121,14 @@ describe("RealTime subscription link", () => {
     );
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
+        // URL should be clean — no query string with credentials
         expect(url).toBe(
-          "wss://apikeytesturl1234567890123.appsync-realtime-api.us-west-2.amazonaws.com/graphql?header=eyJob3N0IjoiYXBpa2V5dGVzdHVybDEyMzQ1Njc4OTAxMjMuYXBwc3luYy1hcGkudXMtd2VzdC0yLmFtYXpvbmF3cy5jb20iLCJ4LWFtei1kYXRlIjoiMjAxOTExMTNUMTg0NzA0WiIsIngtYXBpLWtleSI6Inh4eHh4In0=&payload=e30="
+          "wss://apikeytesturl1234567890123.appsync-realtime-api.us-west-2.amazonaws.com/graphql"
         );
-        expect(protocol).toBe("graphql-ws");
+        // Protocol should be an array with graphql-ws and header- prefix
+        expect(Array.isArray(protocol)).toBe(true);
+        const header = decodeProtocolHeader(protocol);
+        expect(header["x-api-key"]).toBe("xxxxx");
         done();
         return new myWebSocket();
       }
@@ -141,7 +159,7 @@ describe("RealTime subscription link", () => {
   });
 
   test("Initialize WebSocket correctly for API KEY with custom domain", (done) => {
-    expect.assertions(2);
+    expect.assertions(3);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(
       jest.fn(() => {
         return "2019-11-13T18:47:04.733Z";
@@ -150,9 +168,11 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         expect(url).toBe(
-          "wss://apikeytest.testcustomdomain.com/graphql/realtime?header=eyJob3N0IjoiYXBpa2V5dGVzdC50ZXN0Y3VzdG9tZG9tYWluLmNvbSIsIngtYW16LWRhdGUiOiIyMDE5MTExM1QxODQ3MDRaIiwieC1hcGkta2V5IjoieHh4eHgifQ==&payload=e30="
+          "wss://apikeytest.testcustomdomain.com/graphql/realtime"
         );
-        expect(protocol).toBe("graphql-ws");
+        expect(Array.isArray(protocol)).toBe(true);
+        const header = decodeProtocolHeader(protocol);
+        expect(header["x-api-key"]).toBe("xxxxx");
         done();
         return new myWebSocket();
       }
@@ -183,7 +203,7 @@ describe("RealTime subscription link", () => {
   });
 
   test("Initialize WebSocket correctly for COGNITO USER POOLS", (done) => {
-    expect.assertions(2);
+    expect.assertions(3);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(
       jest.fn(() => {
         return "2019-11-13T18:47:04.733Z";
@@ -192,9 +212,11 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         expect(url).toBe(
-          "wss://cognitouserpooltesturl1234.appsync-realtime-api.us-west-2.amazonaws.com/graphql?header=eyJBdXRob3JpemF0aW9uIjoidG9rZW4iLCJob3N0IjoiY29nbml0b3VzZXJwb29sdGVzdHVybDEyMzQuYXBwc3luYy1hcGkudXMtd2VzdC0yLmFtYXpvbmF3cy5jb20ifQ==&payload=e30="
+          "wss://cognitouserpooltesturl1234.appsync-realtime-api.us-west-2.amazonaws.com/graphql"
         );
-        expect(protocol).toBe("graphql-ws");
+        expect(Array.isArray(protocol)).toBe(true);
+        const header = decodeProtocolHeader(protocol);
+        expect(header["Authorization"]).toBe("token");
         done();
         return new myWebSocket();
       }
@@ -225,7 +247,7 @@ describe("RealTime subscription link", () => {
   });
 
   test("Initialize WebSocket correctly for COGNITO USER POOLS with custom domain", (done) => {
-    expect.assertions(2);
+    expect.assertions(3);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(
       jest.fn(() => {
         return "2019-11-13T18:47:04.733Z";
@@ -234,9 +256,11 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         expect(url).toBe(
-          "wss://cognitouserpools.testcustomdomain.com/graphql/realtime?header=eyJBdXRob3JpemF0aW9uIjoidG9rZW4iLCJob3N0IjoiY29nbml0b3VzZXJwb29scy50ZXN0Y3VzdG9tZG9tYWluLmNvbSJ9&payload=e30="
+          "wss://cognitouserpools.testcustomdomain.com/graphql/realtime"
         );
-        expect(protocol).toBe("graphql-ws");
+        expect(Array.isArray(protocol)).toBe(true);
+        const header = decodeProtocolHeader(protocol);
+        expect(header["Authorization"]).toBe("token");
         done();
         return new myWebSocket();
       }
@@ -267,7 +291,7 @@ describe("RealTime subscription link", () => {
   });
 
   test("Initialize WebSocket correctly for OPENID_CONNECT", (done) => {
-    expect.assertions(2);
+    expect.assertions(3);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(
       jest.fn(() => {
         return "2019-11-13T18:47:04.733Z";
@@ -276,9 +300,11 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         expect(url).toBe(
-          "wss://openidconnecttesturl123456.appsync-realtime-api.us-west-2.amazonaws.com/graphql?header=eyJBdXRob3JpemF0aW9uIjoidG9rZW4iLCJob3N0Ijoib3BlbmlkY29ubmVjdHRlc3R1cmwxMjM0NTYuYXBwc3luYy1hcGkudXMtd2VzdC0yLmFtYXpvbmF3cy5jb20ifQ==&payload=e30="
+          "wss://openidconnecttesturl123456.appsync-realtime-api.us-west-2.amazonaws.com/graphql"
         );
-        expect(protocol).toBe("graphql-ws");
+        expect(Array.isArray(protocol)).toBe(true);
+        const header = decodeProtocolHeader(protocol);
+        expect(header["Authorization"]).toBe("token");
         done();
         return new myWebSocket();
       }
@@ -309,7 +335,7 @@ describe("RealTime subscription link", () => {
   });
 
   test("Initialize WebSocket correctly for OPENID_CONNECT with custom domain", (done) => {
-    expect.assertions(2);
+    expect.assertions(3);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(
       jest.fn(() => {
         return "2019-11-13T18:47:04.733Z";
@@ -318,9 +344,11 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         expect(url).toBe(
-          "wss://openidconnecttesturl.testcustomdomain.com/graphql/realtime?header=eyJBdXRob3JpemF0aW9uIjoidG9rZW4iLCJob3N0Ijoib3BlbmlkY29ubmVjdHRlc3R1cmwudGVzdGN1c3RvbWRvbWFpbi5jb20ifQ==&payload=e30="
+          "wss://openidconnecttesturl.testcustomdomain.com/graphql/realtime"
         );
-        expect(protocol).toBe("graphql-ws");
+        expect(Array.isArray(protocol)).toBe(true);
+        const header = decodeProtocolHeader(protocol);
+        expect(header["Authorization"]).toBe("token");
         done();
         return new myWebSocket();
       }
@@ -351,7 +379,7 @@ describe("RealTime subscription link", () => {
   });
 
   test("Initialize WebSocket correctly for AWS_LAMBDA", (done) => {
-    expect.assertions(2);
+    expect.assertions(3);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(
       jest.fn(() => {
         return "2019-11-13T18:47:04.733Z";
@@ -360,9 +388,11 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         expect(url).toBe(
-          "wss://awslambdatesturl1234567890.appsync-realtime-api.us-west-2.amazonaws.com/graphql?header=eyJBdXRob3JpemF0aW9uIjoidG9rZW4iLCJob3N0IjoiYXdzbGFtYmRhdGVzdHVybDEyMzQ1Njc4OTAuYXBwc3luYy1hcGkudXMtd2VzdC0yLmFtYXpvbmF3cy5jb20ifQ==&payload=e30="
+          "wss://awslambdatesturl1234567890.appsync-realtime-api.us-west-2.amazonaws.com/graphql"
         );
-        expect(protocol).toBe("graphql-ws");
+        expect(Array.isArray(protocol)).toBe(true);
+        const header = decodeProtocolHeader(protocol);
+        expect(header["Authorization"]).toBe("token");
         done();
         return new myWebSocket();
       }
@@ -390,7 +420,7 @@ describe("RealTime subscription link", () => {
   });
 
   test("Initialize WebSocket correctly for AWS_LAMBDA with custom domain", (done) => {
-    expect.assertions(2);
+    expect.assertions(3);
     jest.spyOn(Date.prototype, "toISOString").mockImplementation(
       jest.fn(() => {
         return "2019-11-13T18:47:04.733Z";
@@ -399,9 +429,11 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         expect(url).toBe(
-          "wss://awslambdatesturl.testcustomdomain.com/graphql/realtime?header=eyJBdXRob3JpemF0aW9uIjoidG9rZW4iLCJob3N0IjoiYXdzbGFtYmRhdGVzdHVybC50ZXN0Y3VzdG9tZG9tYWluLmNvbSJ9&payload=e30="
+          "wss://awslambdatesturl.testcustomdomain.com/graphql/realtime"
         );
-        expect(protocol).toBe("graphql-ws");
+        expect(Array.isArray(protocol)).toBe(true);
+        const header = decodeProtocolHeader(protocol);
+        expect(header["Authorization"]).toBe("token");
         done();
         return new myWebSocket();
       }
@@ -455,14 +487,11 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         // WebSocket should connect to the proxy, not directly to AppSync
-        // The header should contain the original AppSync host for auth
-        const urlObj = new URL(url);
-        expect(urlObj.origin + urlObj.pathname).toBe(
+        expect(url).toBe(
           "wss://d111111abcdef8.cloudfront.net/realtime"
         );
-        // Decode the header to verify the host is the AppSync endpoint, not CloudFront
-        const headerB64 = urlObj.searchParams.get("header");
-        const header = JSON.parse(Buffer.from(headerB64, "base64").toString());
+        // Decode the header from the protocol to verify the host is the AppSync endpoint, not CloudFront
+        const header = decodeProtocolHeader(protocol);
         expect(header.host).toBe(
           "proxytesturl12345678901234567.appsync-api.us-west-2.amazonaws.com"
         );
@@ -504,12 +533,10 @@ describe("RealTime subscription link", () => {
     );
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
-        const urlObj = new URL(url);
-        expect(urlObj.origin + urlObj.pathname).toBe(
+        expect(url).toBe(
           "wss://mycdn.example.com/realtime"
         );
-        const headerB64 = urlObj.searchParams.get("header");
-        const header = JSON.parse(Buffer.from(headerB64, "base64").toString());
+        const header = decodeProtocolHeader(protocol);
         expect(header.host).toBe(
           "cognitoproxytesturl123456789.appsync-api.us-west-2.amazonaws.com"
         );
@@ -555,9 +582,9 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         expect(url).toBe(
-          "wss://apikeytest.testcustomdomain.com/graphql/realtime?header=eyJob3N0IjoiYXBpa2V5dGVzdC50ZXN0Y3VzdG9tZG9tYWluLmNvbSIsIngtYW16LWRhdGUiOiIyMDE5MTExM1QxODQ3MDRaIiwieC1hcGkta2V5IjoieHh4eHgifQ==&payload=e30="
+          "wss://apikeytest.testcustomdomain.com/graphql/realtime"
         );
-        expect(protocol).toBe("graphql-ws");
+        expect(Array.isArray(protocol)).toBe(true);
         const socket = new myWebSocket();
 
         setTimeout(() => {
@@ -638,9 +665,9 @@ describe("RealTime subscription link", () => {
     AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
       (url, protocol) => {
         expect(url).toBe(
-          "wss://apikeytest.testcustomdomain.com/graphql/realtime?header=eyJob3N0IjoiYXBpa2V5dGVzdC50ZXN0Y3VzdG9tZG9tYWluLmNvbSIsIngtYW16LWRhdGUiOiIyMDE5MTExM1QxODQ3MDRaIiwieC1hcGkta2V5IjoieHh4eHgifQ==&payload=e30="
+          "wss://apikeytest.testcustomdomain.com/graphql/realtime"
         );
-        expect(protocol).toBe("graphql-ws");
+        expect(Array.isArray(protocol)).toBe(true);
         const socket = new myWebSocket();
 
         setTimeout(() => {
@@ -704,6 +731,40 @@ describe("RealTime subscription link", () => {
         console.log("done with this");
         fail();
       },
+    });
+  });
+
+  test("URL does not contain credentials in query string", (done) => {
+    expect.assertions(2);
+    jest.spyOn(Date.prototype, "toISOString").mockImplementation(
+      jest.fn(() => {
+        return "2019-11-13T18:47:04.733Z";
+      })
+    );
+    AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket = jest.fn(
+      (url, protocol) => {
+        // The URL must not contain any query parameters with auth material
+        expect(url.includes("?")).toBe(false);
+        // Auth should be in the protocol header instead
+        const header = decodeProtocolHeader(protocol);
+        expect(header["x-api-key"]).toBe("my-secret-key");
+        done();
+        return new myWebSocket();
+      }
+    );
+    const link = new AppSyncRealTimeSubscriptionHandshakeLink({
+      auth: {
+        type: AUTH_TYPE.API_KEY,
+        apiKey: "my-secret-key",
+      },
+      region: "us-west-2",
+      url: "https://securitytesturl12345678901.appsync-api.us-west-2.amazonaws.com/graphql",
+    });
+
+    execute(link, { query }, { client: mockClient }).subscribe({
+      error: () => { fail; },
+      next: () => { done(); },
+      complete: () => { done(); },
     });
   });
 });

@@ -85,6 +85,14 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     this.proxyUrl = proxy?.url;
     this.keepAliveTimeout = keepAliveTimeoutMs;
 
+    // Warn about non-HTTPS URLs which would send credentials over unencrypted connections
+    if (this.url && !this.url.startsWith("https://")) {
+      logger(`WARNING: AppSync endpoint URL is not using HTTPS. Credentials may be sent unencrypted: ${this.url}`);
+    }
+    if (this.proxyUrl && !this.proxyUrl.startsWith("https://")) {
+      logger(`WARNING: Proxy URL is not using HTTPS. Credentials may be sent unencrypted: ${this.proxyUrl}`);
+    }
+
     if (this.keepAliveTimeout < SERVER_KEEP_ALIVE_TIMEOUT) {
       let configName: keyof AppSyncRealTimeSubscriptionConfig = 'keepAliveTimeoutMs';
 
@@ -389,8 +397,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           this.socketStatus = SOCKET_STATUS.CONNECTING;
 
           const payloadString = "{}";
-          const headerString = JSON.stringify(
-            await this._awsRealTimeHeaderBasedAuth({
+          const headerObj = await this._awsRealTimeHeaderBasedAuth({
               authenticationType,
               payload: payloadString,
               canonicalUri: "/connect",
@@ -400,11 +407,18 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
               credentials,
               token,
               graphql_headers: () => { }
-            })
-          );
-          const headerQs = Buffer.from(headerString).toString("base64");
+            });
+          const headerString = JSON.stringify(headerObj);
 
-          const payloadQs = Buffer.from(payloadString).toString("base64");
+          // Use base64url encoding for the Sec-WebSocket-Protocol header approach
+          // This avoids putting credentials in the URL query string where they
+          // could be logged by servers, proxies, or browser history.
+          // See: https://docs.aws.amazon.com/appsync/latest/devguide/real-time-websocket-client.html
+          const headerBase64url = Buffer.from(headerString)
+            .toString("base64")
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, "");
 
           let discoverableEndpoint: string;
 
@@ -430,9 +444,12 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
               .replace('http://', 'ws://');
           }
 
-          const awsRealTimeUrl = `${discoverableEndpoint}?header=${headerQs}&payload=${payloadQs}`;
+          // Pass auth headers via Sec-WebSocket-Protocol instead of URL query
+          // string to avoid credential exposure in logs, browser history, and
+          // network intermediaries.
+          const protocols = ["graphql-ws", `header-${headerBase64url}`];
 
-          await this._initializeRetryableHandshake({ awsRealTimeUrl });
+          await this._initializeRetryableHandshake({ awsRealTimeUrl: discoverableEndpoint, protocols });
 
           this.promiseArray.forEach(({ res }) => {
             logger("Notifying connection successful");
@@ -481,8 +498,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     const handler = headerHandler[authenticationType];
 
     if (typeof handler !== "function") {
-      logger(`Authentication type ${authenticationType} not supported`);
-      return {};
+      throw new NonRetryableError(`Authentication type ${authenticationType} not supported`);
     }
 
     // Always use the original AppSync endpoint for the host in auth headers,
@@ -582,21 +598,22 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     return signed_params.headers;
   }
 
-  private async _initializeRetryableHandshake({ awsRealTimeUrl }) {
+  private async _initializeRetryableHandshake({ awsRealTimeUrl, protocols }) {
     logger(`Initializaling retryable Handshake`);
     await jitteredExponentialRetry(this._initializeHandshake.bind(this), [
-      { awsRealTimeUrl }
+      { awsRealTimeUrl, protocols }
     ]);
   }
 
-  private async _initializeHandshake({ awsRealTimeUrl }) {
+  private async _initializeHandshake({ awsRealTimeUrl, protocols }) {
+    // Log only the endpoint without auth parameters to avoid credential exposure
     logger(`Initializing handshake ${awsRealTimeUrl}`);
     // Because connecting the socket is async, is waiting until connection is open
     // Step 1: connect websocket
     try {
       await (() => {
         return new Promise<void>((res, rej) => {
-          const newSocket = AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket(awsRealTimeUrl, "graphql-ws");
+          const newSocket = AppSyncRealTimeSubscriptionHandshakeLink.createWebSocket(awsRealTimeUrl, protocols);
           newSocket.onerror = () => {
             logger(`WebSocket connection error`);
           };
@@ -624,17 +641,25 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
           };
 
           this.awsRealTimeSocket.onmessage = (message: MessageEvent) => {
-            logger(
-              `subscription message from AWS AppSyncRealTime: ${message.data} `
-            );
-            const data = JSON.parse(message.data);
+            let data;
+            try {
+              data = JSON.parse(message.data);
+            } catch (e) {
+              logger(`Failed to parse WebSocket message`);
+              return;
+            }
             const {
               type,
               payload: { connectionTimeoutMs = DEFAULT_KEEP_ALIVE_TIMEOUT } = {}
             } = data;
+            logger(`subscription message from AWS AppSyncRealTime: ${type}`);
             if (type === MESSAGE_TYPES.GQL_CONNECTION_ACK) {
               ackOk = true;
-              this.keepAliveTimeout = this.keepAliveTimeout ?? connectionTimeoutMs;
+              // Clamp server-provided timeout to a reasonable range
+              const validTimeout = typeof connectionTimeoutMs === 'number' && connectionTimeoutMs >= SERVER_KEEP_ALIVE_TIMEOUT
+                ? connectionTimeoutMs
+                : DEFAULT_KEEP_ALIVE_TIMEOUT;
+              this.keepAliveTimeout = this.keepAliveTimeout ?? validTimeout;
               this.awsRealTimeSocket.onmessage = this._handleIncomingSubscriptionMessage.bind(
                 this
               );
@@ -696,8 +721,15 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
   }
 
   private _handleIncomingSubscriptionMessage(message: MessageEvent) {
-    logger(`subscription message from AWS AppSync RealTime: ${message.data}`);
-    const { id = "", payload, type } = JSON.parse(message.data);
+    let parsed;
+    try {
+      parsed = JSON.parse(message.data);
+    } catch (e) {
+      logger(`Failed to parse incoming subscription message`);
+      return;
+    }
+    const { id = "", payload, type } = parsed;
+    logger(`subscription message from AWS AppSync RealTime: ${type} id: ${id}`);
     const {
       observer = null,
       query = "",
@@ -839,7 +871,7 @@ export class AppSyncRealTimeSubscriptionHandshakeLink extends ApolloLink {
     logger("timeoutStartSubscription", JSON.stringify({ query, variables }));
   }
 
-  static createWebSocket(awsRealTimeUrl: string, protocol: string): WebSocket {
+  static createWebSocket(awsRealTimeUrl: string, protocol: string | string[]): WebSocket {
     return new WebSocket(awsRealTimeUrl, protocol);
   }
 }
