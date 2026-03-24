@@ -31,7 +31,7 @@ export async function retry(
   delayFn: DelayFunction,
   attempt: number = 1
 ) {
-  logger(`Attempt #${attempt} for this vars: ${JSON.stringify(args)}`);
+  logger(`Attempt #${attempt}`);
   try {
     await functionToRetry.apply(undefined, args);
   } catch (err) {
