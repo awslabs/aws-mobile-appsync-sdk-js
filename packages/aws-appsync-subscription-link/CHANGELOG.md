@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+<a name="3.1.4"></a>
+## [3.1.4](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@3.1.3...aws-appsync-subscription-link@3.1.4) (2026-03-24)
+
+
+### Bug Fixes
+
+* **subscription-link:** move auth credentials from URL query string to Sec-WebSocket-Protocol header ([748b45a](https://github.com/awslabs/aws-mobile-appsync-sdk-js/commit/748b45a))
+
+
+
+
 <a name="3.1.3"></a>
 ## [3.1.3](https://github.com/awslabs/aws-mobile-appsync-sdk-js/compare/aws-appsync-subscription-link@3.1.2...aws-appsync-subscription-link@3.1.3) (2024-01-23)
 
