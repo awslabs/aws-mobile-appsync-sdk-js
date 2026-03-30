@@ -2,6 +2,7 @@
   "name": "aws-appsync-auth-link",
   "version": "3.0.7",
   "main": "lib/index.js",
+  "files": ["lib"],
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync Auth Link for JavaScript",
   "author": {
@@ -14,6 +15,7 @@
     "url": "https://github.com/awslabs/aws-mobile-appsync-sdk-js.git"
   },
   "scripts": {
+    "clean": "rm -rf lib",
     "prepare": "tsc",
     "test": "jest --coverage --coverageReporters=text --passWithNoTests",
     "test-watch": "jest --watch"
