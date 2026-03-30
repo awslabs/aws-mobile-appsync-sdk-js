@@ -17,5 +17,5 @@ export default defineConfig({
     "graphql",
     "uuid",
   ],
-  onSuccess: "cp -r src/vendor lib/vendor",
+  onSuccess: "cp -r src/vendor/ lib/vendor/",
 });

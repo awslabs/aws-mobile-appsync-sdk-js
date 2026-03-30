@@ -3,6 +3,7 @@
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "build": "lerna run build",
+    "clean": "lerna run clean",
     "test": "lerna run test",
     "integration-test": "cd integration-tests && npm install && npm test",
     "validate": "./scripts/validate-build.sh",
