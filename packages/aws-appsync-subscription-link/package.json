@@ -1,8 +1,10 @@
 {
   "name": "aws-appsync-subscription-link",
-  "version": "3.1.4",
+  "version": "3.1.5",
   "main": "lib/index.js",
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "license": "Apache-2.0",
   "description": "AWS Mobile AppSync SDK for JavaScript",
   "author": {
@@ -21,7 +23,7 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "aws-appsync-auth-link": "^3.0.7",
+    "aws-appsync-auth-link": "^3.0.8",
     "debug": "2.6.9",
     "url": "^0.11.0",
     "zen-observable-ts": "^1.2.5"
